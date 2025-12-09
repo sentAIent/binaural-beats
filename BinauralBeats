@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MindWave | Binaural Studio</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+:root {
+--bg-main: #0f172a;
+--bg-panel: #1e293b;
+--border: #334155;
+--text-main: #e2e8f0;
+--text-muted: #94a3b8;
+--accent: #2dd4bf;
+--accent-glow: rgba(45, 212, 191, 0.4);
+--slider-track: #334155;
+}
+body {
+font-family: 'Inter', sans-serif;
+background-color: var(--bg-main);
+color: var(--text-main);
+transition: background-color 0.5s, color 0.5s;
+}
+.panel {
+background-color: var(--bg-panel);
+border-color: var(--border);
+transition: background-color 0.5s, border-color 0.5s;
+}
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+input[type=range] { -webkit-appearance: none; background: transparent; }
+input[type=range]::-webkit-slider-thumb {
+-webkit-appearance: none;
+height: 12px; width: 12px;
+border-radius: 50%;
+background: var(--accent);
+cursor: pointer;
+margin-top: -4px;
+box-shadow: 0 0 10px var(--accent-glow);
+border: 1px solid rgba(255,255,255,0.2);
+}
+input[type=range]::-webkit-slider-runnable-track {
+width: 100%; height: 4px;
+cursor: pointer;
+background: var(--slider-track);
+border-radius: 2px;
+}
+.tone-slider::-webkit-slider-thumb { background: #a78bfa; box-shadow: 0 0 8px rgba(167, 139, 250, 0.4); }
+.speed-slider::-webkit-slider-thumb { background: #fbbf24; box-shadow: 0 0 8px rgba(251, 191, 36, 0.4); }
+.visualizer-container { box-shadow: 0 0 20px var(--accent-glow); transition: box-shadow 0.5s; }
+.fade-text { transition: opacity 1s ease-in-out; }
+.preset-btn.active {
+border-color: var(--accent) !important;
+background-color: var(--accent-glow) !important;
+color: white !important;
+box-shadow: 0 0 15px var(--accent-glow);
+transform: scale(1.05);
+z-index: 10;
+}
+.recording-active {
+animation: recordPulse 2s infinite;
+background-color: #ef4444 !important;
+border-color: #ef4444 !important;
+color: white !important;
+}
+@keyframes recordPulse {
+0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+.modal { opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; pointer-events: none; }
+.modal.active { opacity: 1; visibility: visible; pointer-events: auto; }
+select {
+background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+background-position: right 0.2rem center;
+background-repeat: no-repeat;
+background-size: 1.2em 1.2em;
+padding-right: 1.5rem;
+-webkit-appearance: none;
+appearance: none;
+}
+</style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+<!-- Main Container -->
+<div class="max-w-md w-full panel rounded-2xl shadow-2xl overflow-hidden border flex flex-col max-h-[98vh]">
+<!-- Header -->
+<div class="p-4 border-b border-[var(--border)] flex justify-between items-center shrink-0">
+<div>
+<h1 class="text-xl font-bold tracking-wide" style="color: var(--accent);">MINDWAVE</h1>
+<p class="text-xs" style="color: var(--text-muted);">Binaural Studio</p>
+</div>
+<div class="flex items-center gap-2">
+<!-- Theme Toggle -->
+<div class="relative group">
+<button id="themeBtn" class="p-2 rounded-full hover:bg-[var(--border)] transition-colors" style="color: var(--text-muted);">
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+</button>
+<div class="absolute right-0 mt-2 w-32 panel border border-[var(--border)] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden flex flex-col">
+<button onclick="setTheme('default')" class="text-xs text-left px-3 py-2 hover:bg-[var(--border)]" style="color: var(--text-main);">Original</button>
+<button onclick="setTheme('midnight')" class="text-xs text-left px-3 py-2 hover:bg-[var(--border)]" style="color: #60a9ff;">Midnight</button>
+<button onclick="setTheme('forest')" class="text-xs text-left px-3 py-2 hover:bg-[var(--border)]" style="color: #34d399;">Forest</button>
+<button onclick="setTheme('ember')" class="text-xs text-left px-3 py-2 hover:bg-[var(--border)]" style="color: #fb7185;">Ember</button>
+<button onclick="setTheme('abyss')" class="text-xs text-left px-3 py-2 hover:bg-[var(--border)]" style="color: #a1a1aa;">Abyss</button>
+<div class="h-px bg-[var(--border)]"></div>
+<button onclick="setTheme('cloud')" class="text-xs text-left px-3 py-2 hover:bg-[var(--border)]" style="color: #38bdf8;">Cloud</button>
+<button onclick="setTheme('dawn')" class="text-xs text-left px-3 py-2 hover:bg-[var(--border)]" style="color: #f472b6;">Dawn</button>
+</div>
+</div>
+<!-- Save Mix Button -->
+<button id="saveMixBtn" class="p-2 rounded-full hover:bg-[var(--border)] transition-colors" style="color: var(--text-muted);" title="Save Current Mix to Library">
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+</button>
+<!-- Library Button -->
+<button id="historyBtn" class="p-2 rounded-full hover:bg-[var(--border)] transition-colors" style="color: var(--text-muted);" title="Saved Mixes">
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+</button>
+<div class="flex items-center gap-2 panel rounded-lg p-1 border border-[var(--border)]">
+<label class="flex items-center gap-1 px-2 cursor-pointer" title="Record Video">
+<input type="checkbox" id="videoToggle" checked class="w-3 h-3" style="accent-color: var(--accent);">
+<span class="text-[10px] font-bold" style="color: var(--text-muted);">VID</span>
+</label>
+<button id="recordBtn" class="text-[10px] px-2 py-1 rounded transition-colors flex items-center gap-1 disabled:opacity-50 border border-[var(--border)] hover:bg-[var(--border)]" style="color: var(--text-muted);">
+<div class="w-2 h-2 rounded-full bg-red-500"></div> REC
+</button>
+</div>
+<div id="statusIndicator" class="h-3 w-3 rounded-full bg-slate-600 transition-colors duration-500"></div>
+</div>
+</div>
+<div class="flex-1 flex flex-col min-h-0 relative">
+<!-- Sticky Visuals -->
+<div class="shrink-0 border-b border-[var(--border)] z-10" style="background-color: var(--bg-main);">
+<div class="relative h-28 w-full visualizer-container group">
+<canvas id="visualizer" class="w-full h-full"></canvas>
+<div class="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<button onclick="setVisualMode('wave')" class="text-[10px] bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded border border-slate-600">WAVE</button>
+<button onclick="setVisualMode('lissajous')" class="text-[10px] bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded border border-slate-600">PHASE</button>
+</div>
+<div class="absolute bottom-2 left-2 text-[10px] text-slate-500 font-mono" id="visualLabel">WAVEFORM ANALYSIS</div>
+</div>
+<div class="px-6 py-4 space-y-3">
+<button id="playBtn" class="w-full py-2 rounded-lg font-bold text-sm uppercase tracking-wider shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2" style="background-color: var(--accent); color: var(--bg-main); box-shadow: 0 4px 12px -2px var(--accent-glow);">
+<svg id="playIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+<svg id="pauseIcon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+<span id="btnText">Start Session</span>
+</button>
+<div class="panel rounded-lg p-2 border border-[var(--border)] text-center">
+<p id="aiPrompt" class="text-xs italic font-serif leading-relaxed fade-text" style="color: var(--text-main);">Select a frequency to generate a mindset...</p>
+</div>
+</div>
+</div>
+<div class="overflow-y-auto flex-1 px-6 pb-6 space-y-6 custom-scrollbar relative">
+<div>
+<div class="flex justify-between mb-1">
+<label class="text-xs font-bold uppercase tracking-wider" style="color: var(--accent);">Master Output</label>
+<span id="masterVolValue" class="text-xs font-mono" style="color: var(--accent);">80%</span>
+</div>
+<input type="range" id="masterVolSlider" min="0" max="1" step="0.01" value="0.8" class="w-full">
+</div>
+<div>
+<label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-muted);">Brainwave Mode</label>
+<div class="grid grid-cols-5 gap-1.5" id="presetButtons">
+<button onclick="applyPreset('delta', this)" class="preset-btn px-1 py-2 rounded text-[10px] font-bold transition-all border-2 border-transparent focus:outline-none flex flex-col items-center justify-center bg-indigo-900/30 hover:bg-indigo-800 text-indigo-200 border-indigo-500/20"><span>DELTA</span><span class="text-[8px] opacity-70 font-normal">Sleep</span></button>
+<button onclick="applyPreset('theta', this)" class="preset-btn px-1 py-2 rounded text-[10px] font-bold transition-all border-2 border-transparent focus:outline-none flex flex-col items-center justify-center bg-purple-900/30 hover:bg-purple-800 text-purple-200 border-purple-500/20"><span>THETA</span><span class="text-[8px] opacity-70 font-normal">Dream</span></button>
+<button onclick="applyPreset('alpha', this)" class="preset-btn px-1 py-2 rounded text-[10px] font-bold transition-all border-2 border-transparent focus:outline-none flex flex-col items-center justify-center bg-emerald-900/30 hover:bg-emerald-800 text-emerald-200 border-emerald-500/20"><span>ALPHA</span><span class="text-[8px] opacity-70 font-normal">Relax</span></button>
+<button onclick="applyPreset('beta', this)" class="preset-btn px-1 py-2 rounded text-[10px] font-bold transition-all border-2 border-transparent focus:outline-none flex flex-col items-center justify-center bg-amber-900/30 hover:bg-amber-800 text-amber-200 border-amber-500/20"><span>BETA</span><span class="text-[8px] opacity-70 font-normal">Focus</span></button>
+<button onclick="applyPreset('gamma', this)" class="preset-btn px-1 py-2 rounded text-[10px] font-bold transition-all border-2 border-transparent focus:outline-none flex flex-col items-center justify-center bg-rose-900/30 hover:bg-rose-800 text-rose-200 border-rose-500/20"><span>GAMMA</span><span class="text-[8px] opacity-70 font-normal">Insight</span></button>
+</div>
+</div>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between mb-1">
+<label class="text-xs" style="color: var(--text-muted);">Base Tone</label>
+<span id="baseValue" class="text-xs font-mono" style="color: var(--accent);">200 Hz</span>
+</div>
+<input type="range" id="baseSlider" min="50" max="400" value="200" class="w-full">
+</div>
+<div>
+<div class="flex justify-between mb-1">
+<label class="text-xs" style="color: var(--text-muted);">Binaural Beat</label>
+<span id="beatValue" class="text-xs font-mono" style="color: var(--accent);">10 Hz</span>
+</div>
+<input type="range" id="beatSlider" min="1" max="40" step="0.5" value="10" class="w-full">
+</div>
+</div>
+<div class="space-y-3 pt-2 border-t border-[var(--border)]">
+<div>
+<div class="flex justify-between mb-1">
+<label class="text-xs" style="color: var(--text-muted);">Binaural Tones</label>
+<span id="volValue" class="text-xs font-mono" style="color: var(--text-muted);">50%</span>
+</div>
+<input type="range" id="volSlider" min="0" max="1" step="0.01" value="0.5" class="w-full">
+</div>
+<div>
+<div class="flex justify-between mb-2 items-end">
+<label class="text-xs" style="color: var(--text-muted);">Soundscapes</label>
+<span class="text-[10px]" style="color: var(--text-muted);">Vol / Freq / Spd</span>
+</div>
+<div class="mb-3 px-2">
+<div class="flex justify-between mb-1">
+<label class="text-[10px]" style="color: var(--accent);">Soundscape Master</label>
+<span id="atmosMasterValue" class="text-[10px] font-mono" style="color: var(--accent);">80%</span>
+</div>
+<input type="range" id="atmosMasterSlider" min="0" max="1" step="0.01" value="0.8" class="w-full" style="accent-color: var(--accent);">
+</div>
+<div id="soundscapeContainer" class="panel rounded-lg p-3 border border-[var(--border)] grid grid-cols-2 gap-3" style="max-height: none; overflow-y: visible;">
+<!-- JS Generates Here -->
+</div>
+</div>
+</div>
+</div>
+<!-- Library Overlay -->
+<div id="libraryPanel" class="absolute inset-0 z-40 transform translate-x-full transition-transform duration-300 flex flex-col panel">
+<div class="p-4 border-b border-[var(--border)] bg-opacity-50 flex justify-between items-center">
+<h2 class="text-sm font-bold uppercase tracking-wider" style="color: var(--text-main);">Saved Mixes</h2>
+<button id="closeLibraryBtn" class="hover:text-white" style="color: var(--text-muted);">
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+</button>
+</div>
+<div id="libraryList" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+<div class="text-center text-xs mt-10" style="color: var(--text-muted);">Loading mixes...</div>
+</div>
+</div>
+</div>
+<!-- Playback/Export Modal -->
+<div id="videoModal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
+<div class="panel p-2 rounded-xl shadow-2xl max-w-2xl w-full border border-[var(--border)] flex flex-col">
+<div class="flex justify-between items-center px-2 pb-2">
+<h3 class="text-sm font-bold" style="color: var(--accent);">Recording Review</h3>
+<button id="closeModalBtn" class="hover:text-white" style="color: var(--text-muted);">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+</button>
+</div>
+<!-- Dual Player: Video or Audio -->
+<video id="playbackVideo" controls loop class="w-full rounded-lg bg-black aspect-video hidden"></video>
+<div id="audioOnlyPlayer" class="hidden w-full p-6 bg-black/50 rounded-lg flex flex-col items-center justify-center">
+<div class="text-[var(--accent)] mb-4"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg></div>
+<audio id="playbackAudio" controls class="w-full"></audio>
+<p class="text-xs text-[var(--text-muted)] mt-2 font-mono">High-Fidelity WAV Capture</p>
+</div>
+
+<div class="mt-4 px-2 flex justify-between items-center border-t border-[var(--border)] pt-3">
+<div class="flex items-center gap-2">
+<span class="text-[10px] uppercase font-bold" style="color: var(--text-muted);">Loops:</span>
+<input type="number" id="loopCountInput" value="1" min="1" max="50" class="w-12 text-[10px] rounded border border-[var(--border)] py-1 px-1 focus:outline-none" style="background-color: var(--bg-main); color: var(--text-main);">
+<span id="loopDurationDisplay" class="text-[9px] w-20 text-right font-mono" style="color: var(--accent);">00:00</span>
+</div>
+<div class="flex gap-2">
+<!-- Download -->
+<button id="modalDlBtn" onclick="handleLoopDownload()" class="px-3 py-1.5 rounded text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer" style="background-color: var(--accent); color: var(--bg-main);">
+<span>Save to Device</span>
+<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+</button>
+</div>
+</div>
+<!-- Progress Overlay for Looping -->
+<div id="loopProcessing" class="hidden absolute inset-0 bg-black/80 z-50 flex items-center justify-center flex-col rounded-xl">
+<div class="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin mb-3" style="border-color: var(--accent); border-top-color: transparent;"></div>
+<p class="text-sm font-bold" style="color: var(--accent);">Processing...</p>
+</div>
+</div>
+</div>
+
+<!-- Custom Save Mix Modal -->
+<div id="saveModal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
+<div class="panel p-4 rounded-xl shadow-2xl max-w-sm w-full border border-[var(--border)] flex flex-col gap-4">
+<h3 class="text-sm font-bold" style="color: var(--accent);">Save Custom Mix</h3>
+<input type="text" id="saveNameInput" class="w-full bg-[var(--bg-main)] border border-[var(--border)] rounded p-2 text-sm text-[var(--text-main)] focus:border-[var(--accent)] outline-none" placeholder="Enter mix name...">
+<div class="flex justify-end gap-2">
+<button id="cancelSaveBtn" class="px-3 py-1.5 rounded text-xs font-bold text-[var(--text-muted)] hover:text-white transition-colors border border-[var(--border)]">Cancel</button>
+<button id="confirmSaveBtn" class="px-3 py-1.5 rounded text-xs font-bold transition-colors" style="background-color: var(--accent); color: var(--bg-main);">Save</button>
+</div>
+</div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+let currentUser = null;
+
+const THEMES = {
+default: { bg: '#0f172a', panel: '#1e293b', border: '#334155', text: '#e2e8f0', muted: '#94a3b8', accent: '#2dd4bf', glow: 'rgba(45, 212, 191, 0.4)' },
+midnight: { bg: '#202733', panel: '#2a3441', border: '#3b4758', text: '#e2e8f0', muted: '#94a3b8', accent: '#60a9ff', glow: 'rgba(96, 169, 255, 0.4)' },
+forest: { bg: '#022c22', panel: '#064e3b', border: '#065f46', text: '#ecfdf5', muted: '#6ee7b7', accent: '#34d399', glow: 'rgba(52, 211, 153, 0.4)' },
+ember: { bg: '#450a0a', panel: '#7f1d1d', border: '#991b1b', text: '#fff1f2', muted: '#fca5a5', accent: '#fb7185', glow: 'rgba(251, 113, 133, 0.4)' },
+abyss: { bg: '#09090b', panel: '#18181b', border: '#27272a', text: '#fafafa', muted: '#a1a1aa', accent: '#e4e4e7', glow: 'rgba(255, 255, 255, 0.2)' },
+cloud: { bg: '#f0f9ff', panel: '#ffffff', border: '#e0f2fe', text: '#0c4a6e', muted: '#7dd3fc', accent: '#38bdf8', glow: 'rgba(56, 189, 248, 0.4)' },
+dawn: { bg: '#fff1f2', panel: '#ffffff', border: '#ffe4e6', text: '#881337', muted: '#f472b6', accent: '#fb7185', glow: 'rgba(251, 113, 133, 0.4)' }
+};
+
+const SOUNDSCAPES = [
+{ id: 'pink', label: 'Pink Noise', type: 'nature' },
+{ id: 'rain', label: 'Heavy Rain', type: 'nature' },
+{ id: 'wind', label: 'Mountain Wind', type: 'nature' },
+{ id: 'strings', label: 'Orchestral Strings', type: 'drone' },
+{ id: 'brass', label: 'Brass Swell', type: 'drone' },
+{ id: 'winds', label: 'Woodwinds', type: 'drone' },
+{ id: 'bells', label: 'Temple Bells', type: 'perc' },
+{ id: 'wood', label: 'Woodblocks', type: 'perc' },
+{ id: 'timpani', label: 'Grand Timpani', type: 'perc' },
+{ id: 'orch_perc', label: 'Orchestral Perc', type: 'perc' }
+];
+
+const STATE_INSIGHTS = {
+delta: ["Deep sleep approaches.", "Total regeneration.", "Unconscious healing."],
+theta: ["Dream state activated.", "Creativity flows.", "Access subconscious."],
+alpha: ["Relaxed awareness.", "Calm visualization.", "Bridge to meditation."],
+beta: ["Sharp focus engaged.", "Analytical problem solving.", "Active concentration."],
+gamma: ["Peak cognitive processing.", "High-level synthesis.", "Hyper-awareness."]
+};
+
+const SOUND_INSIGHTS = {
+pink: "Noise masking distractions.", rain: "Rainfall washing away stress.", wind: "Wind carrying thoughts away.",
+strings: "Harmonies evoking emotion.", brass: "Warmth expanding the mind.", winds: "Breath guiding the flow.",
+bells: "Chimes marking the present moment.", wood: "Rhythm grounding the body.", timpani: "Deep resonance strengthening will.",
+orch_perc: "Dynamic textures stimulating alertnes."
+};
+
+let audioCtx;
+let oscLeft, oscRight, panLeft, panRight, beatsGain, masterAtmosGain, masterGain;
+let masterCompressor, analyserLeft, analyserRight;
+let isPlaying = false, isRecording = false;
+let animationId, visualMode = 'wave';
+let mediaRecorder, recordedChunks = [], destStreamNode;
+let activeSoundscapes = {};
+let soundscapeSettings = {};
+let currentSessions = [];
+let currentModalBlob = null;
+let currentModalIsVideo = false;
+let currentModalName = "MindWave_Session";
+// RAW AUDIO CAPTURE
+let rawAudioChunks = [];
+let scriptProcessor = null;
+let workletNode = null;
+let recordedBuffers = [];
+let workletInitialized = false;
+let videoCaptureGain = null; // New gain node for recording fade
+// New variable to hold the processed, clean buffers for looping
+let cleanRecordedBuffers = [];
+
+const els = {
+playBtn: document.getElementById('playBtn'), recordBtn: document.getElementById('recordBtn'), videoToggle: document.getElementById('videoToggle'),
+historyBtn: document.getElementById('historyBtn'), saveMixBtn: document.getElementById('saveMixBtn'),
+playIcon: document.getElementById('playIcon'), pauseIcon: document.getElementById('pauseIcon'),
+btnText: document.getElementById('btnText'), baseSlider: document.getElementById('baseSlider'), beatSlider: document.getElementById('beatSlider'),
+volSlider: document.getElementById('volSlider'), masterVolSlider: document.getElementById('masterVolSlider'), baseValue: document.getElementById('baseValue'),
+beatValue: document.getElementById('beatValue'), volValue: document.getElementById('volValue'), masterVolValue: document.getElementById('masterVolValue'),
+statusIndicator: document.getElementById('statusIndicator'), aiPrompt: document.getElementById('aiPrompt'), visualLabel: document.getElementById('visualLabel'),
+canvas: document.getElementById('visualizer'), libraryPanel: document.getElementById('libraryPanel'), libraryList: document.getElementById('libraryList'),
+videoModal: document.getElementById('videoModal'), playbackVideo: document.getElementById('playbackVideo'),
+playbackAudio: document.getElementById('playbackAudio'), audioOnlyPlayer: document.getElementById('audioOnlyPlayer'),
+soundscapeContainer: document.getElementById('soundscapeContainer'), loopProcessing: document.getElementById('loopProcessing'),
+atmosMasterSlider: document.getElementById('atmosMasterSlider'), atmosMasterValue: document.getElementById('atmosMasterValue'),
+loopCountInput: document.getElementById('loopCountInput'), loopDurationDisplay: document.getElementById('loopDurationDisplay'), modalDlBtn: document.getElementById('modalDlBtn'),
+presetButtons: document.querySelectorAll('.preset-btn'),
+saveModal: document.getElementById('saveModal'), saveNameInput: document.getElementById('saveNameInput'), cancelSaveBtn: document.getElementById('cancelSaveBtn'), confirmSaveBtn: document.getElementById('confirmSaveBtn')
+};
+
+const canvasCtx = els.canvas.getContext('2d');
+
+// --- Functions ---
+window.setTheme = function(themeName) {
+const t = THEMES[themeName] || THEMES.default;
+const r = document.documentElement.style;
+r.setProperty('--bg-main', t.bg); r.setProperty('--bg-panel', t.panel); r.setProperty('--border', t.border);
+r.setProperty('--text-main', t.text); r.setProperty('--text-muted', t.muted); r.setProperty('--accent', t.accent);
+r.setProperty('--accent-glow', t.glow); r.setProperty('--slider-track', t.border);
+if(currentUser) localStorage.setItem('mindwave_theme', themeName);
+};
+const savedTheme = localStorage.getItem('mindwave_theme');
+if(savedTheme) setTheme(savedTheme);
+
+// --- PERSISTENCE: Save/Load State ---
+function saveStateToLocal() {
+const state = {
+base: els.baseSlider.value,
+beat: els.beatSlider.value,
+beatsVol: els.volSlider.value,
+masterVol: els.masterVolSlider.value,
+atmosMaster: els.atmosMasterSlider.value,
+soundscapes: soundscapeSettings
+};
+localStorage.setItem('mindwave_state', JSON.stringify(state));
+}
+
+function restoreStateFromLocal() {
+try {
+const saved = localStorage.getItem('mindwave_state');
+if (saved) {
+const state = JSON.parse(saved);
+loadSettings({ settings: state });
+} else {
+// FIX: Default to Alpha preset on first load if no save state exists
+const alphaBtn = document.querySelector("button[onclick*='alpha']");
+if(alphaBtn) applyPreset('alpha', alphaBtn);
+}
+} catch(e) { console.warn("Failed to restore state", e); }
+}
+
+function initMixer() {
+els.soundscapeContainer.innerHTML = '';
+SOUNDSCAPES.forEach(s => {
+soundscapeSettings[s.id] = { vol: 0, tone: 0.5, speed: 0.5 };
+const item = document.createElement('div');
+item.className = "p-2 rounded border border-[var(--border)] flex flex-col gap-1";
+item.style.backgroundColor = "rgba(0,0,0,0.2)";
+item.innerHTML = `<label class="text-[10px] font-semibold truncate mb-1 block" style="color: var(--text-main);" title="${s.label}">${s.label}</label>
+<div class="flex items-center gap-2"><span class="text-[8px] w-4" style="color: var(--text-muted);">VOL</span><input type="range" min="0" max="0.5" step="0.01" value="0" class="w-full h-1" data-id="${s.id}" data-type="vol"></div>
+<div class="flex items-center gap-2"><span class="text-[8px] w-4" style="color: var(--text-muted);">FRQ</span><input type="range" min="0" max="1" step="0.01" value="0.5" class="w-full tone-slider h-1" data-id="${s.id}" data-type="tone"></div>
+<div class="flex items-center gap-2"><span class="text-[8px] w-4" style="color: var(--text-muted);">SPD</span><input type="range" min="0" max="1" step="0.01" value="0.5" class="w-full speed-slider h-1" data-id="${s.id}" data-type="speed"></div>`;
+item.querySelector('input[data-type="vol"]').addEventListener('input', (e) => { updateSoundscape(s.id, 'vol', parseFloat(e.target.value)); saveStateToLocal(); });
+item.querySelector('input[data-type="tone"]').addEventListener('input', (e) => { updateSoundscape(s.id, 'tone', parseFloat(e.target.value)); saveStateToLocal(); });
+item.querySelector('input[data-type="speed"]').addEventListener('input', (e) => { updateSoundscape(s.id, 'speed', parseFloat(e.target.value)); saveStateToLocal(); });
+els.soundscapeContainer.appendChild(item);
+});
+}
+initMixer();
+
+function updateUIState(playing) {
+if (playing) {
+els.playIcon.classList.add('hidden'); els.pauseIcon.classList.remove('hidden'); els.btnText.textContent = "Pause Session";
+els.statusIndicator.classList.remove('bg-slate-600'); els.statusIndicator.classList.add('bg-teal-400', 'animate-pulse'); els.recordBtn.disabled = false;
+} else {
+els.playIcon.classList.remove('hidden'); els.pauseIcon.classList.add('hidden'); els.btnText.textContent = "Start Session";
+els.statusIndicator.classList.add('bg-slate-600'); els.statusIndicator.classList.remove('bg-teal-400', 'animate-pulse'); els.recordBtn.disabled = true;
+}
+}
+
+window.updateFrequencies = function() {
+const base = parseFloat(els.baseSlider.value); const beat = parseFloat(els.beatSlider.value);
+els.baseValue.textContent = `${base} Hz`; els.beatValue.textContent = `${beat} Hz`;
+if (oscLeft && isPlaying) { oscLeft.frequency.setValueAtTime(base, audioCtx.currentTime); }
+if (oscRight && isPlaying) { oscRight.frequency.setValueAtTime(base + beat, audioCtx.currentTime); }
+updateAIContext();
+}
+
+window.updateBeatsVolume = function() { const vol = parseFloat(els.volSlider.value); els.volValue.textContent = `${Math.round(vol * 100)}%`; if (beatsGain && isPlaying) beatsGain.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.1); }
+window.updateMasterVolume = function() { const vol = parseFloat(els.masterVolSlider.value); els.masterVolValue.textContent = `${Math.round(vol * 100)}%`; if (masterGain && isPlaying) masterGain.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.1); }
+window.updateAtmosMaster = function() { const vol = parseFloat(els.atmosMasterSlider.value); els.atmosMasterValue.textContent = `${Math.round(vol * 100)}%`; if (masterAtmosGain && isPlaying) { masterAtmosGain.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.1); } }
+
+window.setVisualMode = function(mode) { visualMode = mode; els.visualLabel.textContent = mode === 'wave' ? 'WAVEFORM ANALYSIS' : 'PHASE CORRELATION (LISSAJOUS)'; }
+
+window.applyPreset = function(type, btn) {
+let base, beat;
+switch(type) { case 'delta': base = 100; beat = 2; break; case 'theta': base = 100; beat = 6; break; case 'alpha': base = 150; beat = 10; break; case 'beta': base = 200; beat = 20; break; case 'gamma': base = 200; beat = 40; break; }
+els.baseSlider.value = base; els.beatSlider.value = beat; updateFrequencies();
+if(btn) { els.presetButtons.forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
+saveStateToLocal();
+}
+
+function updateAIContext() {
+const beatFreq = parseFloat(els.beatSlider.value);
+let cat = beatFreq < 4 ? 'delta' : beatFreq < 8 ? 'theta' : beatFreq < 14 ? 'alpha' : beatFreq < 30 ? 'beta' : 'gamma';
+let text = STATE_INSIGHTS[cat][Math.floor(beatFreq * 10) % STATE_INSIGHTS[cat].length];
+const activeIds = Object.keys(soundscapeSettings).filter(id => soundscapeSettings[id].vol > 0.1);
+if (activeIds.length > 0) {
+const dominantId = activeIds.sort((a,b) => soundscapeSettings[b].vol - soundscapeSettings[a].vol)[0];
+text += ` ${SOUND_INSIGHTS[dominantId] || ""}`;
+}
+if (els.aiPrompt.textContent !== `"${text}"`) {
+els.aiPrompt.style.opacity = 0;
+setTimeout(() => { els.aiPrompt.textContent = `"${text}"`; els.aiPrompt.style.opacity = 1; }, 200);
+}
+}
+
+function downloadFile(blob, name, ext) {
+const url = URL.createObjectURL(blob); const a = document.createElement('a'); document.body.appendChild(a); a.style = 'display: none'; a.href = url;
+a.download = `${name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${ext}`; a.click(); window.URL.revokeObjectURL(url); a.remove();
+}
+
+// --- Audio Logic ---
+function initAudio() {
+if (!audioCtx) { const AudioContext = window.AudioContext || window.webkitAudioContext; audioCtx = new AudioContext(); }
+if (audioCtx.state === 'suspended') {
+audioCtx.resume().catch(e => console.warn("Resume aborted", e));
+}
+}
+
+// AUDIO WORKLET FOR STATIC-FREE RECORDING
+const recorderWorkletCode = `
+class RecorderProcessor extends AudioWorkletProcessor {
+constructor() {
+super();
+this.buffers = [];
+}
+process(inputs, outputs, parameters) {
+const input = inputs[0];
+if (input.length > 0) {
+// Copy Float32 data to avoid referencing issues
+const left = new Float32Array(input[0]);
+const right = new Float32Array(input[1] || input[0]); // fallback mono to stereo
+this.port.postMessage([left, right], [left.buffer, right.buffer]);
+}
+return true;
+}
+}
+registerProcessor('recorder-processor', RecorderProcessor);
+`;
+
+async function setupWorklet() {
+if (workletInitialized) return;
+if (audioCtx && audioCtx.audioWorklet) {
+try {
+const blob = new Blob([recorderWorkletCode], {type: "application/javascript"});
+const url = URL.createObjectURL(blob);
+await audioCtx.audioWorklet.addModule(url);
+workletInitialized = true;
+} catch(e) {
+console.warn("Worklet setup warning:", e);
+}
+}
+}
+
+async function startAudio() {
+try {
+initAudio();
+await setupWorklet();
+destStreamNode = audioCtx.createMediaStreamDestination();
+
+// Nodes & Connections (Same as before)
+oscLeft = audioCtx.createOscillator(); oscRight = audioCtx.createOscillator();
+panLeft = audioCtx.createStereoPanner(); panRight = audioCtx.createStereoPanner();
+beatsGain = audioCtx.createGain(); masterAtmosGain = audioCtx.createGain(); masterGain = audioCtx.createGain();
+masterCompressor = audioCtx.createDynamicsCompressor();
+analyserLeft = audioCtx.createAnalyser(); analyserRight = audioCtx.createAnalyser();
+analyserLeft.fftSize = 2048; analyserRight.fftSize = 2048;
+
+panLeft.pan.value = -1; panRight.pan.value = 1;
+oscLeft.connect(panLeft); oscRight.connect(panRight);
+panLeft.connect(analyserLeft); panLeft.connect(beatsGain);
+panRight.connect(analyserRight); panRight.connect(beatsGain);
+beatsGain.connect(masterGain); masterAtmosGain.connect(masterGain);
+masterGain.connect(masterCompressor);
+
+// Safety Limiter
+const limiter = audioCtx.createDynamicsCompressor();
+limiter.threshold.value = -1.0;
+limiter.knee.value = 0;
+limiter.ratio.value = 20.0;
+limiter.attack.value = 0.001;
+limiter.release.value = 0.1;
+
+masterCompressor.connect(limiter);
+limiter.connect(audioCtx.destination);
+
+// FIX: Route through a gain node for recording fades
+videoCaptureGain = audioCtx.createGain();
+videoCaptureGain.gain.value = 0; // Start silenced
+limiter.connect(videoCaptureGain);
+videoCaptureGain.connect(destStreamNode);
+
+// FIX: Boost compressor threshold for louder output (-12dB -> -3dB)
+masterCompressor.threshold.value = -3; // Louder before compression starts
+masterCompressor.knee.value = 12;
+masterCompressor.ratio.value = 2; // gentler compression ratio
+masterCompressor.attack.value = 0.05;
+masterCompressor.release.value = 0.1;
+
+// Instantiate Worklet Node here so it is ready
+if (workletInitialized && !workletNode) {
+workletNode = new AudioWorkletNode(audioCtx, 'recorder-processor');
+}
+
+// FIX: Initialize frequencies immediately using the current slider values
+const baseFreq = parseFloat(els.baseSlider.value);
+const beatFreq = parseFloat(els.beatSlider.value);
+oscLeft.frequency.value = baseFreq;
+oscRight.frequency.value = baseFreq + beatFreq;
+
+updateFrequencies();
+const now = audioCtx.currentTime;
+beatsGain.gain.cancelScheduledValues(now); beatsGain.gain.setValueAtTime(0, now);
+beatsGain.gain.linearRampToValueAtTime(parseFloat(els.volSlider.value), now + 0.5);
+masterAtmosGain.gain.cancelScheduledValues(now); masterAtmosGain.gain.setValueAtTime(parseFloat(els.atmosMasterSlider.value), now);
+
+// FIX: Removed 0.5 multiplier to restore full volume range
+masterGain.gain.cancelScheduledValues(now); masterGain.gain.setValueAtTime(parseFloat(els.masterVolSlider.value), now);
+
+oscLeft.start(now); oscRight.start(now);
+isPlaying = true;
+
+Object.keys(soundscapeSettings).forEach(id => {
+if (soundscapeSettings[id].vol > 0) {
+startSingleSoundscape(id, soundscapeSettings[id].vol, soundscapeSettings[id].tone, soundscapeSettings[id].speed);
+}
+});
+updateUIState(true);
+drawVisualizer();
+} catch (e) {
+console.error("Audio Start Error:", e);
+// Reset UI if audio fails to start
+isPlaying = false;
+updateUIState(false);
+}
+}
+
+function stopAudio() {
+if (!oscLeft) return;
+if (isRecording) stopRecording();
+const now = audioCtx.currentTime;
+masterGain.gain.cancelScheduledValues(now);
+masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+masterGain.gain.linearRampToValueAtTime(0, now + 0.3);
+
+setTimeout(() => {
+if(oscLeft) { oscLeft.stop(); oscLeft.disconnect(); }
+if(oscRight) { oscRight.stop(); oscRight.disconnect(); }
+oscLeft = null; oscRight = null;
+Object.keys(activeSoundscapes).forEach(id => stopSingleSoundscape(id));
+isPlaying = false;
+cancelAnimationFrame(animationId);
+canvasCtx.clearRect(0, 0, els.canvas.width, els.canvas.height);
+}, 350);
+updateUIState(false);
+}
+
+// FIX: High Quality Pink Noise (Normalized -1 to 1)
+function createPinkNoiseBuffer() {
+const bs = 2 * audioCtx.sampleRate;
+const b = audioCtx.createBuffer(1, bs, audioCtx.sampleRate);
+const o = b.getChannelData(0);
+let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+for(let i=0;i<bs;i++){
+const w = (Math.random()*2-1);
+b0 = 0.99886*b0 + w*0.0555179;
+b1 = 0.99332*b1 + w*0.0750759;
+b2 = 0.96900*b2 + w*0.1538520;
+b3 = 0.86650*b3 + w*0.3104856;
+b4 = 0.55000*b4 + w*0.5329522;
+b5 = -0.7616*b5 - w*0.0168980;
+o[i] = b0+b1+b2+b3+b4+b5+b6 + w*0.5362;
+o[i] *= 0.11; // Basic scaling
+b6 = w*0.115926;
+}
+// Strict Normalization to prevent clipping
+let maxVal = 0;
+for (let i=0; i<bs; i++) { if(Math.abs(o[i]) > maxVal) maxVal = Math.abs(o[i]); }
+if(maxVal > 0) { for (let i=0; i<bs; i++) { o[i] = o[i] / maxVal; } }
+return b;
+}
+
+function updateSoundscape(id, type, val) {
+soundscapeSettings[id][type] = val;
+if (type === 'vol') {
+updateAIContext();
+if (!isPlaying) return;
+if (val > 0 && !activeSoundscapes[id]) startSingleSoundscape(id, val, soundscapeSettings[id].tone, soundscapeSettings[id].speed);
+else if (val > 0 && activeSoundscapes[id]) activeSoundscapes[id].gainNode.gain.setTargetAtTime(val, audioCtx.currentTime, 0.1);
+else if (val === 0 && activeSoundscapes[id]) stopSingleSoundscape(id);
+} else {
+if (!isPlaying) return;
+if (type === 'tone' && activeSoundscapes[id]) updateSoundscapeTone(id, val);
+else if (type === 'speed' && activeSoundscapes[id]) updateSoundscapeSpeed(id, val);
+}
+}
+
+function updateSoundscapeTone(id, toneVal) {
+const sc = activeSoundscapes[id]; if (!sc) return; const t = audioCtx.currentTime;
+const filter = sc.nodes.find(n => n instanceof BiquadFilterNode);
+if (filter) {
+let min = 200, max = 5000;
+if (id === 'pink') { min = 200; max = 10000; } else if (id === 'rain') { min = 200; max = 2000; } else if (id === 'strings') { min = 500; max = 8000; }
+filter.frequency.setTargetAtTime(min + (toneVal * (max - min)), t, 0.2);
+}
+if (['strings','brass','winds'].includes(id)) {
+const detune = (toneVal - 0.5) * 2400;
+sc.nodes.filter(n => n instanceof OscillatorNode && n.frequency.value > 20).forEach(osc => osc.detune.setTargetAtTime(detune, t, 0.1));
+}
+}
+
+function updateSoundscapeSpeed(id, speedVal) {
+const sc = activeSoundscapes[id]; if (!sc) return; const t = audioCtx.currentTime;
+const rate = 0.2 + (speedVal * 3.8);
+if (['pink','rain','wind'].includes(id)) sc.nodes.filter(n => n instanceof AudioBufferSourceNode).forEach(src => src.playbackRate.setTargetAtTime(rate, t, 0.1));
+if (['brass','strings','winds'].includes(id)) {
+sc.nodes.filter(n => n instanceof OscillatorNode && n.frequency.value < 20).forEach(lfo => {
+let base = 0.1; if(id==='strings') base=3.0; if(id==='brass') base=0.2; if(id==='winds') base=4.0;
+lfo.frequency.setTargetAtTime(base * rate, t, 0.2);
+});
+}
+}
+
+function startSingleSoundscape(id, vol, tone, speed) {
+if (!masterAtmosGain) return;
+const channelGain = audioCtx.createGain();
+channelGain.gain.setValueAtTime(vol, audioCtx.currentTime);
+channelGain.connect(masterAtmosGain);
+let nodes = [], cleanupFn = null;
+
+const rate = 0.2 + (speed * 3.8);
+
+const createDrone = (freqs, type, fFreq, fType, lfoBase) => {
+fFreq = fFreq * (0.5 + tone);
+const f = audioCtx.createBiquadFilter(); f.type = fType; f.frequency.value = fFreq; f.connect(channelGain); nodes.push(f);
+const lfo = audioCtx.createOscillator(); lfo.frequency.value = lfoBase * rate;
+const lfoG = audioCtx.createGain(); lfoG.gain.value = 200; lfo.connect(lfoG);
+if (type === 'strings') { lfoG.gain.value = 15; } else { lfoG.connect(f.frequency); }
+lfo.start(); nodes.push(lfo, lfoG);
+const detuneOffset = (tone - 0.5) * 2400;
+freqs.forEach(fr => { [0, -5, 5].forEach(d => { const osc = audioCtx.createOscillator(); osc.type = type; osc.frequency.value = fr; osc.detune.value = d + detuneOffset; if(type === 'strings') lfoG.connect(osc.detune); osc.connect(f); osc.start(); nodes.push(osc); }); });
+}
+
+if (id === 'pink') { const n = audioCtx.createBufferSource(); n.buffer = createPinkNoiseBuffer(); n.loop = true; n.playbackRate.value = rate; const f = audioCtx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 200 + (tone * 10000); n.connect(f); f.connect(channelGain); n.start(); nodes.push(n, f); }
+else if (id === 'rain') { const n = audioCtx.createBufferSource(); n.buffer = createPinkNoiseBuffer(); n.loop = true; n.playbackRate.value = rate; const f = audioCtx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 200 + (tone * 1800); n.connect(f); f.connect(channelGain); n.start(); nodes.push(n, f); }
+else if (id === 'wind') { const n = audioCtx.createBufferSource(); n.buffer = createPinkNoiseBuffer(); n.loop = true; n.playbackRate.value = rate; const f = audioCtx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 200 + (tone * 800); f.Q.value = 1; const lfo = audioCtx.createOscillator(); lfo.frequency.value = 0.1 * rate; const lfoG = audioCtx.createGain(); lfoG.gain.value = 200; lfo.connect(lfoG); lfoG.connect(f.frequency); n.connect(f); f.connect(channelGain); n.start(); lfo.start(); nodes.push(n, f, lfo, lfoG); }
+else if (id === 'strings') createDrone([65.41,98.00,130.81], 'sawtooth', 1500, 'lowpass', 3.0);
+else if (id === 'brass') createDrone([130.81,196.00,261.63], 'sawtooth', 400, 'lowpass', 0.2);
+else if (id === 'winds') createDrone([261.63,329.63,392.00], 'triangle', 1000, 'bandpass', 4.0);
+else if (['bells', 'wood', 'timpani', 'orch_perc'].includes(id)) {
+let active = true;
+const loop = () => {
+if (!active || !isPlaying) return;
+const currentTone = soundscapeSettings[id].tone;
+playOneShot(id, channelGain, currentTone);
+const baseInterval = id === 'bells' ? 4000 : id === 'wood' ? 1500 : 3000;
+const currentSpeed = soundscapeSettings[id].speed;
+const currentRate = 0.2 + (currentSpeed * 3.8);
+setTimeout(loop, (baseInterval / currentRate) + (Math.random() * (500 / currentRate)));
+};
+loop(); cleanupFn = () => { active = false; };
+}
+activeSoundscapes[id] = { gainNode: channelGain, nodes: nodes, cleanup: cleanupFn };
+}
+
+function playOneShot(type, dest, tone) {
+const t = audioCtx.currentTime; const pitchMult = 0.5 + (tone * 1.5);
+if (type === 'bells') { const fund = (200 + Math.random() * 300) * pitchMult; const osc = audioCtx.createOscillator(), mod = audioCtx.createOscillator(), oscGain = audioCtx.createGain(), modGain = audioCtx.createGain(); mod.frequency.value = fund * 1.4; modGain.gain.setValueAtTime(fund, t); modGain.gain.exponentialRampToValueAtTime(0.01, t + 2); osc.frequency.value = fund; oscGain.gain.setValueAtTime(0.1, t); oscGain.gain.exponentialRampToValueAtTime(0.001, t + 3.5); mod.connect(modGain); modGain.connect(osc.frequency); osc.connect(oscGain); oscGain.connect(dest); mod.start(t); osc.start(t); mod.stop(t+4); osc.stop(t+4); }
+else if (type === 'wood') { const osc = audioCtx.createOscillator(), env = audioCtx.createGain(); osc.frequency.setValueAtTime((800 + Math.random() * 200) * pitchMult, t); osc.frequency.exponentialRampToValueAtTime(100, t + 0.1); env.gain.setValueAtTime(0.3, t); env.gain.exponentialRampToValueAtTime(0.001, t + 0.15); osc.connect(env); env.connect(dest); osc.start(t); osc.stop(t+0.2); }
+else if (type === 'timpani') { const osc = audioCtx.createOscillator(), gain = audioCtx.createGain(); const freq = (60 + Math.random() * 30) * pitchMult; osc.frequency.setValueAtTime(freq + (50 * pitchMult), t); osc.frequency.exponentialRampToValueAtTime(freq, t + 0.1); gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.6, t + 0.02); gain.gain.exponentialRampToValueAtTime(0.001, t + 2.0); osc.connect(gain); gain.connect(dest); osc.start(t); osc.stop(t + 2.5); }
+else if (type === 'orch_perc') { const r = Math.random(); if (r < 0.33) { const osc = audioCtx.createOscillator(), gain = audioCtx.createGain(); osc.frequency.setValueAtTime(80 * pitchMult, t); osc.frequency.exponentialRampToValueAtTime(10, t + 0.5); gain.gain.setValueAtTime(0.7, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6); osc.connect(gain); gain.connect(dest); osc.start(t); osc.stop(t + 0.7); } else if (r < 0.66) { const noise = audioCtx.createBufferSource(); noise.buffer = createPinkNoiseBuffer(); const filter = audioCtx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = 2000 * pitchMult; const gain = audioCtx.createGain(); gain.gain.setValueAtTime(0.4, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2); noise.connect(filter); filter.connect(gain); gain.connect(dest); noise.start(t); noise.stop(t + 0.3); } else { const noise = audioCtx.createBufferSource(); noise.buffer = createPinkNoiseBuffer(); const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 5000 * pitchMult; const gain = audioCtx.createGain(); gain.gain.setValueAtTime(0.05, t); gain.gain.linearRampToValueAtTime(0.15, t + 0.2); gain.gain.exponentialRampToValueAtTime(0.001, t + 3.5); noise.connect(filter); filter.connect(gain); gain.connect(dest); noise.start(t); noise.stop(t + 4.0); } }
+}
+
+function stopSingleSoundscape(id) {
+const sc = activeSoundscapes[id]; if (!sc) return;
+sc.gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.5);
+setTimeout(() => { if (sc.cleanup) sc.cleanup(); sc.nodes.forEach(n => { try { n.stop(); n.disconnect(); } catch(e){} }); sc.gainNode.disconnect(); delete activeSoundscapes[id]; }, 600);
+}
+
+// --- Loop/Export Logic ---
+function formatDuration(sec) {
+const h = Math.floor(sec / 3600);
+const m = Math.floor((sec % 3600) / 60);
+const s = Math.floor(sec % 60);
+if (h > 0) return `${h}h ${m}m ${s}s`;
+return `${m}m ${s}s`;
+}
+
+async function updateLoopDurationDisplay() {
+if (!els.videoModal.classList.contains('active')) return;
+const dur = currentModalIsVideo ? els.playbackVideo.duration : (currentModalBlob ? await getBlobDuration(currentModalBlob) : 0);
+if(dur) {
+const count = parseInt(els.loopCountInput.value) || 1;
+els.loopDurationDisplay.textContent = formatDuration(dur * count);
+}
+}
+function getBlobDuration(blob) {
+return new Promise(resolve => {
+const audio = document.createElement('audio');
+audio.src = URL.createObjectURL(blob);
+audio.onloadedmetadata = () => { resolve(audio.duration); };
+audio.onerror = () => resolve(0);
+});
+}
+els.loopCountInput.addEventListener('input', updateLoopDurationDisplay);
+
+async function renderVideoLoop(originalBlob, count) {
+return new Promise((resolve, reject) => {
+// SUSPEND LIVE AUDIO TO PREVENT "HAYWIRE" INTERFERENCE
+if(audioCtx.state === 'running') audioCtx.suspend();
+
+const video = document.createElement('video');
+video.src = URL.createObjectURL(originalBlob);
+video.muted = false;
+video.crossOrigin = "anonymous";
+// FIX: Don't use display:none, it stops playback engine in some browsers
+video.style.position = 'fixed';
+video.style.top = '0';
+video.style.left = '0';
+video.style.width = '1px';
+video.style.height = '1px';
+video.style.opacity = '0';
+video.style.pointerEvents = 'none';
+document.body.appendChild(video);
+
+video.onloadedmetadata = () => {
+const stream = video.captureStream();
+const mimeType = 'video/webm;codecs=vp9';
+const options = MediaRecorder.isTypeSupported(mimeType)
+? { mimeType, videoBitsPerSecond: 8000000 }
+: { mimeType: 'video/webm' };
+
+const recorder = new MediaRecorder(stream, options);
+const chunks = [];
+
+recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
+
+recorder.onstop = () => {
+const finalBlob = new Blob(chunks, { type: options.mimeType });
+document.body.removeChild(video);
+// RESUME LIVE AUDIO
+if(isPlaying) audioCtx.resume();
+resolve(finalBlob);
+};
+
+// Loop Logic
+video.loop = true;
+let loops = 0;
+let lastTime = 0;
+
+// Use setInterval for background stability
+const loopCheckInterval = setInterval(() => {
+if(recorder.state !== 'recording') {
+clearInterval(loopCheckInterval);
+return;
+}
+
+const t = video.currentTime;
+const dur = video.duration;
+
+// Detect wrap: if current time is small and last time was large
+// Threshold: last time was in the last 10% of video, current is in first 10%
+if (lastTime > (dur * 0.5) && t < (dur * 0.5)) {
+loops++;
+if (loops >= count) {
+recorder.stop();
+video.pause();
+clearInterval(loopCheckInterval);
+}
+}
+lastTime = t;
+}, 20); // Check faster (20ms) for accuracy
+
+recorder.start();
+video.play().catch(e => {
+document.body.removeChild(video);
+if(isPlaying) audioCtx.resume();
+reject(e);
+});
+};
+video.onerror = (e) => {
+document.body.removeChild(video);
+if(isPlaying) audioCtx.resume();
+reject(new Error("Video load error"));
+};
+});
+}
+
+// NEW: Robust Buffer-Based WAV Generator (No Streaming)
+function createWavFromRaw(chunks) {
+// 1. FLATTEN FIRST
+let totalLen = 0;
+// chunks is array of [L_Float32, R_Float32]
+// But due to my fix, it's actually [ [Float32Array, Float32Array] ] (if chunks is cleanRecordedBuffers)
+// Wait, createWavFromRaw expects an array of chunks, where each chunk is [L, R]
+
+for(let c of chunks) totalLen += c[0].length;
+
+// Create giant buffers
+const masterL = new Float32Array(totalLen);
+const masterR = new Float32Array(totalLen);
+
+let offset = 0;
+for(let c of chunks) {
+masterL.set(c[0], offset);
+masterR.set(c[1], offset);
+offset += c[0].length;
+}
+
+// 2. NOW APPLY FADE TO THE FLATTENED BUFFER (if this is the final assembly, fades are already applied to cleanRecordedBuffers? No, applyMicroFade applies to the list of chunks)
+// Actually, createWavFromRaw is a generic utility.
+// The fading happens in stopRecording logic.
+// BUT! Since we loop the *entire* cleaned buffer set, we want the start of the set to fade in and end of set to fade out.
+// Which is already done by applyMicroFade() before calling this.
+
+const buffer = new ArrayBuffer(44 + totalLen * 4); // 2 channels * 2 bytes
+const view = new DataView(buffer);
+
+const writeString = (view, offset, string) => {
+for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+};
+
+writeString(view, 0, 'RIFF');
+view.setUint32(4, 36 + totalLen * 4, true);
+writeString(view, 8, 'WAVE');
+writeString(view, 12, 'fmt ');
+view.setUint32(16, 16, true);
+view.setUint16(20, 1, true); // PCM
+view.setUint16(22, 2, true); // Stereo
+view.setUint32(24, audioCtx.sampleRate, true);
+view.setUint32(28, audioCtx.sampleRate * 4, true); // Byte Rate
+view.setUint16(32, 4, true); // Block Align
+view.setUint16(34, 16, true); // Bits per sample
+writeString(view, 36, 'data');
+view.setUint32(40, totalLen * 4, true);
+
+let wavOffset = 44;
+// Interleave
+for(let i=0; i<totalLen; i++) {
+const sL = Math.max(-1, Math.min(1, masterL[i]));
+const sR = Math.max(-1, Math.min(1, masterR[i]));
+view.setInt16(wavOffset, sL < 0 ? sL * 0x8000 : sL * 0x7FFF, true);
+view.setInt16(wavOffset + 2, sR < 0 ? sR * 0x8000 : sR * 0x7FFF, true);
+wavOffset += 4;
+}
+
+return new Blob([buffer], { type: 'audio/wav' });
+}
+
+// FIX: Micro-Fade Logic to prevent static clicks at loop points
+// Now it takes a list of chunks, flattens conceptually, and fades start of first and end of last.
+function applyMicroFade(chunks) {
+if(chunks.length === 0) return;
+
+// FADE LENGTH: 200ms (approx 8800 samples at 44.1k)
+// Using a longer fade ensures zero-crossing is smooth
+const fadeLen = 8800;
+
+// --- FADE IN START ---
+let samplesFaded = 0;
+for(let c=0; c<chunks.length; c++) {
+const chunkL = chunks[c][0];
+const chunkR = chunks[c][1];
+
+for(let i=0; i<chunkL.length; i++) {
+if (samplesFaded >= fadeLen) break;
+
+// Logarithmic-like curve for smoother entry (0 to 1)
+// gain = 0.5 * (1 - cos(pi * t)) is a standard hanning window half
+const t = samplesFaded / fadeLen;
+const gain = 0.5 * (1 - Math.cos(Math.PI * t)); // Smooth 0->1
+
+chunkL[i] *= gain;
+chunkR[i] *= gain;
+samplesFaded++;
+}
+if (samplesFaded >= fadeLen) break;
+}
+
+// --- FADE OUT END ---
+// We have to iterate backwards from the very last sample of the very last chunk
+samplesFaded = 0;
+for(let c=chunks.length-1; c>=0; c--) {
+const chunkL = chunks[c][0];
+const chunkR = chunks[c][1];
+
+// Iterate backwards through this chunk
+for(let i=chunkL.length-1; i>=0; i--) {
+if (samplesFaded >= fadeLen) break;
+
+const t = samplesFaded / fadeLen;
+const gain = 0.5 * (1 - Math.cos(Math.PI * t)); // Smooth 0->1 (but we apply it as fade out, so effectively 1->0 if we view it forward)
+// Wait, t goes 0->1 as we go backwards.
+// So gain goes 0 (at very end) -> 1 (towards inside). Correct.
+
+chunkL[i] *= gain;
+chunkR[i] *= gain;
+samplesFaded++;
+}
+if (samplesFaded >= fadeLen) break;
+}
+}
+
+window.handleLoopDownload = async function() {
+const count = parseInt(els.loopCountInput.value) || 1;
+const baseName = currentModalName || "mindwave_recording";
+
+// Show processing
+els.loopProcessing.classList.remove('hidden');
+
+// Video Export (Native)
+if (currentModalIsVideo) {
+if(!currentModalBlob) { alert("Video data missing."); els.loopProcessing.classList.add('hidden'); return; }
+
+// Video Loop Handler
+if (count > 1) {
+els.loopProcessing.querySelector('p').textContent = `Rendering Video Loop x${count} (Real-time)...`;
+// Delay to allow UI update
+setTimeout(async () => {
+try {
+const loopedBlob = await renderVideoLoop(currentModalBlob, count);
+downloadFile(loopedBlob, baseName + `_x${count}`, 'webm');
+} catch(e) {
+console.error("Video Render Fail", e);
+alert("Video rendering failed. Downloading original.");
+downloadFile(currentModalBlob, baseName, 'webm');
+} finally {
+els.loopProcessing.classList.add('hidden');
+els.loopProcessing.querySelector('p').textContent = "Processing..."; // Reset text
+}
+}, 100);
+} else {
+const ext = 'webm';
+downloadFile(currentModalBlob, baseName, ext);
+els.loopProcessing.classList.add('hidden');
+}
+}
+// Audio Export
+else {
+setTimeout(async () => {
+try {
+if(count === 1) {
+downloadFile(currentModalBlob, baseName, 'wav');
+} else {
+// For looping, we simply create a larger raw chunk set
+// FIX: Using CLEANED buffers from stopRecording logic
+let loopedChunks = [];
+for(let i=0; i<count; i++) loopedChunks = loopedChunks.concat(cleanRecordedBuffers); // Using the global we set
+const wavBlob = createWavFromRaw(loopedChunks);
+downloadFile(wavBlob, baseName + `_x${count}`, 'wav');
+}
+} catch (e) {
+console.error("Export Error:", e);
+alert("Audio export error: " + e.message);
+} finally {
+els.loopProcessing.classList.add('hidden');
+}
+}, 50);
+}
+}
+
+// --- New Storage Logic (Presets Only) ---
+const savePreset = () => {
+if (!currentUser) {
+// If auth isn't ready, flash red to indicate not ready
+const oldColor = els.saveMixBtn.style.color;
+els.saveMixBtn.style.color = "#ef4444";
+setTimeout(() => els.saveMixBtn.style.color = oldColor, 500);
+return;
+}
+// Open Modal
+els.saveModal.classList.add('active');
+els.saveNameInput.value = `Mix ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+// Focus and select text
+setTimeout(() => els.saveNameInput.select(), 50);
+};
+
+const confirmSave = async () => {
+const name = els.saveNameInput.value || "Untitled Mix";
+els.saveModal.classList.remove('active'); // Close modal immediately
+
+// Visual Feedback (Loading/Success state) on button
+const originalContent = els.saveMixBtn.innerHTML;
+els.saveMixBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>`;
+els.saveMixBtn.style.color = "var(--accent)";
+
+const sessionData = {
+name: name,
+date: new Date().toLocaleDateString(),
+timestamp: Date.now(),
+settings: {
+base: els.baseSlider.value,
+beat: els.beatSlider.value,
+beatsVol: els.volSlider.value,
+masterVol: els.masterVolSlider.value,
+atmosMaster: els.atmosMasterSlider.value,
+soundscapes: { ...soundscapeSettings }
+}
+};
+
+try {
+const colRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'sessions');
+await addDoc(colRef, sessionData);
+
+// Success State
+els.saveMixBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+
+// Open Library to show the new save
+els.libraryPanel.classList.remove('translate-x-full');
+} catch (e) {
+console.error("Save failed", e);
+els.saveMixBtn.style.color = "#ef4444";
+} finally {
+// Reset button after delay
+setTimeout(() => {
+els.saveMixBtn.innerHTML = originalContent;
+els.saveMixBtn.style.color = "var(--text-muted)";
+}, 2000);
+}
+};
+
+// Bind Modal Actions
+els.cancelSaveBtn.onclick = () => els.saveModal.classList.remove('active');
+els.confirmSaveBtn.onclick = confirmSave;
+// Allow hitting Enter in input
+els.saveNameInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') confirmSave(); });
+
+
+// --- Library Render ---
+function renderLibrary(sessions) {
+currentSessions = sessions;
+els.libraryList.innerHTML = '';
+if (sessions.length === 0) {
+els.libraryList.innerHTML = '<div class="text-center text-xs mt-10" style="color: var(--text-muted);">No saved mixes yet.<br>Click the floppy disk icon to save one.</div>';
+return;
+}
+
+sessions.forEach(session => {
+const item = document.createElement('div');
+item.className = 'p-3 rounded-lg border border-[var(--border)] flex flex-col gap-2 group';
+item.style.backgroundColor = "var(--bg-panel)";
+
+const top = document.createElement('div'); top.className = 'flex justify-between items-center';
+
+const info = document.createElement('div'); info.className = 'flex-1 mr-2';
+const name = document.createElement('div');
+name.className = 'text-sm font-semibold truncate';
+name.textContent = session.name;
+name.style.color = "var(--text-main)";
+
+const meta = document.createElement('div');
+meta.className = 'text-[10px] flex items-center gap-2';
+meta.style.color = "var(--text-muted)";
+meta.textContent = session.date;
+
+info.appendChild(name); info.appendChild(meta);
+
+const actions = document.createElement('div');
+actions.className = 'flex items-center gap-2';
+
+// LOAD Button
+const loadBtn = document.createElement('button');
+loadBtn.className = 'px-3 py-1.5 rounded text-[10px] font-bold tracking-wide transition-colors';
+loadBtn.style.backgroundColor = "rgba(167, 139, 250, 0.2)";
+loadBtn.style.color = "#a78bfa";
+loadBtn.textContent = "LOAD";
+// FIX: Pass object with 'settings' property to match structure
+loadBtn.onclick = () => loadSettings({ settings: session.settings });
+
+// DELETE Button (Fixed)
+const delBtn = document.createElement('button');
+delBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+delBtn.className = 'w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-500/20 text-red-400 transition-colors';
+delBtn.onclick = async (e) => {
+e.stopPropagation();
+// Safety Toggle: First click turns it red and changes text
+if (delBtn.dataset.confirm === "true") {
+await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'sessions', session.docId));
+} else {
+delBtn.dataset.confirm = "true";
+delBtn.classList.add("bg-red-600", "text-white");
+delBtn.classList.remove("text-red-400", "hover:bg-red-500/20");
+delBtn.innerHTML = "<span class='text-[9px] font-bold'>?</span>";
+// Reset if not confirmed within 3 seconds
+setTimeout(() => {
+delBtn.dataset.confirm = "false";
+delBtn.classList.remove("bg-red-600", "text-white");
+delBtn.classList.add("text-red-400", "hover:bg-red-500/20");
+delBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+}, 3000);
+}
+};
+
+actions.appendChild(loadBtn);
+actions.appendChild(delBtn);
+
+top.appendChild(info);
+top.appendChild(actions);
+item.appendChild(top);
+
+els.libraryList.appendChild(item);
+});
+}
+
+function loadSettings(payload) {
+if(!payload || !payload.settings) return;
+const settings = payload.settings;
+
+if(settings.base) els.baseSlider.value = settings.base;
+if(settings.beat) els.beatSlider.value = settings.beat;
+if(settings.beatsVol) els.volSlider.value = settings.beatsVol;
+if(settings.masterVol) els.masterVolSlider.value = settings.masterVol;
+if(settings.atmosMaster) els.atmosMasterSlider.value = settings.atmosMaster;
+
+// Robust Load: Iterate over ALL soundscapes to ensure clean state
+if(settings.soundscapes) {
+SOUNDSCAPES.forEach(s => {
+const id = s.id;
+const saved = settings.soundscapes[id];
+// If it exists in save, use it. If not, default to 0 (OFF).
+// This fixes the bug where old active soundscapes wouldn't turn off.
+const newVol = saved ? saved.vol : 0;
+const newTone = saved ? (saved.tone || 0.5) : 0.5;
+const newSpeed = saved ? (saved.speed || 0.5) : 0.5;
+
+// Update State
+soundscapeSettings[id] = { vol: newVol, tone: newTone, speed: newSpeed };
+
+// Update DOM
+const vIn = els.soundscapeContainer.querySelector(`input[data-id="${id}"][data-type="vol"]`);
+const tIn = els.soundscapeContainer.querySelector(`input[data-id="${id}"][data-type="tone"]`);
+const sIn = els.soundscapeContainer.querySelector(`input[data-id="${id}"][data-type="speed"]`);
+if (vIn) vIn.value = newVol;
+if (tIn) tIn.value = newTone;
+if (sIn) sIn.value = newSpeed;
+
+// Update Audio (if playing)
+if (isPlaying) {
+updateSoundscape(id, 'vol', newVol);
+updateSoundscape(id, 'tone', newTone);
+updateSoundscape(id, 'speed', newSpeed);
+}
+});
+}
+
+window.updateFrequencies();
+window.updateBeatsVolume();
+window.updateMasterVolume();
+window.updateAtmosMaster();
+
+// Close library and show feedback
+els.libraryPanel.classList.add('translate-x-full');
+els.statusIndicator.classList.add('bg-purple-500');
+setTimeout(() => els.statusIndicator.classList.remove('bg-purple-500'), 500);
+
+saveStateToLocal(); // Save this new loaded state as current
+}
+
+// --- Event Bindings ---
+els.playBtn.addEventListener('click', () => {
+if (isPlaying) {
+stopAudio();
+} else {
+startAudio().catch(e => console.error("Start Audio Failed", e));
+}
+});
+els.recordBtn.addEventListener('click', () => !isPlaying ? alert("Start audio session first.") : (isRecording ? stopRecording() : startRecording()));
+els.historyBtn.addEventListener('click', () => els.libraryPanel.classList.toggle('translate-x-full'));
+els.saveMixBtn.addEventListener('click', savePreset);
+
+els.baseSlider.addEventListener('input', (e) => { window.updateFrequencies(); saveStateToLocal(); });
+els.beatSlider.addEventListener('input', (e) => { window.updateFrequencies(); saveStateToLocal(); });
+els.volSlider.addEventListener('input', (e) => { window.updateBeatsVolume(); saveStateToLocal(); });
+els.masterVolSlider.addEventListener('input', (e) => { window.updateMasterVolume(); saveStateToLocal(); });
+els.atmosMasterSlider.addEventListener('input', (e) => { window.updateAtmosMaster(); saveStateToLocal(); });
+
+document.getElementById('closeModalBtn').addEventListener('click', () => {
+els.videoModal.classList.remove('active');
+els.playbackVideo.pause();
+if(els.playbackAudio) els.playbackAudio.pause();
+// Revoke blob url to free memory
+if(els.playbackVideo.src) URL.revokeObjectURL(els.playbackVideo.src);
+els.playbackVideo.src = "";
+});
+document.getElementById('closeLibraryBtn').addEventListener('click', () => els.libraryPanel.classList.add('translate-x-full'));
+
+function setupLibraryListener(uid) {
+const q = query(collection(db, 'artifacts', appId, 'users', uid, 'sessions'));
+onSnapshot(q, (snapshot) => {
+const sessions = [];
+snapshot.forEach(doc => sessions.push({ docId: doc.id, ...doc.data() }));
+sessions.sort((a, b) => b.timestamp - a.timestamp);
+renderLibrary(sessions);
+}, (error) => console.log("Library listener error", error));
+}
+
+const initAuth = async () => {
+if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
+else await signInAnonymously(auth);
+};
+initAuth();
+
+onAuthStateChanged(auth, (user) => { currentUser = user; if (user) setupLibraryListener(user.uid); });
+
+// Restore state on startup
+restoreStateFromLocal();
+els.recordBtn.disabled = true;
+
+// --- Recording Logic ---
+function startRecording() {
+let tracks = [...destStreamNode.stream.getAudioTracks()];
+const includeVideo = els.videoToggle.checked;
+let mimeType = includeVideo ? "video/webm;codecs=vp9" : "audio/webm";
+
+if (includeVideo) {
+tracks = [...tracks, ...els.canvas.captureStream(30).getVideoTracks()];
+if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "video/webm";
+try {
+const options = { mimeType, videoBitsPerSecond: 8000000 };
+mediaRecorder = new MediaRecorder(new MediaStream(tracks), options);
+} catch(e) { mediaRecorder = new MediaRecorder(new MediaStream(tracks)); }
+
+recordedChunks = [];
+mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+mediaRecorder.onstop = () => {
+currentModalBlob = new Blob(recordedChunks, { type: mimeType });
+currentModalIsVideo = true;
+currentModalName = `MindWave_Video_${new Date().toISOString().slice(0,10)}`;
+els.playbackVideo.src = URL.createObjectURL(currentModalBlob);
+els.playbackVideo.classList.remove('hidden');
+els.audioOnlyPlayer.classList.add('hidden'); // Hide audio player
+els.videoModal.classList.add('active');
+els.playbackVideo.play().catch(e => console.warn("Video auto-play blocked", e));
+};
+
+// FIX: RAMP IN
+const now = audioCtx.currentTime;
+if(videoCaptureGain) {
+videoCaptureGain.gain.setValueAtTime(0, now);
+videoCaptureGain.gain.linearRampToValueAtTime(1, now + 0.5); // Extended 0.5s fade in for video
+}
+
+mediaRecorder.start();
+} else {
+// RAW AUDIO CAPTURE (State of the Art)
+recordedBuffers = [];
+if (!workletNode) {
+console.error("AudioWorklet not initialized");
+return;
+}
+
+workletNode.port.onmessage = (e) => {
+if (!isRecording) return;
+recordedBuffers.push(e.data);
+};
+
+// Connect to master output to capture final mix
+masterCompressor.connect(workletNode);
+workletNode.connect(audioCtx.destination); // Keep it alive but muted? No, worklet output 0s.
+
+currentModalIsVideo = false;
+currentModalName = `MindWave_Audio_${new Date().toISOString().slice(0,10)}`;
+}
+
+isRecording = true;
+els.recordBtn.classList.add('recording-active');
+els.recordBtn.innerHTML = `<div class="w-2 h-2 rounded-full bg-white"></div> STOP`;
+}
+
+function stopRecording() {
+isRecording = false;
+els.recordBtn.classList.remove('recording-active');
+els.recordBtn.innerHTML = `<div class="w-2 h-2 rounded-full bg-red-500"></div> REC`;
+
+if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+// FIX: RAMP OUT BEFORE STOP
+const now = audioCtx.currentTime;
+if(videoCaptureGain) {
+videoCaptureGain.gain.cancelScheduledValues(now);
+videoCaptureGain.gain.setValueAtTime(1, now);
+videoCaptureGain.gain.linearRampToValueAtTime(0, now + 0.2); // Quick fade out
+}
+
+// Wait for fade before stopping recorder
+setTimeout(() => {
+if(mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+}, 300);
+}
+
+if (workletNode && !currentModalIsVideo) { // Only if audio recording
+workletNode.disconnect();
+
+currentModalIsVideo = false;
+
+// Show Modal immediately
+els.playbackVideo.classList.add('hidden');
+els.audioOnlyPlayer.classList.remove('hidden');
+els.videoModal.classList.add('active');
+els.loopProcessing.classList.remove('hidden'); // Show loader
+
+// Async Generate WAV for Preview
+setTimeout(async () => {
+try {
+if (recordedBuffers.length === 0) throw new Error("No data captured");
+
+// 1. Calculate Crop Size (0.5 seconds to match fade-in)
+const cropStartSamples = Math.floor(audioCtx.sampleRate * 0.5);
+const cropEndSamples = Math.floor(audioCtx.sampleRate * 0.5); // Changed to 0.5s
+let currentSamples = 0;
+let startIndex = 0;
+let startOffset = 0;
+
+// Find where to start
+for(let i=0; i<recordedBuffers.length; i++) {
+const chunkLen = recordedBuffers[i][0].length;
+if (currentSamples + chunkLen > cropStartSamples) {
+startIndex = i;
+startOffset = cropStartSamples - currentSamples;
+break;
+}
+currentSamples += chunkLen;
+}
+
+// Reconstruct buffers starting from crop point
+const cleanBuffers = [];
+if (startIndex < recordedBuffers.length) {
+const firstChunk = recordedBuffers[startIndex];
+cleanBuffers.push([
+firstChunk[0].subarray(startOffset),
+firstChunk[1].subarray(startOffset)
+]);
+for(let i=startIndex+1; i<recordedBuffers.length; i++) {
+cleanBuffers.push(recordedBuffers[i]);
+}
+}
+
+// Crop the END
+// We need total length of cleanBuffers now
+let totalCleanLen = 0;
+for(let c of cleanBuffers) totalCleanLen += c[0].length;
+
+// If we have enough samples to crop the end
+if (totalCleanLen > cropEndSamples) {
+const keepLen = totalCleanLen - cropEndSamples;
+// We need to trim the last chunk(s)
+let processedLen = 0;
+const finalBuffers = [];
+for(let c of cleanBuffers) {
+const len = c[0].length;
+if (processedLen + len <= keepLen) {
+finalBuffers.push(c);
+processedLen += len;
+} else {
+// This is the last partial chunk
+const remaining = keepLen - processedLen;
+if(remaining > 0) {
+finalBuffers.push([
+c[0].subarray(0, remaining),
+c[1].subarray(0, remaining)
+]);
+}
+break; // Done
+}
+}
+cleanRecordedBuffers = finalBuffers; // Store to global for looping
+} else {
+cleanRecordedBuffers = cleanBuffers; // Too short to crop end, use as is
+}
+
+if (cleanRecordedBuffers.length === 0) throw new Error("Recording too short");
+
+// INSTANT GENERATION (No OfflineAudioContext)
+applyMicroFade(cleanRecordedBuffers); // Apply fade to smooth loop points
+const wavBlob = createWavFromRaw(cleanRecordedBuffers);
+
+currentModalBlob = wavBlob; // Store for Save/Loop
+
+// Set to Audio Player
+els.playbackAudio.src = URL.createObjectURL(wavBlob);
+
+// FIXED: Catch AbortError if user interrupts playback
+const playPromise = els.playbackAudio.play();
+if (playPromise !== undefined) {
+playPromise.catch(error => {
+console.log("Auto-play prevented or aborted:", error);
+});
+}
+} catch (e) {
+console.error("Preview Generation Error", e);
+alert("Failed to process audio.");
+} finally {
+els.loopProcessing.classList.add('hidden');
+}
+}, 50);
+}
+}
+
+// --- Visualizer ---
+function drawVisualizer() {
+// FIX: High-DPI Canvas Rendering
+const rect = els.canvas.parentElement.getBoundingClientRect();
+const scale = 4;
+els.canvas.width = Math.floor((rect.width * scale) / 2) * 2;
+els.canvas.height = Math.floor((rect.height * scale) / 2) * 2;
+
+const w = els.canvas.width, h = els.canvas.height;
+const len = analyserLeft.frequencyBinCount;
+const dL = new Uint8Array(len), dR = new Uint8Array(len);
+
+function render() {
+animationId = requestAnimationFrame(render);
+canvasCtx.clearRect(0, 0, w, h);
+analyserLeft.getByteTimeDomainData(dL);
+analyserRight.getByteTimeDomainData(dR);
+canvasCtx.lineWidth = 4; // Thicker lines for higher resolution
+
+if (visualMode === 'wave') {
+canvasCtx.strokeStyle = 'var(--accent)';
+canvasCtx.beginPath();
+let sliceWidth = w * 1.0 / len;
+let x = 0;
+for (let i = 0; i < len; i++) {
+let v = dL[i] / 128.0;
+let y = v * h / 2;
+if (i === 0) canvasCtx.moveTo(x, y);
+else canvasCtx.lineTo(x, y);
+x += sliceWidth;
+}
+canvasCtx.stroke();
+canvasCtx.strokeStyle = '#a78bfa';
+canvasCtx.beginPath();
+x = 0;
+for (let i = 0; i < len; i++) {
+let v = dR[i] / 128.0;
+let y = v * h / 2;
+if (i === 0) canvasCtx.moveTo(x, y);
+else canvasCtx.lineTo(x, y);
+x += sliceWidth;
+}
+canvasCtx.stroke();
+} else {
+canvasCtx.strokeStyle = 'var(--accent)';
+canvasCtx.beginPath();
+const scale = Math.min(w, h) / 2.2;
+for (let i = 0; i < len; i++) {
+const valX = (dL[i] / 128.0) - 1;
+const valY = (dR[i] / 128.0) - 1;
+const x = (w / 2) + (valX * scale);
+const y = (h / 2) + (valY * scale);
+if (i === 0) canvasCtx.moveTo(x, y);
+else canvasCtx.lineTo(x, y);
+}
+canvasCtx.stroke();
+}
+}
+render();
+}
+</script>
+</body>
+</html>
