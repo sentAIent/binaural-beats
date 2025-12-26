@@ -13,17 +13,83 @@ export const THEMES = {
 };
 
 export const SOUNDSCAPES = [
-    { id: 'pink', label: 'Pink Noise', type: 'nature' },
-    { id: 'rain', label: 'Heavy Rain', type: 'nature' },
-    { id: 'wind', label: 'Mountain Wind', type: 'nature' },
-    { id: 'ocean', label: 'Ocean Waves', type: 'nature' },
-    { id: 'strings', label: 'Orchestral Strings', type: 'drone' },
-    { id: 'brass', label: 'Brass Swell', type: 'drone' },
-    { id: 'winds', label: 'Woodwinds', type: 'drone' },
-    { id: 'bells', label: 'Temple Bells', type: 'perc' },
-    { id: 'wood', label: 'Woodblocks', type: 'perc' },
-    { id: 'timpani', label: 'Grand Timpani', type: 'perc' },
-    { id: 'orch_perc', label: 'Orchestral Perc', type: 'perc' }
+    { id: 'pink', label: 'Pink Noise', type: 'nature', bpm: null },
+    { id: 'white', label: 'White Noise', type: 'nature', bpm: null },
+    { id: 'brown', label: 'Brown Noise', type: 'nature', bpm: null },
+    { id: 'rain', label: 'Heavy Rain', type: 'nature', bpm: null },
+    { id: 'wind', label: 'Mountain Wind', type: 'nature', bpm: null },
+    { id: 'ocean', label: 'Ocean Waves', type: 'nature', bpm: null },
+    { id: 'strings', label: 'Orchestral Strings', type: 'drone', bpm: null },
+    { id: 'brass', label: 'Brass Swell', type: 'drone', bpm: null },
+    { id: 'winds', label: 'Woodwinds', type: 'drone', bpm: null },
+    { id: 'bells', label: 'Temple Bells', type: 'perc', bpm: 40 },
+    { id: 'wood', label: 'Woodblocks', type: 'perc', bpm: 60 },
+    { id: 'timpani', label: 'Grand Timpani', type: 'perc', bpm: 45 },
+    { id: 'orch_perc', label: 'Orchestral Perc', type: 'perc', bpm: 80 }
+];
+
+// Ambient Preset Combos - combine binaural frequencies with soundscapes
+export const PRESET_COMBOS = [
+    {
+        id: 'lofi-rain',
+        label: 'Lofi Rain',
+        description: 'Chill beats + rain',
+        icon: '🌧️',
+        preset: 'alpha',
+        soundscapes: ['rain'],
+        atmosVolume: 0.6,
+        color: '#6b7280'
+    },
+    {
+        id: 'night-ambient',
+        label: 'Night Ambience',
+        description: 'Peaceful night sounds',
+        icon: '🌙',
+        preset: 'delta',
+        soundscapes: ['wind'],
+        atmosVolume: 0.5,
+        color: '#1e3a5f'
+    },
+    {
+        id: 'epic-focus',
+        label: 'Epic Focus',
+        description: 'Triumphant concentration',
+        icon: '⚔️',
+        preset: 'beta',
+        soundscapes: ['strings', 'brass'],
+        atmosVolume: 0.4,
+        color: '#b45309'
+    },
+    {
+        id: 'ocean-drift',
+        label: 'Ocean Drift',
+        description: 'Deep wave meditation',
+        icon: '🌊',
+        preset: 'theta',
+        soundscapes: ['ocean'],
+        atmosVolume: 0.7,
+        color: '#0891b2'
+    },
+    {
+        id: 'storm-focus',
+        label: 'Storm Focus',
+        description: 'Intense productivity',
+        icon: '⛈️',
+        preset: 'beta',
+        soundscapes: ['rain', 'wind'],
+        atmosVolume: 0.5,
+        color: '#4b5563'
+    },
+    {
+        id: 'temple-zen',
+        label: 'Temple Zen',
+        description: 'Spiritual tranquility',
+        icon: '🔔',
+        preset: 'theta',
+        soundscapes: ['bells'],
+        atmosVolume: 0.4,
+        color: '#a855f7'
+    }
 ];
 
 export const STATE_INSIGHTS = {
@@ -35,16 +101,17 @@ export const STATE_INSIGHTS = {
 };
 
 export const SOUND_INSIGHTS = {
-    pink: "Noise masking distractions.", rain: "Rainfall washing away stress.", wind: "Wind carrying thoughts away.", ocean: "Ocean waves calming the mind.",
+    pink: "Noise masking distractions.", white: "Pure static clearing the mind.", brown: "Deep rumble grounding awareness.",
+    rain: "Rainfall washing away stress.", wind: "Wind carrying thoughts away.", ocean: "Ocean waves calming the mind.",
     strings: "Harmonies evoking emotion.", brass: "Warmth expanding the mind.", winds: "Breath guiding the flow.",
     bells: "Chimes marking the present moment.", wood: "Rhythm grounding the body.", timpani: "Deep resonance strengthening will.",
-    orch_perc: "Dynamic textures stimulating alertnes."
+    orch_perc: "Dynamic textures stimulating alertness."
 };
 
 export const state = {
     audioCtx: null,
     oscLeft: null, oscRight: null, panLeft: null, panRight: null,
-    beatsGain: null, masterAtmosGain: null, masterGain: null,
+    beatsGain: null, masterAtmosGain: null, masterGain: null, masterPanner: null,
     masterCompressor: null, analyserLeft: null, analyserRight: null,
     isPlaying: false, isRecording: false, videoEnabled: false,
     animationId: null, visualMode: 'sphere',
@@ -63,14 +130,40 @@ export const state = {
     videoCaptureGain: null,
     cleanRecordedBuffers: [],
     currentRecordingDuration: 0,
-    currentRecordingDuration: 0,
     currentUser: null,
     userTier: 'pro', // Unlocked for everyone
     visualSpeedAuto: true, // Default to Hz sync
 
+    // Session Timer State
+    sessionActive: false,
+    sessionPaused: false,
+    sessionDuration: 0, // in minutes
+
     // UI Refs that were global
-    immersiveTimeout: null
+    immersiveTimeout: null,
+
+    // Safety
+    disclaimerAccepted: false,
+
+    // NEW: Audio Mode (binaural, isochronic, monaural)
+    audioMode: 'binaural',
+
+    // NEW: Isochronic pulse state
+    isochronicGain: null,
+    isochronicLFO: null,
+
+    // NEW: Frequency Sweep state
+    sweepActive: false,
+    sweepStartFreq: 10,
+    sweepEndFreq: 40,
+    sweepDuration: 60, // seconds
+    sweepInterval: null,
+
+    // NEW: Extended Hyper-Gamma unlock
+    hyperGammaUnlocked: false,
+    hyperGammaDisclaimerAccepted: false
 };
+
 
 // Global Elements Container
 export const els = {
@@ -96,9 +189,10 @@ export const els = {
 
     // Mixer
     baseSlider: null, beatSlider: null, volSlider: null,
-    masterVolSlider: null, atmosMasterSlider: null,
+    baseSlider: null, beatSlider: null, volSlider: null,
+    masterVolSlider: null, atmosMasterSlider: null, balanceSlider: null,
     baseValue: null, beatValue: null, volValue: null,
-    masterVolValue: null, atmosMasterValue: null,
+    masterVolValue: null, atmosMasterValue: null, balanceValue: null,
     soundscapeContainer: null,
     presetButtons: null,
 

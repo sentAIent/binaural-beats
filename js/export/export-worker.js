@@ -3,15 +3,25 @@
 self.onmessage = async function (e) {
     const { type, chunks, format, loopCount, sampleRate } = e.data;
 
+    console.log('[Export Worker] Received message:', { type, chunksCount: chunks?.length, format, loopCount, sampleRate });
+
     if (type === 'export') {
         try {
             const startTime = performance.now();
+
+            // Convert plain arrays back to Float32Arrays if needed
+            const processedChunks = chunks.map(chunk => [
+                chunk[0] instanceof Float32Array ? chunk[0] : new Float32Array(chunk[0]),
+                chunk[1] instanceof Float32Array ? chunk[1] : new Float32Array(chunk[1])
+            ]);
+
+            console.log('[Export Worker] Processing', processedChunks.length, 'chunks');
 
             // Step 1: Calculate total samples
             self.postMessage({ type: 'progress', step: 'Analyzing audio', detail: 'Calculating buffer size', percent: 5 });
 
             let totalSamplesPerChannel = 0;
-            for (const chunk of chunks) {
+            for (const chunk of processedChunks) {
                 totalSamplesPerChannel += chunk[0].length;
             }
             totalSamplesPerChannel *= loopCount;
@@ -50,7 +60,7 @@ self.onmessage = async function (e) {
             const singleL = new Float32Array(singleLoopLen);
             const singleR = new Float32Array(singleLoopLen);
             let sOffset = 0;
-            for (const chunk of chunks) {
+            for (const chunk of processedChunks) {
                 singleL.set(chunk[0], sOffset);
                 singleR.set(chunk[1], sOffset);
                 sOffset += chunk[0].length;

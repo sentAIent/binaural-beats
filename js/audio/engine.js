@@ -98,6 +98,15 @@ export async function startAudio() {
         state.beatsGain = state.audioCtx.createGain();
         state.masterAtmosGain = state.audioCtx.createGain();
         state.masterGain = state.audioCtx.createGain();
+
+        // Master Balance Panner
+        if (state.audioCtx.createStereoPanner) {
+            state.masterPanner = state.audioCtx.createStereoPanner();
+        } else {
+            console.warn("StereoPanner not supported for Master Balance");
+            state.masterPanner = state.audioCtx.createGain(); // Dummy fallback
+        }
+
         state.masterCompressor = state.audioCtx.createDynamicsCompressor();
         state.analyserLeft = state.audioCtx.createAnalyser();
         state.analyserRight = state.audioCtx.createAnalyser();
@@ -114,7 +123,10 @@ export async function startAudio() {
         state.panRight.connect(state.beatsGain);
         state.beatsGain.connect(state.masterGain);
         state.masterAtmosGain.connect(state.masterGain);
-        state.masterGain.connect(state.masterCompressor);
+
+        // Output Chain: Gain -> Panner -> Compressor -> Limiter -> Dest
+        state.masterGain.connect(state.masterPanner);
+        state.masterPanner.connect(state.masterCompressor);
 
         // Safety Limiter (Promoted to state to avoid GC)
         state.limiter = state.audioCtx.createDynamicsCompressor();
@@ -152,6 +164,7 @@ export async function startAudio() {
         // Initialize Frequencies & Volumes with Safe Defaults
         const baseFreq = parseFloat(els.baseSlider ? els.baseSlider.value : 200) || 200;
         const beatFreq = parseFloat(els.beatSlider ? els.beatSlider.value : 10) || 10;
+        console.log(`[Audio] startAudio reading sliders: Base=${baseFreq}Hz, Beat=${beatFreq}Hz`);
         state.oscLeft.frequency.value = baseFreq;
         state.oscRight.frequency.value = baseFreq + beatFreq;
 
@@ -182,6 +195,9 @@ export async function startAudio() {
         state.oscRight.start(now);
         state.isPlaying = true;
 
+        // Setup Media Session for lock screen controls
+        setupMediaSession();
+
         console.log(`[Audio] Started. Base: ${baseFreq}Hz, Beat: ${beatFreq}Hz, Vol: ${safeVol}`);
         console.log(`[Audio Diagnostics] Ctx State: ${state.audioCtx.state}`);
         console.log(`[Audio Diagnostics] Master Gain: ${state.masterGain.gain.value}`);
@@ -211,9 +227,88 @@ export async function startAudio() {
     }
 }
 
+// --- MEDIA SESSION API (Lock Screen / Background Controls) ---
+function setupMediaSession() {
+    if (!('mediaSession' in navigator)) {
+        console.log('[MediaSession] Not supported');
+        return;
+    }
+
+    // Get current preset info for metadata
+    const beatFreq = parseFloat(els.beatSlider?.value || 10);
+    let presetName = 'Custom Session';
+    if (beatFreq < 4) presetName = 'Delta - Deep Sleep';
+    else if (beatFreq < 8) presetName = 'Theta - Meditation';
+    else if (beatFreq < 14) presetName = 'Alpha - Relaxation';
+    else if (beatFreq < 30) presetName = 'Beta - Focus';
+    else if (beatFreq < 50) presetName = 'Gamma - Awareness';
+    else presetName = 'Hyper-Gamma - Peak Performance';
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+        title: presetName,
+        artist: 'MindWave',
+        album: 'Binaural Beats Session',
+        artwork: [
+            { src: '/icons/icon-96x96.png', sizes: '96x96', type: 'image/png' },
+            { src: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+            { src: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' }
+        ]
+    });
+
+    navigator.mediaSession.playbackState = 'playing';
+
+    // Action handlers
+    navigator.mediaSession.setActionHandler('play', () => {
+        if (!state.isPlaying && state.audioCtx) {
+            state.audioCtx.resume();
+            console.log('[MediaSession] Play triggered');
+        }
+    });
+
+    navigator.mediaSession.setActionHandler('pause', () => {
+        if (state.isPlaying && state.audioCtx) {
+            state.audioCtx.suspend();
+            console.log('[MediaSession] Pause triggered');
+        }
+    });
+
+    navigator.mediaSession.setActionHandler('stop', () => {
+        stopAudio();
+        console.log('[MediaSession] Stop triggered');
+    });
+
+    console.log('[MediaSession] Setup complete');
+}
+
+// Update media session when stopped
+function clearMediaSession() {
+    if ('mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'none';
+    }
+}
+
 export function stopAudio() {
     if (!state.oscLeft) return;
     if (state.isRecording) stopRecording();
+
+    // Stop any active sweep
+    if (state.sweepInterval) {
+        clearInterval(state.sweepInterval);
+        state.sweepInterval = null;
+        state.sweepActive = false;
+    }
+
+    // Stop isochronic LFO if active
+    if (state.isochronicLFO) {
+        state.isochronicLFO.stop();
+        state.isochronicLFO.disconnect();
+        state.isochronicLFO = null;
+    }
+    if (state.isochronicGain) {
+        state.isochronicGain.disconnect();
+        state.isochronicGain = null;
+    }
+
     const now = state.audioCtx.currentTime;
 
     state.masterGain.gain.cancelScheduledValues(now);
@@ -229,7 +324,270 @@ export function stopAudio() {
         // canvas clear if needed
     }, 350);
 
+    // Clear lock screen controls
+    clearMediaSession();
+
     if (uiCallback) uiCallback(false);
+}
+
+// --- AUDIO MODE SWITCHING ---
+// Modes: 'binaural' (default), 'isochronic', 'monaural'
+
+export function setAudioMode(mode) {
+    if (!['binaural', 'isochronic', 'monaural'].includes(mode)) {
+        console.warn('[Audio] Invalid mode:', mode);
+        return;
+    }
+
+    const wasPlaying = state.isPlaying;
+    const prevMode = state.audioMode;
+    state.audioMode = mode;
+
+    console.log(`[Audio] Mode changed: ${prevMode} → ${mode}`);
+
+    // If audio is playing, we need to reconfigure the routing
+    if (wasPlaying && state.oscLeft && state.oscRight) {
+        applyAudioMode();
+    }
+}
+
+function applyAudioMode() {
+    if (!state.audioCtx || !state.oscLeft || !state.oscRight) return;
+
+    const now = state.audioCtx.currentTime;
+    const baseFreq = parseFloat(els.baseSlider?.value || 200);
+    const beatFreq = parseFloat(els.beatSlider?.value || 10);
+
+    // Clean up previous isochronic nodes if switching away
+    if (state.isochronicLFO) {
+        state.isochronicLFO.stop();
+        state.isochronicLFO.disconnect();
+        state.isochronicLFO = null;
+    }
+    if (state.isochronicGain) {
+        state.isochronicGain.disconnect();
+        state.isochronicGain = null;
+    }
+
+    switch (state.audioMode) {
+        case 'binaural':
+            // Standard binaural: left ear = base, right ear = base + beat
+            state.oscLeft.frequency.setValueAtTime(baseFreq, now);
+            state.oscRight.frequency.setValueAtTime(baseFreq + beatFreq, now);
+            state.panLeft.pan.setValueAtTime(-1, now);
+            state.panRight.pan.setValueAtTime(1, now);
+            break;
+
+        case 'monaural':
+            // Monaural: both ears hear the same mixed beat (no headphones needed)
+            // Both oscillators at same frequencies, let the interference happen
+            state.oscLeft.frequency.setValueAtTime(baseFreq, now);
+            state.oscRight.frequency.setValueAtTime(baseFreq + beatFreq, now);
+            // Center both pans so the beat is heard in mono
+            state.panLeft.pan.setValueAtTime(0, now);
+            state.panRight.pan.setValueAtTime(0, now);
+            break;
+
+        case 'isochronic':
+            // Isochronic: single tone pulsing at beat frequency (no headphones needed)
+            // Set both oscillators to base frequency
+            state.oscLeft.frequency.setValueAtTime(baseFreq, now);
+            state.oscRight.frequency.setValueAtTime(baseFreq, now);
+            // Center panning
+            state.panLeft.pan.setValueAtTime(0, now);
+            state.panRight.pan.setValueAtTime(0, now);
+
+            // Create LFO to modulate gain (pulse effect)
+            state.isochronicLFO = state.audioCtx.createOscillator();
+            state.isochronicGain = state.audioCtx.createGain();
+
+            state.isochronicLFO.type = 'square'; // Sharp on/off pulses
+            state.isochronicLFO.frequency.setValueAtTime(beatFreq, now);
+
+            // LFO controls gain amplitude (0 to 1)
+            state.isochronicGain.gain.setValueAtTime(0.5, now);
+
+            // Connect LFO to modulate the beatsGain
+            state.isochronicLFO.connect(state.isochronicGain);
+            state.isochronicGain.connect(state.beatsGain.gain);
+
+            state.isochronicLFO.start(now);
+            break;
+    }
+
+    console.log(`[Audio] Applied mode: ${state.audioMode}`);
+}
+
+export function getAudioMode() {
+    return state.audioMode;
+}
+
+// --- FREQUENCY SWEEP FUNCTIONS ---
+
+// Sweep Preset Programs
+export const SWEEP_PRESETS = {
+    wakeUp: {
+        name: 'Wake Up',
+        description: 'Gentle transition from sleep to alertness',
+        startFreq: 4,    // Theta
+        endFreq: 20,     // Beta
+        duration: 300,   // 5 minutes
+        icon: '🌅'
+    },
+    windDown: {
+        name: 'Wind Down',
+        description: 'Transition from active to relaxed state',
+        startFreq: 20,   // Beta
+        endFreq: 8,      // Alpha
+        duration: 600,   // 10 minutes
+        icon: '🌙'
+    },
+    deepSleep: {
+        name: 'Deep Sleep Journey',
+        description: 'Guide into deep restorative sleep',
+        startFreq: 10,   // Alpha
+        endFreq: 2,      // Delta
+        duration: 1200,  // 20 minutes
+        icon: '💤'
+    },
+    focusBuilder: {
+        name: 'Focus Builder',
+        description: 'Build concentration gradually',
+        startFreq: 8,    // Alpha
+        endFreq: 18,     // Beta
+        duration: 300,   // 5 minutes
+        icon: '🎯'
+    },
+    meditation: {
+        name: 'Meditation Descent',
+        description: 'Descend into deep meditative state',
+        startFreq: 12,   // Alpha
+        endFreq: 5,      // Theta
+        duration: 600,   // 10 minutes
+        icon: '🧘'
+    },
+    creativity: {
+        name: 'Creative Flow',
+        description: 'Unlock creative theta state',
+        startFreq: 14,   // Low Beta
+        endFreq: 6,      // Theta
+        duration: 480,   // 8 minutes
+        icon: '🎨'
+    }
+};
+
+export function startSweep(startFreq, endFreq, durationSec) {
+    if (!state.isPlaying) {
+        console.warn('[Sweep] Audio must be playing to start sweep');
+        return false;
+    }
+
+    // Stop any existing sweep
+    if (state.sweepInterval) {
+        clearInterval(state.sweepInterval);
+    }
+
+    // Store original beat frequency BEFORE starting the sweep
+    state.preSweepBeatFreq = parseFloat(els.beatSlider?.value || 10);
+    console.log('[Sweep] Storing original beat frequency:', state.preSweepBeatFreq);
+
+    state.sweepActive = true;
+    state.sweepStartFreq = startFreq;
+    state.sweepEndFreq = endFreq;
+    state.sweepDuration = durationSec;
+
+    const startTime = Date.now();
+    const freqDiff = endFreq - startFreq;
+
+    console.log(`[Sweep] Starting: ${startFreq}Hz → ${endFreq}Hz over ${durationSec}s`);
+
+    state.sweepInterval = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000;
+        const progress = Math.min(elapsed / durationSec, 1);
+
+        // Calculate current frequency (linear interpolation)
+        const currentFreq = startFreq + (freqDiff * progress);
+
+        // Update the beat slider value
+        // Update the beat slider value
+        if (els.beatSlider) {
+            els.beatSlider.value = currentFreq.toFixed(1);
+            if (els.beatValue) {
+                els.beatValue.textContent = currentFreq.toFixed(1) + ' Hz';
+            }
+        }
+
+        // Apply the frequency change
+        updateFrequencies();
+
+        // Check if sweep complete
+        if (progress >= 1) {
+            clearInterval(state.sweepInterval);
+            state.sweepInterval = null;
+            state.sweepActive = false;
+            console.log('[Sweep] Complete');
+
+            // Dispatch custom event for UI updates
+            window.dispatchEvent(new CustomEvent('sweepComplete', {
+                detail: { endFreq }
+            }));
+        }
+    }, 100); // Update every 100ms for smooth transitions
+
+    return true;
+}
+
+
+export function stopSweep(restore = true) {
+    if (state.sweepInterval) {
+        clearInterval(state.sweepInterval);
+        state.sweepInterval = null;
+    }
+    state.sweepActive = false;
+
+    // If restore is false, we skip restoring old frequency (e.g. when Story takes over)
+    if (!restore) {
+        console.log('[Sweep] Skipping restore (restore=false)');
+        return;
+    }
+
+    // Restore to original beat frequency (saved when sweep started)
+    const originalBeat = state.preSweepBeatFreq || 10;
+    console.log('[Sweep] Restoring original beat frequency:', originalBeat);
+
+    if (els.beatSlider) {
+        els.beatSlider.value = originalBeat;
+        if (els.beatValue) {
+            els.beatValue.textContent = originalBeat + ' Hz';
+        }
+    }
+
+    // Apply the frequency change to audio
+    if (state.isPlaying) {
+        updateFrequencies();
+    }
+
+    // Clear the stored frequency
+    state.preSweepBeatFreq = null;
+
+    console.log('[Sweep] Stopped - Restored to', originalBeat, 'Hz');
+}
+
+
+
+export function startSweepPreset(presetKey) {
+    const preset = SWEEP_PRESETS[presetKey];
+    if (!preset) {
+        console.warn('[Sweep] Unknown preset:', presetKey);
+        return false;
+    }
+
+    console.log(`[Sweep] Starting preset: ${preset.name}`);
+    return startSweep(preset.startFreq, preset.endFreq, preset.duration);
+}
+
+export function isSweepActive() {
+    return state.sweepActive;
 }
 
 // Helpers
@@ -255,6 +613,150 @@ function createPinkNoiseBuffer() {
     if (maxVal > 0) { for (let i = 0; i < bs; i++) { o[i] = o[i] / maxVal; } }
     return b;
 }
+
+function createWhiteNoiseBuffer() {
+    const bs = 2 * state.audioCtx.sampleRate;
+    const b = state.audioCtx.createBuffer(1, bs, state.audioCtx.sampleRate);
+    const o = b.getChannelData(0);
+    for (let i = 0; i < bs; i++) {
+        o[i] = Math.random() * 2 - 1;
+    }
+    return b;
+}
+
+function createBrownNoiseBuffer() {
+    const bs = 2 * state.audioCtx.sampleRate;
+    const b = state.audioCtx.createBuffer(1, bs, state.audioCtx.sampleRate);
+    const o = b.getChannelData(0);
+    let lastOut = 0;
+    for (let i = 0; i < bs; i++) {
+        const white = Math.random() * 2 - 1;
+        o[i] = (lastOut + (0.02 * white)) / 1.02;
+        lastOut = o[i];
+        o[i] *= 3.5; // Normalize
+    }
+    // Normalize
+    let maxVal = 0;
+    for (let i = 0; i < bs; i++) { if (Math.abs(o[i]) > maxVal) maxVal = Math.abs(o[i]); }
+    if (maxVal > 0) { for (let i = 0; i < bs; i++) { o[i] = o[i] / maxVal; } }
+    return b;
+}
+
+/**
+ * Fade in master audio over specified duration
+ * @param {number} duration - Fade duration in seconds (default 2s)
+ */
+export function fadeIn(duration = 2) {
+    if (!state.masterGain || !state.audioCtx) return;
+    const now = state.audioCtx.currentTime;
+    const targetVol = parseFloat(els.masterVolSlider?.value || 1);
+    state.masterGain.gain.cancelScheduledValues(now);
+    state.masterGain.gain.setValueAtTime(0, now);
+    state.masterGain.gain.linearRampToValueAtTime(targetVol, now + duration);
+    console.log(`[Audio] Fade in: ${duration}s`);
+}
+
+/**
+/**
+ * Fade out master audio over specified duration (Cancellable)
+ * @param {number} duration - Fade duration in seconds (default 2s)
+ * @param {Function} onComplete - Callback when fade completes
+ */
+export function fadeOut(duration = 2, onComplete = null) {
+    if (!state.masterGain || !state.audioCtx) return;
+    const now = state.audioCtx.currentTime;
+
+    // Clear any existing timeout
+    if (state.fadeTimeout) {
+        clearTimeout(state.fadeTimeout);
+        state.fadeTimeout = null;
+    }
+
+    state.masterGain.gain.cancelScheduledValues(now);
+    state.masterGain.gain.setValueAtTime(state.masterGain.gain.value, now);
+    state.masterGain.gain.linearRampToValueAtTime(0, now + duration);
+    console.log(`[Audio] Fade out: ${duration}s`);
+
+    // Store timeout so we can cancel it if user resumes
+    state.fadeTimeout = setTimeout(() => {
+        state.fadeTimeout = null;
+        if (onComplete) onComplete();
+    }, duration * 1000);
+}
+
+/**
+ * Cancel any active fade out and restore volume target
+ */
+export function cancelFadeOut() {
+    if (state.fadeTimeout) {
+        console.log('[Audio] Cancelling fade out - RESUMING');
+        clearTimeout(state.fadeTimeout);
+        state.fadeTimeout = null;
+
+        // Restore volume
+        fadeIn(0.5); // Quick fade back in
+    }
+}
+
+/**
+ * Check if volume is above safe threshold and return warning
+ * @returns {boolean} true if volume is above 85%
+ */
+export function isVolumeHigh() {
+    const masterVol = parseFloat(els.masterVolSlider?.value || 0);
+    return masterVol > 0.85;
+}
+
+/**
+ * Play a gentle completion chime when session ends
+ * Uses FM synthesis for a pleasant bell-like tone
+ */
+export function playCompletionChime() {
+    if (!state.audioCtx) return;
+
+    const ctx = state.audioCtx;
+    const now = ctx.currentTime;
+
+    // Create a gentle bell-like chime using FM synthesis
+    const frequencies = [523.25, 659.25, 783.99]; // C5, E5, G5 (C major chord)
+
+    frequencies.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const modulator = ctx.createOscillator();
+        const modGain = ctx.createGain();
+        const oscGain = ctx.createGain();
+
+        // Modulator for FM synthesis
+        modulator.frequency.value = freq * 2;
+        modGain.gain.setValueAtTime(freq * 0.5, now);
+        modGain.gain.exponentialRampToValueAtTime(0.01, now + 2);
+
+        // Carrier oscillator
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+
+        // Amplitude envelope
+        const startTime = now + (i * 0.1); // Stagger notes
+        oscGain.gain.setValueAtTime(0, startTime);
+        oscGain.gain.linearRampToValueAtTime(0.15, startTime + 0.02);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, startTime + 2.5);
+
+        // Connections
+        modulator.connect(modGain);
+        modGain.connect(osc.frequency);
+        osc.connect(oscGain);
+        oscGain.connect(ctx.destination);
+
+        // Start and stop
+        modulator.start(startTime);
+        osc.start(startTime);
+        modulator.stop(startTime + 3);
+        osc.stop(startTime + 3);
+    });
+
+    console.log('[Audio] Completion chime played');
+}
+
 
 export function updateFrequencies() {
     const base = parseFloat(els.baseSlider.value);
@@ -312,6 +814,18 @@ export function updateMasterVolume() {
     const vol = parseFloat(els.masterVolSlider.value);
     if (els.masterVolValue) els.masterVolValue.textContent = `${Math.round(vol * 100)}%`;
     if (state.masterGain && state.isPlaying) state.masterGain.gain.setTargetAtTime(vol, state.audioCtx.currentTime, 0.1);
+}
+
+export function updateMasterBalance() {
+    const val = parseFloat(els.balanceSlider.value); // -1 to 1
+    if (els.balanceValue) {
+        const percent = Math.round(val * 100);
+        const text = percent === 0 ? "C" : percent < 0 ? `L ${Math.abs(percent)}` : `R ${percent}`;
+        els.balanceValue.textContent = text;
+    }
+    if (state.masterPanner && state.masterPanner.pan && state.isPlaying) {
+        state.masterPanner.pan.setTargetAtTime(val, state.audioCtx.currentTime, 0.1);
+    }
 }
 
 export function updateAtmosMaster() {
@@ -397,6 +911,32 @@ function startSingleSoundscape(id, vol, tone, speed) {
     }
 
     if (id === 'pink') { const n = state.audioCtx.createBufferSource(); n.buffer = createPinkNoiseBuffer(); n.loop = true; n.playbackRate.value = rate; const f = state.audioCtx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 200 + (tone * 10000); n.connect(f); f.connect(channelGain); n.start(); nodes.push(n, f); }
+    else if (id === 'white') {
+        const n = state.audioCtx.createBufferSource();
+        n.buffer = createWhiteNoiseBuffer();
+        n.loop = true;
+        n.playbackRate.value = rate;
+        const f = state.audioCtx.createBiquadFilter();
+        f.type = 'lowpass';
+        f.frequency.value = 500 + (tone * 15000); // Full range for white noise
+        n.connect(f);
+        f.connect(channelGain);
+        n.start();
+        nodes.push(n, f);
+    }
+    else if (id === 'brown') {
+        const n = state.audioCtx.createBufferSource();
+        n.buffer = createBrownNoiseBuffer();
+        n.loop = true;
+        n.playbackRate.value = rate;
+        const f = state.audioCtx.createBiquadFilter();
+        f.type = 'lowpass';
+        f.frequency.value = 100 + (tone * 800); // Lower range for brown noise
+        n.connect(f);
+        f.connect(channelGain);
+        n.start();
+        nodes.push(n, f);
+    }
     else if (id === 'rain') { const n = state.audioCtx.createBufferSource(); n.buffer = createPinkNoiseBuffer(); n.loop = true; n.playbackRate.value = rate; const f = state.audioCtx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 200 + (tone * 1800); n.connect(f); f.connect(channelGain); n.start(); nodes.push(n, f); }
     else if (id === 'wind') { const n = state.audioCtx.createBufferSource(); n.buffer = createPinkNoiseBuffer(); n.loop = true; n.playbackRate.value = rate; const f = state.audioCtx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 200 + (tone * 800); f.Q.value = 1; const lfo = state.audioCtx.createOscillator(); lfo.frequency.value = 0.1 * rate; const lfoG = state.audioCtx.createGain(); lfoG.gain.value = 200; lfo.connect(lfoG); lfoG.connect(f.frequency); n.connect(f); f.connect(channelGain); n.start(); lfo.start(); nodes.push(n, f, lfo, lfoG); }
     else if (id === 'ocean') {

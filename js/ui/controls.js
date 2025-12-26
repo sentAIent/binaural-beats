@@ -1,10 +1,17 @@
-import { state, els, THEMES, SOUNDSCAPES } from '../state.js';
-import { startAudio, stopAudio, updateFrequencies, updateBeatsVolume, updateMasterVolume, updateAtmosMaster, updateSoundscape, registerUICallback } from '../audio/engine.js';
+import { state, els, THEMES, SOUNDSCAPES, PRESET_COMBOS } from '../state.js';
+import { startAudio, stopAudio, updateFrequencies, updateBeatsVolume, updateMasterVolume, updateMasterBalance, updateAtmosMaster, updateSoundscape, registerUICallback, fadeIn, fadeOut, cancelFadeOut, isVolumeHigh, playCompletionChime, setAudioMode, getAudioMode, startSweep, stopSweep, startSweepPreset, isSweepActive, SWEEP_PRESETS } from '../audio/engine.js';
 import { initVisualizer, getVisualizer } from '../visuals/visualizer.js';
 import { startRecording, stopRecording, startExport, cancelExport, updateExportPreview } from '../export/recorder.js';
-import { openAuthModal } from './auth-controller.js';
+import { openAuthModal, renderLibraryList } from './auth-controller.js';
 import { saveMixToCloud } from '../services/firebase.js';
 import { auth, db, registerAuthCallback } from '../services/firebase.js';
+import { startSession, stopSession, pauseSession, resumeSession, isSessionPaused, formatTimeRemaining, getProgress, isSessionActive, DURATION_PRESETS } from '../audio/session-timer.js';
+import { startSessionTracking, endSessionTracking, getStats, getWeeklyData } from '../services/analytics.js';
+import { setStoryVolume, storyState } from '../content/stories.js';
+import { setCustomAudioVolume } from '../content/audio-library.js';
+import { initClassical, isClassicalPlaying, stopClassical, onClassicalStateChange } from '../content/classical.js';
+import { initDJAudio, setDJVolume, setDJPitch, setDJTone, setDJSpeed, triggerOneShot, startLoop, stopLoop, isLoopActive, stopAllLoops, DJ_SOUNDS } from '../audio/dj-synth.js';
+
 
 export function setupUI() {
     // Populate els (DOM Element References)
@@ -21,6 +28,8 @@ export function setupUI() {
     els.volValue = document.getElementById('volValue');
     els.masterVolValue = document.getElementById('masterVolValue');
     els.atmosMasterValue = document.getElementById('atmosMasterValue');
+    els.balanceSlider = document.getElementById('balanceSlider');
+    els.balanceValue = document.getElementById('balanceValue');
     els.presetButtons = document.querySelectorAll('.preset-btn');
     els.soundscapeContainer = document.getElementById('soundscapeContainer');
     els.canvas = document.getElementById('visualizer');
@@ -32,6 +41,7 @@ export function setupUI() {
     els.visualSyncBtn = document.getElementById('visualSyncBtn');
     els.visualColorPicker = document.getElementById('visualColorPicker');
     els.randomColorBtn = document.getElementById('randomColorBtn');
+    els.prevColorBtn = document.getElementById('prevColorBtn');
     els.colorPreview = document.getElementById('colorPreview');
     els.profileBtn = document.getElementById('profileBtn');
     els.recordBtn = document.getElementById('recordBtn');
@@ -40,6 +50,7 @@ export function setupUI() {
     els.videoToggleBtn = document.getElementById('videoToggleBtn');
     els.saveMixBtn = document.getElementById('saveMixBtn');
     els.historyBtn = document.getElementById('historyBtn');
+    els.journeyBtn = document.getElementById('journeyBtn');
     els.libraryPanel = document.getElementById('libraryPanel');
     els.libraryList = document.getElementById('libraryList');
 
@@ -48,7 +59,10 @@ export function setupUI() {
     els.rightPanel = document.getElementById('rightPanel');
     els.leftToggle = document.getElementById('leftToggle');
     els.rightToggle = document.getElementById('rightToggle');
+    els.leftToggle = document.getElementById('leftToggle');
+    els.rightToggle = document.getElementById('rightToggle');
     els.closeLeftBtn = document.getElementById('closeLeftBtn');
+    els.disclaimerBackBtn = document.getElementById('disclaimerBackBtn'); // NEW Back Button
     els.closeRightBtn = document.getElementById('closeRightBtn');
     els.statusIndicator = document.getElementById('statusIndicator');
     els.aiPrompt = document.getElementById('aiPrompt');
@@ -88,13 +102,63 @@ export function setupUI() {
     els.tapZone = document.getElementById('tapZone');
     els.sphereBtn = document.getElementById('sphereBtn');
     els.flowBtn = document.getElementById('flowBtn');
+    els.lavaBtn = document.getElementById('lavaBtn');
+
+    // Session Timer Elements
+    els.sessionDuration = document.getElementById('sessionDuration');
+    els.timerRing = document.getElementById('timerRing');
+    els.timerProgress = document.getElementById('timerProgress');
+    els.timerDisplay = document.getElementById('timerDisplay');
+
+    // Disclaimer Elements
+    els.disclaimerModal = document.getElementById('disclaimerModal');
+    els.disclaimerAccept = document.getElementById('disclaimerAccept');
+    els.disclaimerContinueBtn = document.getElementById('disclaimerContinueBtn');
+
+    // Session Pause Button
+    els.sessionPauseBtn = document.getElementById('sessionPauseBtn');
+
+    // NEW: Mode Toggle Elements
+    els.modeToggle = document.getElementById('modeToggle');
+    els.modeLabel = document.getElementById('modeLabel');
+    els.modeDescription = document.getElementById('modeDescription');
+
+    // NEW: Sweep Elements
+    els.sweepStatus = document.getElementById('sweepStatus');
+    els.stopSweepBtn = document.getElementById('stopSweepBtn');
+
+    // NEW: Hyper-Gamma Modal Elements
+    els.hyperGammaModal = document.getElementById('hyperGammaModal');
+    els.hyperGammaAccept = document.getElementById('hyperGammaAccept');
+    els.hyperGammaUnlockBtn = document.getElementById('hyperGammaUnlockBtn');
+    els.hyperGammaCancelBtn = document.getElementById('hyperGammaCancelBtn');
+    els.hyperGammaBtn = document.getElementById('hyperGammaBtn');
+    els.hyperGammaLock = document.getElementById('hyperGammaLock');
+
+    // NEW: Stats Modal Elements
+    els.statsModal = document.getElementById('statsModal');
+    els.statsBtn = document.getElementById('statsBtn');
+    els.closeStatsBtn = document.getElementById('closeStatsBtn');
+    els.statStreak = document.getElementById('statStreak');
+    els.statHours = document.getElementById('statHours');
+    els.statSessions = document.getElementById('statSessions');
+    els.weeklyChart = document.getElementById('weeklyChart');
+    els.weeklyLabels = document.getElementById('weeklyLabels');
+    els.statTopPreset = document.getElementById('statTopPreset');
+    els.statAvgSession = document.getElementById('statAvgSession');
+
+    // Mobile Navigation Elements
+    els.mobileBottomNav = document.getElementById('mobileBottomNav');
+    els.mobilePresetsBtn = document.getElementById('mobilePresetsBtn');
+    els.mobilePlayBtn = document.getElementById('mobilePlayBtn');
+    els.mobilePlayIcon = document.getElementById('mobilePlayIcon');
+    els.mobilePauseIcon = document.getElementById('mobilePauseIcon');
+    els.mobileMixerBtn = document.getElementById('mobileMixerBtn');
 
     // Bind Event Listeners
+
     if (els.playBtn) {
-        els.playBtn.addEventListener('click', () => {
-            if (state.isPlaying) stopAudio();
-            else startAudio().catch(e => console.error("Start Audio Failed", e));
-        });
+        els.playBtn.addEventListener('click', handlePlayClick);
     }
 
     if (els.recordBtn) {
@@ -105,8 +169,97 @@ export function setupUI() {
         });
     }
 
-    if (els.historyBtn) els.historyBtn.addEventListener('click', () => els.libraryPanel.classList.toggle('translate-x-full'));
+    // Session Pause/Resume Button
+    if (els.sessionPauseBtn) {
+        els.sessionPauseBtn.addEventListener('click', () => {
+            if (isSessionPaused()) {
+                resumeSession();
+                els.sessionPauseBtn.textContent = 'Pause';
+                els.sessionPauseBtn.classList.remove('text-[var(--accent)]', 'border-[var(--accent)]');
+                showToast('Session resumed', 'info');
+            } else {
+                pauseSession();
+                els.sessionPauseBtn.textContent = 'Resume';
+                els.sessionPauseBtn.classList.add('text-[var(--accent)]', 'border-[var(--accent)]');
+                showToast('Session paused', 'info');
+            }
+        });
+    }
+
+    if (els.historyBtn) els.historyBtn.addEventListener('click', () => {
+        // Open library panel (works offline with localStorage)
+        els.libraryPanel.classList.toggle('translate-x-full');
+        // Render library list when opening
+        if (!els.libraryPanel.classList.contains('translate-x-full')) {
+            // Load mixes from localStorage (offline-first)
+            const localMixes = JSON.parse(localStorage.getItem('mindwave_mock_library') || '[]');
+            renderLibraryList(localMixes);
+        }
+    });
+
+    // Journey Program Button - opens journey modal
+    if (els.journeyBtn) els.journeyBtn.addEventListener('click', () => {
+        // Open the journey modal if it exists
+        const journeyModal = document.getElementById('journeyModal');
+        if (journeyModal) {
+            journeyModal.classList.remove('hidden');
+            journeyModal.classList.add('active');
+        } else {
+            showToast('🧭 Journey program coming soon!', 'info');
+        }
+    });
+
+    // Close Journey Modal - X button and click outside
+    const closeJourneyBtn = document.getElementById('closeJourneyBtn');
+    const journeyModal = document.getElementById('journeyModal');
+
+    if (closeJourneyBtn) {
+        closeJourneyBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (journeyModal) {
+                journeyModal.classList.remove('active');
+                journeyModal.classList.add('hidden');
+            }
+        });
+    }
+
+    // Click outside journey modal content to close
+    if (journeyModal) {
+        journeyModal.addEventListener('click', (e) => {
+            // Only close if clicking the backdrop (not the content)
+            if (e.target === journeyModal) {
+                journeyModal.classList.remove('active');
+                journeyModal.classList.add('hidden');
+            }
+        });
+    }
+
     if (els.closeLibraryBtn) els.closeLibraryBtn.addEventListener('click', () => els.libraryPanel.classList.add('translate-x-full'));
+
+    // Library backdrop click-outside-to-close
+    const libraryBackdrop = document.getElementById('libraryBackdrop');
+    if (libraryBackdrop) {
+        libraryBackdrop.addEventListener('click', () => {
+            els.libraryPanel.classList.add('translate-x-full');
+        });
+    }
+
+    // Quick save button in library panel footer
+    const quickSaveMixBtn = document.getElementById('quickSaveMixBtn');
+    if (quickSaveMixBtn) {
+        quickSaveMixBtn.addEventListener('click', () => {
+            savePreset();
+        });
+    }
+
+    // Escape key to close library panel
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (els.libraryPanel && !els.libraryPanel.classList.contains('translate-x-full')) {
+                els.libraryPanel.classList.add('translate-x-full');
+            }
+        }
+    });
 
     if (els.saveMixBtn) els.saveMixBtn.addEventListener('click', savePreset);
     if (els.cancelSaveBtn) els.cancelSaveBtn.addEventListener('click', () => els.saveModal.classList.remove('active'));
@@ -133,12 +286,35 @@ export function setupUI() {
         });
     }
 
+    if (els.profileBtn) {
+        els.profileBtn.addEventListener('click', () => {
+            if (state.currentUser) {
+                // Open Profile Modal (if implemented) or just Library/Stats
+                // For now, let's open the Auth Modal which handles "Already Logged In" state or Library
+                // Actually, let's open the library/profile logic.
+                // If logged in, maybe show stats/profile modal?
+                // Using openAuthModal for now as it handles sign-out/profile view placeholders
+                openAuthModal();
+            } else {
+                openAuthModal();
+            }
+        });
+    }
+
     // Sliders
     if (els.baseSlider) els.baseSlider.addEventListener('input', () => { updateFrequencies(); saveStateToLocal(); });
     if (els.beatSlider) els.beatSlider.addEventListener('input', () => { updateFrequencies(); saveStateToLocal(); });
     if (els.volSlider) els.volSlider.addEventListener('input', () => { updateBeatsVolume(); saveStateToLocal(); });
-    if (els.masterVolSlider) els.masterVolSlider.addEventListener('input', () => { updateMasterVolume(); saveStateToLocal(); });
+    if (els.masterVolSlider) els.masterVolSlider.addEventListener('input', () => {
+        updateMasterVolume();
+        // Also apply master volume to stories and custom audio
+        const masterVol = parseFloat(els.masterVolSlider.value);
+        setStoryVolume(masterVol);
+        setCustomAudioVolume(masterVol);
+        saveStateToLocal();
+    });
     if (els.atmosMasterSlider) els.atmosMasterSlider.addEventListener('input', () => { updateAtmosMaster(); saveStateToLocal(); });
+    if (els.balanceSlider) els.balanceSlider.addEventListener('input', () => { updateMasterBalance(); saveStateToLocal(); });
 
     // Visual Speed & Sync Controls
     if (els.visualSpeedSlider) els.visualSpeedSlider.addEventListener('input', () => {
@@ -227,12 +403,60 @@ export function setupUI() {
     document.addEventListener('mousemove', resetImmersiveTimer, { passive: true });
     document.addEventListener('click', resetImmersiveTimer);
 
+    // --- KEYBOARD SHORTCUTS ---
+    document.addEventListener('keydown', (e) => {
+        // Ignore shortcuts when typing in inputs
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+            return;
+        }
 
+        switch (e.code) {
+            case 'Space':
+                e.preventDefault();
+                handlePlayClick();
+                break;
+            case 'KeyM':
+                // Toggle mute (set master volume to 0 or restore)
+                if (els.masterVolSlider) {
+                    const currentVol = parseFloat(els.masterVolSlider.value);
+                    if (currentVol > 0) {
+                        els.masterVolSlider.dataset.prevVol = currentVol;
+                        els.masterVolSlider.value = 0;
+                        showToast('🔇 Muted', 'info');
+                    } else {
+                        els.masterVolSlider.value = els.masterVolSlider.dataset.prevVol || 1;
+                        showToast('🔊 Unmuted', 'info');
+                    }
+                    updateMasterVolume();
+                }
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                if (els.masterVolSlider) {
+                    const newVol = Math.min(1, parseFloat(els.masterVolSlider.value) + 0.05);
+                    els.masterVolSlider.value = newVol;
+                    updateMasterVolume();
+                    if (els.masterVolValue) els.masterVolValue.textContent = Math.round(newVol * 100) + '%';
+                }
+                break;
+            case 'ArrowDown':
+                e.preventDefault();
+                if (els.masterVolSlider) {
+                    const newVol = Math.max(0, parseFloat(els.masterVolSlider.value) - 0.05);
+                    els.masterVolSlider.value = newVol;
+                    updateMasterVolume();
+                    if (els.masterVolValue) els.masterVolValue.textContent = Math.round(newVol * 100) + '%';
+                }
+                break;
+        }
+    });
 
     // Visual Modes
     if (els.sphereBtn) els.sphereBtn.addEventListener('click', () => setVisualMode('sphere'));
     if (els.flowBtn) els.flowBtn.addEventListener('click', () => setVisualMode('particles'));
+    if (els.lavaBtn) els.lavaBtn.addEventListener('click', () => setVisualMode('lava'));
     if (els.visualSpeedSlider) {
+
         els.visualSpeedSlider.addEventListener('input', (e) => {
             console.log("Slider Input:", e.target.value);
             const viz = getVisualizer();
@@ -240,36 +464,79 @@ export function setupUI() {
         });
     }
 
+    // Mobile Bottom Navigation Handlers
+    if (els.mobilePresetsBtn) {
+        els.mobilePresetsBtn.addEventListener('click', () => {
+            if (els.leftPanel) {
+                els.leftPanel.classList.toggle('-translate-x-full');
+            }
+        });
+    }
+
+    if (els.mobilePlayBtn) {
+        els.mobilePlayBtn.addEventListener('click', handlePlayClick);
+    }
+
+    if (els.mobileMixerBtn) {
+        els.mobileMixerBtn.addEventListener('click', () => {
+            if (els.rightPanel) {
+                els.rightPanel.classList.toggle('translate-x-full');
+            }
+        });
+    }
+
     initThemeModal();
 
+
     // Color Controls
+    // Color history for back button
+    let previousColor = null;
+    let currentColor = '#a78bfa'; // Default
+
+    function updateColorWithHistory(newColor) {
+        previousColor = currentColor;
+        currentColor = newColor;
+
+        if (els.colorPreview) els.colorPreview.style.backgroundColor = newColor;
+        if (els.visualColorPicker) els.visualColorPicker.value = newColor;
+
+        const viz = getVisualizer();
+        if (viz) viz.setColor(newColor);
+
+        // Show back button if we have a previous color
+        if (els.prevColorBtn && previousColor) {
+            els.prevColorBtn.classList.remove('hidden');
+        }
+    }
+
     if (els.visualColorPicker) {
         els.visualColorPicker.addEventListener('input', (e) => {
-            const color = e.target.value;
-            if (els.colorPreview) els.colorPreview.style.backgroundColor = color;
-            const viz = getVisualizer();
-            if (viz) viz.setColor(color);
+            updateColorWithHistory(e.target.value);
         });
     }
 
     if (els.randomColorBtn) {
         els.randomColorBtn.addEventListener('click', () => {
             // Generate random vibrant color
-            const h = Math.floor(Math.random() * 360);
-            const s = 70 + Math.random() * 30; // High saturation
-            const l = 50 + Math.random() * 10; // Medium-High lightness
-            const color = `hsl(${h}, ${s}%, ${l}%)`;
-
-            // Convert to Hex for input (helper or temp div trick)
-            // Or just set directly if Three.js accepts hsl string (it does!)
-            // But we need hex for the input value. Let's do a simple hex gen for safety.
             const randomHex = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+            updateColorWithHistory(randomHex);
+        });
+    }
 
-            if (els.colorPreview) els.colorPreview.style.backgroundColor = randomHex;
-            if (els.visualColorPicker) els.visualColorPicker.value = randomHex;
+    if (els.prevColorBtn) {
+        els.prevColorBtn.addEventListener('click', () => {
+            if (previousColor) {
+                // Swap colors
+                const temp = currentColor;
+                currentColor = previousColor;
+                previousColor = temp;
 
-            const viz = getVisualizer();
-            if (viz) viz.setColor(randomHex);
+                if (els.colorPreview) els.colorPreview.style.backgroundColor = currentColor;
+                if (els.visualColorPicker) els.visualColorPicker.value = currentColor;
+
+                const viz = getVisualizer();
+                if (viz) viz.setColor(currentColor);
+            }
         });
     }
 
@@ -297,6 +564,11 @@ export function setupUI() {
         // Handled by auth-controller
     });
 
+    // Register Classical State Listener to sync Main Play Button
+    onClassicalStateChange((isPlaying) => {
+        updateUIState(isPlaying || state.isPlaying);
+    });
+
     // Listen for custom load event from auth-controller
     window.addEventListener('load-mix', (e) => {
         loadSettings({ settings: e.detail.settings });
@@ -316,17 +588,654 @@ export function setupUI() {
     const savedTheme = localStorage.getItem('mindwave_theme');
     if (savedTheme) setTheme(savedTheme);
 
+    // Check disclaimer acceptance from localStorage
+    state.disclaimerAccepted = localStorage.getItem('mindwave_disclaimer_accepted') === 'true';
+
+    // Initialize Timer & Disclaimer UI
+    setupTimerUI();
+    setupDisclaimerUI();
+    setupModeToggle(); // NEW
+    setupHyperGammaUI(); // NEW
+    setupSweepUI(); // NEW
+    setupStatsUI(); // NEW - Session Analytics
+    setupDJPads(); // NEW - DJ Sound Pads
+
+    // SYNC SLIDER VALUES - Ensure displays match slider positions on load
+    syncSliderDisplays();
+
+    // Volume Warning on Master Slider
+    if (els.masterVolSlider) {
+        els.masterVolSlider.addEventListener('change', () => {
+            if (isVolumeHigh()) {
+                showVolumeWarning();
+            }
+        });
+    }
+
     // Expose Global Window Functions
     window.setTheme = setTheme;
     window.setVisualMode = setVisualMode;
     window.applyPreset = applyPreset;
+    window.applyComboPreset = applyComboPreset;
     window.openProfile = openProfile;
+    window.startSweepPreset = startSweepPresetUI; // NEW
+    window.stopSweep = stopSweepUI; // NEW
+    window.handleHyperGammaClick = handleHyperGammaClick; // NEW
+
+    // NUCLEAR OPTION: Hijack beatSlider value setter to catch the 5.5Hz culprit
+    try {
+        const beatSlider = els.beatSlider;
+        if (beatSlider) {
+            const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+            Object.defineProperty(beatSlider, 'value', {
+                set: function (val) {
+                    // Check if we are trying to set 5.5Hz (or close) while protected
+                    // AND if we are not actively setting it ourselves via story (which sets 2.0, 3.0 etc)
+                    if (Math.abs(parseFloat(val) - 5.5) < 0.1) {
+                        if (storyState && (storyState.isPlaying || storyState.isTransitioning)) {
+                            console.warn('[Controls] BLOCKED 5.5Hz Setting Attempt! Source Blocked.');
+                            return; // BLOCK IT
+                        }
+                    }
+                    // Otherwise allow
+                    descriptor.set.call(this, val);
+                },
+                get: function () {
+                    return descriptor.get.call(this); // Pass through getter
+                }
+            });
+            console.log('[Controls] 5.5Hz Protection System Active');
+        }
+    } catch (e) {
+        console.error("Failed to install protection:", e);
+    }
 }
 
-export function updateUIState(playing) {
-    if (playing) {
+// --- PLAY BUTTON HANDLER ---
+async function handlePlayClick() {
+    // Check disclaimer first
+    if (!state.disclaimerAccepted) {
+        showDisclaimerModal();
+        return;
+    }
+
+    // RESUME CASE: If we are in the middle of stopping (fading out), cancel it and resume!
+    if (state.isStopping) {
+        console.log('[Controls] Fast Resume triggered!');
+        cancelFadeOut();
+        state.isStopping = false;
+        // Ensure UI reflects playing immediately
+        updateUIState(true);
+        return;
+    }
+
+    if (state.isPlaying || isClassicalPlaying()) {
+        // STOPPING
+        console.log('[Controls] Play Click -> Stopping...');
+
+        // 1. Mark as stopping so UI knows we are "paused" even if audio is fading
+        state.isStopping = true;
+
+        // 2. Force UI update immediately to show Play icon (Pause state)
+        updateUIState(false);
+
+        // 3. Perform the actual stop logic (with fade)
+        stopSession();
+        if (isClassicalPlaying()) stopClassical();
+        endSessionTracking(false);
+
+        fadeOut(1.5, () => {
+            stopAudio();
+            state.isStopping = false; // Reset flag when actually stopped
+        });
+
+        hideTimerUI();
+    } else {
+        // STARTING
+        try {
+            await startAudio();
+            fadeIn(1.5);
+
+            // Start analytics tracking
+            const beatFreq = parseFloat(els.beatSlider?.value || 10);
+            let presetName = 'Custom';
+            if (beatFreq < 4) presetName = 'Delta';
+            else if (beatFreq < 8) presetName = 'Theta';
+            else if (beatFreq < 14) presetName = 'Alpha';
+            else if (beatFreq < 30) presetName = 'Beta';
+            else if (beatFreq < 50) presetName = 'Gamma';
+            else presetName = 'Hyper-Gamma';
+            startSessionTracking(presetName);
+
+            const duration = parseInt(els.sessionDuration?.value || 0);
+            if (duration > 0) {
+                startSession(duration, {
+                    onTick: updateTimerUI,
+                    onComplete: handleSessionComplete
+                });
+                showTimerUI();
+            }
+        } catch (e) {
+            console.error("Start Audio Failed", e);
+        }
+    }
+}
+
+
+// --- TIMER UI FUNCTIONS ---
+function setupTimerUI() {
+    // Duration selector change handler
+    if (els.sessionDuration) {
+        els.sessionDuration.addEventListener('change', () => {
+            const duration = parseInt(els.sessionDuration.value);
+            if (duration === 0) {
+                hideTimerUI();
+            }
+        });
+    }
+}
+
+function showTimerUI() {
+    if (els.timerRing) els.timerRing.style.opacity = '1';
+    if (els.timerDisplay) els.timerDisplay.style.opacity = '1';
+    // Show session pause button
+    if (els.sessionPauseBtn) {
+        els.sessionPauseBtn.classList.remove('hidden');
+        els.sessionPauseBtn.textContent = 'Pause';
+    }
+}
+
+function hideTimerUI() {
+    if (els.timerRing) els.timerRing.style.opacity = '0';
+    if (els.timerDisplay) els.timerDisplay.style.opacity = '0';
+    // Reset progress ring
+    if (els.timerProgress) els.timerProgress.style.strokeDashoffset = '339.292';
+    // Hide session pause button
+    if (els.sessionPauseBtn) els.sessionPauseBtn.classList.add('hidden');
+}
+
+function updateTimerUI(data) {
+    // Update countdown text
+    if (els.timerDisplay) {
+        els.timerDisplay.textContent = data.formatted;
+    }
+
+    // Update progress ring (circumference = 2 * PI * 54 = 339.292)
+    if (els.timerProgress) {
+        const circumference = 339.292;
+        const offset = circumference - (data.progress / 100) * circumference;
+        els.timerProgress.style.strokeDashoffset = offset;
+    }
+}
+
+function handleSessionComplete() {
+    console.log('[Session] Complete - playing chime and fading out...');
+    // Mark session as completed in analytics
+    endSessionTracking(true);
+    // Play gentle completion chime
+    playCompletionChime();
+    fadeOut(3, () => {
+        stopAudio();
+        hideTimerUI();
+        showToast('Session complete! 🧘', 'success');
+    });
+}
+
+// --- DISCLAIMER MODAL ---
+function setupDisclaimerUI() {
+    if (els.disclaimerAccept) {
+        els.disclaimerAccept.addEventListener('change', () => {
+            if (els.disclaimerContinueBtn) {
+                els.disclaimerContinueBtn.disabled = !els.disclaimerAccept.checked;
+            }
+        });
+    }
+
+    if (els.disclaimerContinueBtn) {
+        els.disclaimerContinueBtn.addEventListener('click', () => {
+            state.disclaimerAccepted = true;
+            localStorage.setItem('mindwave_disclaimer_accepted', 'true');
+            hideDisclaimerModal();
+            // Auto-start after accepting
+            handlePlayClick();
+        });
+    }
+
+    // Back button - close the disclaimer without accepting
+    if (els.disclaimerBackBtn) {
+        els.disclaimerBackBtn.addEventListener('click', () => {
+            hideDisclaimerModal();
+        });
+    }
+}
+
+function showDisclaimerModal() {
+    if (els.disclaimerModal) {
+        els.disclaimerModal.classList.remove('hidden');
+        els.disclaimerModal.classList.add('active');
+    }
+}
+
+function hideDisclaimerModal() {
+    if (els.disclaimerModal) {
+        els.disclaimerModal.classList.remove('active');
+        els.disclaimerModal.classList.add('hidden');
+    }
+}
+
+// --- MODE TOGGLE SETUP ---
+const MODE_DESCRIPTIONS = {
+    binaural: 'Requires stereo headphones for brain entrainment',
+    isochronic: 'Pulsed tones - works with speakers or headphones',
+    monaural: 'Combined beat - works with speakers or headphones'
+};
+
+function setupModeToggle() {
+    if (!els.modeToggle) return;
+
+    const buttons = els.modeToggle.querySelectorAll('.mode-btn');
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const mode = btn.dataset.mode;
+            setAudioMode(mode);
+            updateModeUI(mode);
+        });
+    });
+}
+
+function updateModeUI(mode) {
+    if (!els.modeToggle) return;
+
+    const buttons = els.modeToggle.querySelectorAll('.mode-btn');
+    buttons.forEach(btn => {
+        if (btn.dataset.mode === mode) {
+            // Active style - theme-aware
+            btn.classList.add('toggle-active');
+            btn.classList.remove('toggle-inactive');
+        } else {
+            // Inactive style - theme-aware
+            btn.classList.remove('toggle-active');
+            btn.classList.add('toggle-inactive');
+        }
+    });
+
+    if (els.modeLabel) {
+        els.modeLabel.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+    }
+
+    if (els.modeDescription) {
+        els.modeDescription.textContent = MODE_DESCRIPTIONS[mode] || '';
+    }
+}
+
+// --- JOURNEY UI SETUP (formerly Sweep) ---
+function setupSweepUI() {
+    // Listen for journey completion
+    window.addEventListener('sweepComplete', () => {
+        activeSweepPreset = null;
+        updateSweepStatusUI(false, null);
+        showToast('✨ Journey complete!', 'success');
+    });
+}
+
+// --- STATS MODAL ---
+function setupStatsUI() {
+    if (els.statsBtn) {
+        els.statsBtn.addEventListener('click', openStatsModal);
+    }
+    if (els.closeStatsBtn) {
+        els.closeStatsBtn.addEventListener('click', closeStatsModal);
+    }
+    // Close on backdrop click
+    if (els.statsModal) {
+        els.statsModal.addEventListener('click', (e) => {
+            if (e.target === els.statsModal) closeStatsModal();
+        });
+    }
+}
+
+function openStatsModal() {
+    if (!els.statsModal) return;
+
+    // Get stats data
+    const stats = getStats();
+    const weeklyData = getWeeklyData();
+    const maxMinutes = Math.max(...weeklyData.map(d => d.minutes), 1);
+
+    // Find the card container inside the modal and replace its content
+    const modalContent = els.statsModal.querySelector('.glass-card');
+    if (modalContent) {
+        modalContent.innerHTML = `
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent)] to-purple-500 flex items-center justify-center">
+                        <span class="text-xl">📊</span>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Your Stats</h3>
+                        <p class="text-[10px] text-[var(--text-muted)]">Track your meditation journey</p>
+                    </div>
+                </div>
+                <button id="closeStatsBtn" class="p-2 rounded-full hover:bg-white/10 transition-colors" style="color: var(--text-muted);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Stats Grid - Revamped with proper icon placement -->
+            <div class="grid grid-cols-3 gap-3 mb-6">
+                <!-- Day Streak -->
+                <div class="rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/10 border border-orange-500/30 p-4 text-center">
+                    <div class="text-2xl mb-1">🔥</div>
+                    <div class="text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">${stats.currentStreak}</div>
+                    <div class="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mt-1">Day Streak</div>
+                </div>
+                <!-- Hours -->
+                <div class="rounded-xl bg-gradient-to-br from-[var(--accent)]/20 to-cyan-500/10 border border-[var(--accent)]/30 p-4 text-center">
+                    <div class="text-2xl mb-1">⏱️</div>
+                    <div class="text-3xl font-bold bg-gradient-to-r from-[var(--accent)] to-cyan-400 bg-clip-text text-transparent">${stats.totalHours}</div>
+                    <div class="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mt-1">Hours</div>
+                </div>
+                <!-- Sessions -->
+                <div class="rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/10 border border-purple-500/30 p-4 text-center">
+                    <div class="text-2xl mb-1">🧘</div>
+                    <div class="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">${stats.totalSessions}</div>
+                    <div class="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mt-1">Sessions</div>
+                </div>
+            </div>
+
+            <!-- Weekly Chart -->
+            <div class="rounded-xl bg-white/5 border border-white/10 p-4 mb-4">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-xs font-semibold text-white">This Week</span>
+                    <span class="text-[10px] text-[var(--accent)]">${stats.weeklyMinutes || 0} min total</span>
+                </div>
+                <div class="h-32 flex items-end gap-2 px-2">
+                    ${weeklyData.map((d, i) => {
+            // Calculate bar height in pixels (max 100px for chart area minus label space)
+            const maxBarHeight = 100;
+            const barHeight = d.minutes > 0
+                ? Math.max(Math.round((d.minutes / maxMinutes) * maxBarHeight), 8)
+                : 8;
+            const isToday = i === 6;
+            // Use inline styles for background to ensure visibility
+            const barBg = d.minutes > 0
+                ? (isToday
+                    ? 'background: linear-gradient(to top, #00d4ff, #06b6d4);'
+                    : 'background: linear-gradient(to top, #a855f7, #ec4899);')
+                : 'background: rgba(255,255,255,0.15);';
+            return `
+                                <div class="flex-1 flex flex-col items-center justify-end h-full">
+                                    <div class="w-full rounded-t-lg transition-all duration-500 ease-out hover:brightness-125 cursor-pointer relative group"
+                                         style="height: ${barHeight}px; ${barBg}">
+                                        <div class="absolute -top-6 left-1/2 -translate-x-1/2 px-2 py-1 rounded text-[9px] text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none"
+                                             style="background: rgba(0,0,0,0.9);">
+                                            ${d.minutes} min
+                                        </div>
+                                    </div>
+                                    <span class="text-[9px] mt-1 ${isToday ? 'text-cyan-400 font-bold' : 'text-gray-400'}">${d.label}</span>
+                                </div>
+                            `;
+        }).join('')}
+                </div>
+            </div>
+
+            <!-- Additional Stats -->
+            <div class="space-y-3">
+                <div class="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/5">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">⭐</span>
+                        <span class="text-xs text-[var(--text-muted)]">Favorite Preset</span>
+                    </div>
+                    <span class="text-sm font-bold text-[var(--accent)]">${stats.topPreset}</span>
+                </div>
+                <div class="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/5">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">⏰</span>
+                        <span class="text-xs text-[var(--text-muted)]">Avg. Session</span>
+                    </div>
+                    <span class="text-sm font-bold text-[var(--accent)]">${stats.avgMinutes} min</span>
+                </div>
+                <div class="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/5">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">🏆</span>
+                        <span class="text-xs text-[var(--text-muted)]">Longest Streak</span>
+                    </div>
+                    <span class="text-sm font-bold text-[var(--accent)]">${stats.longestStreak} days</span>
+                </div>
+            </div>
+
+            <!-- Animation styles -->
+            <style>
+                @keyframes barGrow {
+                    from { height: 0%; }
+                }
+            </style>
+        `;
+
+        // Re-attach close button listener
+        const closeBtn = modalContent.querySelector('#closeStatsBtn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeStatsModal);
+        }
+    }
+
+    // Show modal
+    els.statsModal.classList.add('active');
+}
+
+function closeStatsModal() {
+    if (els.statsModal) els.statsModal.classList.remove('active');
+}
+
+
+let activeSweepPreset = null; // Track which preset button is active
+
+function startSweepPresetUI(presetKey) {
+    // If clicking the same journey that's active, stop it (toggle off)
+    if (activeSweepPreset === presetKey) {
+        stopSweepUI();
+        return;
+    }
+
+    if (!state.isPlaying) {
+        showToast('▶️ Start audio first to use journeys', 'warning');
+        return;
+    }
+
+    // If another journey is active, stop it first
+    if (activeSweepPreset) {
+        stopSweep();
+    }
+
+    const success = startSweepPreset(presetKey);
+    if (success) {
+        activeSweepPreset = presetKey;
+        updateSweepStatusUI(true, presetKey);
+        const preset = SWEEP_PRESETS[presetKey];
+        if (preset) {
+            showToast(`${preset.icon} ${preset.name} started`, 'success');
+        }
+    }
+}
+
+function stopSweepUI() {
+    console.log('[UI] stopSweepUI called');
+    stopSweep();
+    console.log('[UI] stopSweep returned, beatSlider value now:', els.beatSlider?.value);
+    activeSweepPreset = null;
+    updateSweepStatusUI(false, null);
+    showToast('⏹ Journey stopped - Restored to original frequency', 'info');
+}
+
+
+
+function updateSweepStatusUI(active, activePresetKey = null) {
+    if (els.sweepStatus) {
+        els.sweepStatus.classList.toggle('hidden', !active);
+    }
+    if (els.stopSweepBtn) {
+        els.stopSweepBtn.classList.toggle('hidden', !active);
+    }
+
+    // Highlight the active journey button using data attribute
+    const journeyBtns = document.querySelectorAll('.sweep-btn[data-journey]');
+    journeyBtns.forEach(btn => {
+        const presetKey = btn.dataset.journey;
+        if (active && presetKey === activePresetKey) {
+            // Add active class for highlighting
+            btn.classList.add('journey-active');
+        } else {
+            btn.classList.remove('journey-active');
+        }
+    });
+}
+
+// --- HYPER-GAMMA UNLOCK ---
+function setupHyperGammaUI() {
+    // Check if already unlocked from localStorage
+    state.hyperGammaUnlocked = localStorage.getItem('mindwave_hypergamma_unlocked') === 'true';
+
+    // Update UI based on unlock state
+    if (state.hyperGammaUnlocked) {
+        updateHyperGammaUnlockedUI();
+    } else {
+        // Ensure lock icon is shown if not unlocked
+        if (els.hyperGammaLock) {
+            els.hyperGammaLock.textContent = '🔒';
+        }
+    }
+
+    // Checkbox enable/disable unlock button
+    if (els.hyperGammaAccept) {
+        els.hyperGammaAccept.addEventListener('change', () => {
+            if (els.hyperGammaUnlockBtn) {
+                els.hyperGammaUnlockBtn.disabled = !els.hyperGammaAccept.checked;
+            }
+        });
+    }
+
+    // Unlock button
+    if (els.hyperGammaUnlockBtn) {
+        els.hyperGammaUnlockBtn.addEventListener('click', () => {
+            state.hyperGammaUnlocked = true;
+            state.hyperGammaDisclaimerAccepted = true;
+            localStorage.setItem('mindwave_hypergamma_unlocked', 'true');
+            hideHyperGammaModal();
+            updateHyperGammaUnlockedUI();
+            showToast('⚡ Hyper-Gamma mode unlocked!', 'success');
+            // Apply the preset
+            applyPreset('hyper-gamma', els.hyperGammaBtn);
+        });
+    }
+
+    // Cancel button
+    if (els.hyperGammaCancelBtn) {
+        els.hyperGammaCancelBtn.addEventListener('click', () => {
+            hideHyperGammaModal();
+        });
+    }
+}
+
+function handleHyperGammaClick(btnElement) {
+    if (state.hyperGammaUnlocked) {
+        // Already unlocked, just apply preset
+        applyPreset('hyper-gamma', btnElement);
+    } else {
+        // Show unlock modal
+        showHyperGammaModal();
+    }
+}
+
+function showHyperGammaModal() {
+    if (els.hyperGammaModal) {
+        els.hyperGammaModal.classList.remove('hidden');
+        els.hyperGammaModal.classList.add('active');
+    }
+}
+
+function hideHyperGammaModal() {
+    if (els.hyperGammaModal) {
+        els.hyperGammaModal.classList.remove('active');
+        els.hyperGammaModal.classList.add('hidden');
+    }
+    // Reset checkbox
+    if (els.hyperGammaAccept) {
+        els.hyperGammaAccept.checked = false;
+    }
+    if (els.hyperGammaUnlockBtn) {
+        els.hyperGammaUnlockBtn.disabled = true;
+    }
+}
+
+function updateHyperGammaUnlockedUI() {
+    // Remove lock icon
+    if (els.hyperGammaLock) {
+        els.hyperGammaLock.textContent = '🔓';
+    }
+    // Update button styling
+    if (els.hyperGammaBtn) {
+        els.hyperGammaBtn.classList.remove('border-amber-500/30');
+        els.hyperGammaBtn.classList.add('border-amber-500/50');
+    }
+}
+
+// --- VOLUME WARNING ---
+function showVolumeWarning() {
+
+    showToast('⚠️ High volume! Recommended max: 85%', 'warning');
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg text-sm font-medium z-[200] transition-all duration-300 opacity-0 transform -translate-y-2`;
+
+    if (type === 'success') {
+        toast.style.backgroundColor = 'rgba(16, 185, 129, 0.95)';
+        toast.style.color = 'white';
+    } else if (type === 'warning') {
+        toast.style.backgroundColor = 'rgba(245, 158, 11, 0.95)';
+        toast.style.color = 'black';
+    } else {
+        toast.style.backgroundColor = 'rgba(59, 130, 246, 0.95)';
+        toast.style.color = 'white';
+    }
+
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Animate in
+    requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+    });
+
+    // Remove after 3s
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+export function updateUIState(isPlaying) {
+    // If ANY audio is playing (Binaural OR Classical), show Pause button
+    // BUT if we are in the process of stopping (fading out), show Play button (inactive state)
+    const active = (isPlaying || state.isPlaying || (typeof isClassicalPlaying === 'function' && isClassicalPlaying())) && !state.isStopping;
+
+    if (active) {
         els.playIcon.classList.add('hidden');
         els.pauseIcon.classList.remove('hidden');
+        els.playBtn.classList.add('playing');
+
+        // Pulse effect
+        els.playBtn.style.boxShadow = "0 0 30px var(--accent-glow)";
+
+        if (els.mobilePlayIcon) els.mobilePlayIcon.classList.add('hidden');
+        if (els.mobilePauseIcon) els.mobilePauseIcon.classList.remove('hidden');
+
         els.statusIndicator.classList.remove('bg-slate-600');
         els.statusIndicator.classList.add('bg-teal-400', 'animate-pulse');
         els.recordBtn.disabled = false;
@@ -334,14 +1243,31 @@ export function updateUIState(playing) {
     } else {
         els.playIcon.classList.remove('hidden');
         els.pauseIcon.classList.add('hidden');
+        els.playBtn.classList.remove('playing');
+
+        // Remove pulse
+        els.playBtn.style.boxShadow = "";
+
+        if (els.mobilePlayIcon) els.mobilePlayIcon.classList.remove('hidden');
+        if (els.mobilePauseIcon) els.mobilePauseIcon.classList.add('hidden');
+
         els.statusIndicator.classList.add('bg-slate-600');
         els.statusIndicator.classList.remove('bg-teal-400', 'animate-pulse');
         els.recordBtn.disabled = true;
-        els.recordBtn.disabled = true;
         clearTimeout(state.immersiveTimeout);
         if (els.appOverlay) els.appOverlay.classList.remove('immersive-hidden');
+
+        // Mobile play button state
+        if (els.mobilePlayIcon) els.mobilePlayIcon.classList.remove('hidden');
+        if (els.mobilePauseIcon) els.mobilePauseIcon.classList.add('hidden');
+        if (els.mobilePlayBtn) els.mobilePlayBtn.classList.remove('playing');
+
+        // Reset active preset type so next click starts fresh
+        state.activePresetType = null;
+        if (typeof updatePresetButtons === 'function') updatePresetButtons(null);
     }
 }
+
 
 export function resetImmersiveTimer() {
     if (els.appOverlay) els.appOverlay.classList.remove('immersive-hidden');
@@ -359,20 +1285,28 @@ export function setVisualMode(mode) {
     state.visualMode = mode;
     const viz = getVisualizer();
     if (viz) viz.setMode(mode);
-    if (els.sphereBtn && els.flowBtn) {
-        if (mode === 'sphere') {
-            els.sphereBtn.classList.add('active-mode', 'text-[var(--accent)]');
-            els.sphereBtn.classList.remove('text-[var(--text-muted)]');
-            els.flowBtn.classList.remove('active-mode', 'text-[var(--accent)]');
-            els.flowBtn.classList.add('text-[var(--text-muted)]');
+
+    // Update button states with theme-aware styling
+    const buttons = [
+        { el: els.sphereBtn, mode: 'sphere' },
+        { el: els.flowBtn, mode: 'particles' },
+        { el: els.lavaBtn, mode: 'lava' }
+    ];
+
+    buttons.forEach(({ el, mode: btnMode }) => {
+        if (!el) return;
+        if (mode === btnMode) {
+            // Active style - theme-aware
+            el.classList.add('toggle-active');
+            el.classList.remove('toggle-inactive');
         } else {
-            els.flowBtn.classList.add('active-mode', 'text-[var(--accent)]');
-            els.flowBtn.classList.remove('text-[var(--text-muted)]');
-            els.sphereBtn.classList.remove('active-mode', 'text-[var(--accent)]');
-            els.sphereBtn.classList.add('text-[var(--text-muted)]');
+            // Inactive style - theme-aware
+            el.classList.remove('toggle-active');
+            el.classList.add('toggle-inactive');
         }
-    }
+    });
 }
+
 
 export function setTheme(themeName) {
     const t = THEMES[themeName] || THEMES.default;
@@ -394,7 +1328,7 @@ export function initMixer() {
         const item = document.createElement('div');
         item.className = "p-2 rounded border border-[var(--border)] flex flex-col gap-1";
         item.style.backgroundColor = "rgba(0,0,0,0.2)";
-        item.innerHTML = `<label class="text-[10px] font-semibold truncate mb-1 block" style="color: var(--accent);" title="${s.label}">${s.label}</label>
+        item.innerHTML = `<label class="text-[10px] font-semibold truncate mb-1 block" style="color: var(--accent);" title="${s.label}">${s.label}${s.bpm ? ` <span class="text-[8px] text-[var(--text-muted)] font-normal">${s.bpm} BPM</span>` : ''}</label>
 <div class="flex items-center gap-2"><span class="text-[8px] w-6" style="color: var(--text-muted);">VOL</span><input type="range" min="0" max="0.5" step="0.01" value="${settings.vol}" class="flex-1 h-1" data-id="${s.id}" data-type="vol"><span class="text-[9px] font-mono w-8 text-right tabular-nums" style="color: var(--accent);" data-val="vol">${Math.round(settings.vol * 200)}%</span></div>
 <div class="flex items-center gap-2"><span class="text-[8px] w-6" style="color: var(--text-muted);">TONE</span><input type="range" min="0" max="1" step="0.01" value="${settings.tone}" class="flex-1 tone-slider h-1" data-id="${s.id}" data-type="tone"><span class="text-[9px] font-mono w-8 text-right tabular-nums" style="color: var(--accent);" data-val="tone">${Math.round(settings.tone * 100)}%</span></div>
 <div class="flex items-center gap-2"><span class="text-[8px] w-6" style="color: var(--text-muted);">SPD</span><input type="range" min="0" max="1" step="0.01" value="${settings.speed}" class="flex-1 speed-slider h-1" data-id="${s.id}" data-type="speed"><span class="text-[9px] font-mono w-8 text-right tabular-nums" style="color: var(--accent);" data-val="speed">${Math.round(settings.speed * 100)}%</span></div>`;
@@ -445,6 +1379,46 @@ function saveStateToLocal() {
     localStorage.setItem('mindwave_state_v2', JSON.stringify(s));
 }
 
+// Sync all slider value displays to match their actual positions
+function syncSliderDisplays() {
+    // Base/Pitch slider
+    if (els.baseSlider && els.baseValue) {
+        els.baseValue.textContent = `${els.baseSlider.value}Hz`;
+    }
+    // Beat slider
+    if (els.beatSlider && els.beatValue) {
+        els.beatValue.textContent = `${els.beatSlider.value}Hz`;
+    }
+    // Volume slider
+    if (els.volSlider && els.volValue) {
+        els.volValue.textContent = `${Math.round(els.volSlider.value * 100)}%`;
+    }
+    // Master volume slider
+    if (els.masterVolSlider && els.masterVolValue) {
+        els.masterVolValue.textContent = `${Math.round(els.masterVolSlider.value * 100)}%`;
+    }
+    // LR Balance slider
+    if (els.masterBalanceSlider && els.masterBalanceValue) {
+        const val = parseFloat(els.masterBalanceSlider.value);
+        if (Math.abs(val) < 0.05) {
+            els.masterBalanceValue.textContent = 'C';
+        } else if (val < 0) {
+            els.masterBalanceValue.textContent = `L ${Math.round(Math.abs(val) * 100)}%`;
+        } else {
+            els.masterBalanceValue.textContent = `R ${Math.round(val * 100)}%`;
+        }
+    }
+    // Atmos Master slider
+    if (els.atmosMasterSlider && els.atmosMasterValue) {
+        els.atmosMasterValue.textContent = `${Math.round(els.atmosMasterSlider.value * 100)}%`;
+    }
+    // Visual Speed slider
+    if (els.visualSpeedSlider && els.speedValue) {
+        els.speedValue.textContent = `${parseFloat(els.visualSpeedSlider.value).toFixed(1)}x`;
+    }
+    console.log('[Controls] Slider displays synchronized');
+}
+
 function restoreStateFromLocal() {
     try {
         const saved = localStorage.getItem('mindwave_state_v2');
@@ -452,7 +1426,7 @@ function restoreStateFromLocal() {
             const s = JSON.parse(saved);
             loadSettings({ settings: s });
         } else {
-            applyPreset('alpha');
+            applyPreset('alpha', null, false); // Don't auto-start during page load
         }
     } catch (e) { console.warn("Failed to restore state", e); }
 }
@@ -460,8 +1434,13 @@ function restoreStateFromLocal() {
 export function loadSettings(payload) {
     if (!payload || !payload.settings) return;
     const settings = payload.settings;
-    if (settings.base) els.baseSlider.value = settings.base;
-    if (settings.beat) els.beatSlider.value = settings.beat;
+    if (settings.base) {
+        // Block frequency overwrite if story is playing or transitioning
+        if (!storyState.isPlaying && !storyState.isTransitioning) els.baseSlider.value = settings.base;
+    }
+    if (settings.beat) {
+        if (!storyState.isPlaying && !storyState.isTransitioning) els.beatSlider.value = settings.beat;
+    }
     if (settings.beatsVol) els.volSlider.value = settings.beatsVol;
     if (settings.masterVol) els.masterVolSlider.value = settings.masterVol;
     if (settings.atmosMaster) els.atmosMasterSlider.value = settings.atmosMaster;
@@ -471,6 +1450,40 @@ export function loadSettings(payload) {
     updateBeatsVolume();
     updateMasterVolume();
     updateAtmosMaster();
+
+    // NEW: Restore enhanced settings
+    if (settings.audioMode) {
+        setAudioMode(settings.audioMode);
+        // Update mode toggle UI
+        const modeButtons = document.querySelectorAll('.mode-btn');
+        modeButtons.forEach(btn => {
+            if (btn.dataset.mode === settings.audioMode) {
+                btn.classList.add('bg-[var(--accent)]', 'text-[var(--bg-main)]');
+                btn.classList.remove('text-[var(--text-muted)]');
+            } else {
+                btn.classList.remove('bg-[var(--accent)]', 'text-[var(--bg-main)]');
+                btn.classList.add('text-[var(--text-muted)]');
+            }
+        });
+        if (els.modeLabel) {
+            els.modeLabel.textContent = settings.audioMode.charAt(0).toUpperCase() + settings.audioMode.slice(1);
+        }
+    }
+
+    if (settings.visualColor) {
+        if (els.visualColorPicker) els.visualColorPicker.value = settings.visualColor;
+        if (els.colorPreview) els.colorPreview.style.backgroundColor = settings.visualColor;
+        const viz = getVisualizer();
+        if (viz) viz.setColor(settings.visualColor);
+    }
+
+    if (settings.visualMode) {
+        setVisualMode(settings.visualMode);
+    }
+
+    if (settings.theme) {
+        setTheme(settings.theme);
+    }
 
     if (settings.soundscapes) {
         state.soundscapeSettings = settings.soundscapes;
@@ -500,6 +1513,8 @@ export function loadSettings(payload) {
             }
         });
     }
+
+    showToast('✨ Preset loaded!', 'success');
 }
 
 
@@ -514,9 +1529,29 @@ export function openProfile() {
     if (els.profileAvatarBig) els.profileAvatarBig.textContent = (user.displayName || "A")[0].toUpperCase();
 }
 
-// --- Library Logic ---
+// --- Auth Logic (Profile Button) ---
+if (els.profileBtn) {
+    els.profileBtn.addEventListener('click', () => {
+        // Check if already logged in? maybe show different menu?
+        // For now, open Auth Modal which handles state (or could show profile details)
+        // If logged in, maybe show logout option?
+        // auth-controller.js usually handles the view logic.
+        // We'll just open it for now.
+        openAuthModal();
+    });
+}
 
+// --- Journey Logic (Phase 2B) ---
 
+// Helper to categorize presets by brainwave type
+function detectCategory(beatFreq) {
+    if (beatFreq < 4) return 'sleep';
+    if (beatFreq < 8) return 'meditation';
+    if (beatFreq < 14) return 'relaxation';
+    if (beatFreq < 30) return 'focus';
+    if (beatFreq < 50) return 'awareness';
+    return 'peak-performance';
+}
 
 function savePreset() {
     if (!state.currentUser) {
@@ -546,8 +1581,16 @@ async function confirmSave() {
             beatsVol: els.volSlider.value,
             masterVol: els.masterVolSlider.value,
             atmosMaster: els.atmosMasterSlider.value,
-            soundscapes: { ...state.soundscapeSettings }
-        }
+            soundscapes: { ...state.soundscapeSettings },
+            // NEW: Enhanced settings
+            audioMode: state.audioMode || 'binaural',
+            visualColor: els.visualColorPicker?.value || '#2dd4bf',
+            visualMode: state.visualMode || 'particles',
+            theme: localStorage.getItem('mindwave_theme') || 'default'
+        },
+        // NEW: Sharing flag (for Phase 4)
+        isPublic: false,
+        category: detectCategory(parseFloat(els.beatSlider.value))
     };
 
     try {
@@ -569,12 +1612,30 @@ async function confirmSave() {
 }
 // Remove old setupLibraryListener and renderLibrary as they are handled by auth-controller now.
 
-export async function applyPreset(type, btnElement) {
-    console.log("[Controls] applyPreset called:", type);
+export async function applyPreset(type, btnElement, autoStart = true) {
+    // BLOCKER: If a story is playing, do NOT apply presets that would override story frequency
+    if (storyState && (storyState.isPlaying || storyState.isTransitioning)) {
+        console.log('[Controls] Blocked applyPreset because Story is Playing/Transitioning');
+        return;
+    }
 
-    // 0. Auto-Play FIRST (Critical for UX)
+    console.log("[Controls] applyPreset called:", type, "autoStart:", autoStart);
+
+    // 0. Toggle Logic (Stop if clicking same active preset)
+    if (state.isPlaying && state.activePresetType === type) {
+        console.log('[Controls] Toggle: Stopping active preset', type);
+        handlePlayClick(); // This toggles play/pause
+        state.activePresetType = null;
+        updatePresetButtons(null);
+        return;
+    }
+
+    state.activePresetType = type;
+
+    // 1. Auto-Play FIRST (Critical for UX) - Only if triggered by user gesture
     // We try to start audio immediately on the click event
-    if (!state.isPlaying) {
+    // Skip auto-start if called during page load (autoStart = false)
+    if (autoStart && !state.isPlaying) {
         console.log("[Controls] Auto-starting audio...");
         try {
             await startAudio();
@@ -606,11 +1667,13 @@ export async function applyPreset(type, btnElement) {
     switch (type) {
         case 'delta': base = 100; beat = 2.5; color = '#6366f1'; break;
         case 'theta': base = 144; beat = 5.5; color = '#a855f7'; break;
-        case 'alpha': base = 200; beat = 10; color = '#2dd4bf'; break;
-        case 'beta': base = 250; beat = 20; color = '#f59e0b'; break;
-        case 'gamma': base = 320; beat = 40; color = '#f43f5e'; break;
+        case 'alpha': base = 120; beat = 10; color = '#60a5fa'; break;
+        case 'beta': base = 200; beat = 20; color = '#facc15'; break;
+        case 'gamma': base = 200; beat = 40; color = '#f472b6'; break;
+        // case 'hyper-gamma': base = 300; beat = 100; color = '#ffffff'; break; // REMOVED: Duplicate causing glitch
 
-        // Healing Frequencies (Solfeggio)
+        // Solfeggio Healing Frequencies
+        // We combine Solfeggio Base with Theta Beat for deep healing state
         // using Theta (5.5Hz) beat for relaxation, except 963Hz (Gamma/40Hz)
         case 'heal-174': base = 174; beat = 5.5; color = '#2dd4bf'; break; // Teal
         case 'heal-285': base = 285; beat = 5.5; color = '#2dd4bf'; break; // Teal
@@ -622,8 +1685,17 @@ export async function applyPreset(type, btnElement) {
         case 'heal-741': base = 741; beat = 5.5; color = '#6366f1'; break; // Indigo
         case 'heal-852': base = 852; beat = 5.5; color = '#8b5cf6'; break; // Violet
         case 'heal-963': base = 963; beat = 40; color = '#d946ef'; break; // Fuchsia (Hyper-Gamma)
-        case 'hyper-gamma': base = 640; beat = 80; color = '#e879f9'; break; // Higher octave than gamma (2x)
+
+        // Mu Waves (Motor Cortex / Body Awareness) - 8-13Hz range
+        // Using significantly different base frequency (150Hz vs Alpha's 200Hz) for audible distinction
+        // Beat at 9Hz (lower end of Mu range) for a more grounding/body-focused feel
+        case 'mu': base = 150; beat = 9; color = '#10b981'; break; // Emerald
+
+
+        // Hyper-Gamma (40-100Hz) - Extended range
+        case 'hyper-gamma': base = 640; beat = 80; color = '#f59e0b'; break; // Amber - higher octave
     }
+
 
     if (els.baseSlider) { els.baseSlider.value = base; if (els.baseValue) els.baseValue.textContent = base + ' Hz'; }
     if (els.beatSlider) { els.beatSlider.value = beat; if (els.beatValue) els.beatValue.textContent = beat + ' Hz'; }
@@ -642,6 +1714,85 @@ export async function applyPreset(type, btnElement) {
     if (els.colorPreview) els.colorPreview.style.backgroundColor = color;
 
     // 5. Save
+    saveStateToLocal();
+}
+
+// --- COMBO PRESET LOGIC (Ambient Presets) ---
+// Combines binaural frequency presets with atmospheric soundscapes
+export async function applyComboPreset(comboId, btnElement) {
+    const combo = PRESET_COMBOS.find(c => c.id === comboId);
+    if (!combo) {
+        console.warn('[Controls] Unknown combo preset:', comboId);
+        return;
+    }
+
+    console.log('[Controls] Applying combo preset:', comboId, combo);
+
+    // 1. Apply the base preset (alpha, theta, beta, delta, gamma)
+    await applyPreset(combo.preset, null, true);
+
+    // 2. Reset all soundscape volumes to 0 first
+    const soundscapeContainer = document.getElementById('soundscapeContainer');
+    if (soundscapeContainer) {
+        const allVolInputs = soundscapeContainer.querySelectorAll('input[data-type="vol"]');
+        allVolInputs.forEach(input => {
+            input.value = 0;
+            const soundscapeId = input.getAttribute('data-id');
+            updateSoundscape(soundscapeId, 'vol', 0);
+            // Update display
+            const valSpan = input.closest('div').querySelector('[data-val="vol"]');
+            if (valSpan) valSpan.textContent = '0%';
+        });
+    }
+
+    // 3. Activate the specified soundscapes with default volume (0.25)
+    if (soundscapeContainer && combo.soundscapes) {
+        combo.soundscapes.forEach(soundscapeId => {
+            const volInput = soundscapeContainer.querySelector(`input[data-id="${soundscapeId}"][data-type="vol"]`);
+            if (volInput) {
+                const vol = 0.25; // 50% when displayed (0.25 * 200)
+                volInput.value = vol;
+                updateSoundscape(soundscapeId, 'vol', vol);
+                // Update display
+                const valSpan = volInput.closest('div').querySelector('[data-val="vol"]');
+                if (valSpan) valSpan.textContent = Math.round(vol * 200) + '%';
+            }
+        });
+    }
+
+    // 4. Set atmosphere master volume
+    if (combo.atmosVolume !== undefined && els.atmosMasterSlider) {
+        els.atmosMasterSlider.value = combo.atmosVolume;
+        updateAtmosMaster();
+        if (els.atmosMasterValue) {
+            els.atmosMasterValue.textContent = Math.round(combo.atmosVolume * 100) + '%';
+        }
+    }
+
+    // 5. Update visualizer color
+    if (combo.color) {
+        const viz = getVisualizer();
+        if (viz) viz.setColor(combo.color);
+        if (els.visualColorPicker) els.visualColorPicker.value = combo.color;
+        if (els.colorPreview) els.colorPreview.style.backgroundColor = combo.color;
+    }
+
+    // 6. Update UI buttons (highlight selected combo)
+    if (els.presetButtons) {
+        els.presetButtons.forEach(b => {
+            b.classList.remove('bg-white/10', 'border-white/20');
+            b.classList.add('bg-white/5', 'border-white/10');
+        });
+    }
+    if (btnElement) {
+        btnElement.classList.remove('bg-white/5', 'border-white/10');
+        btnElement.classList.add('bg-white/10', 'border-white/20');
+    }
+
+    // 7. Show toast
+    showToast(`🎧 ${combo.label}: ${combo.description}`, 'success');
+
+    // 8. Save state
     saveStateToLocal();
 }
 
@@ -756,4 +1907,337 @@ export function closeThemeModal() {
             setTimeout(() => modal.classList.add('hidden'), 300);
         }, 300);
     }
+}
+export function updatePresetButtons(activeType) {
+    if (!els.presetButtons) return;
+
+    els.presetButtons.forEach(b => {
+        b.classList.remove('bg-white/10', 'border-white/20');
+        b.classList.add('bg-white/5', 'border-white/10');
+
+        // Check if this button matches the active type
+        // Note: onclick string matching is fragile, but consistent with existing app structure
+        if (activeType && b.getAttribute('onclick') && b.getAttribute('onclick').includes(`'${activeType}'`)) {
+            b.classList.remove('bg-white/5', 'border-white/10');
+            b.classList.add('bg-white/10', 'border-white/20');
+        }
+    });
+}
+
+// =============================================================================
+// DJ PADS CONTROLLER
+// =============================================================================
+
+let djCurrentCategory = 'fx';
+let djMode = 'oneshot'; // 'oneshot' or 'loop'
+
+function setupDJPads() {
+    const grid = document.getElementById('djPadsGrid');
+    const categoryTabs = document.getElementById('djCategoryTabs');
+    const masterVolume = document.getElementById('djMasterVolume');
+    const masterValue = document.getElementById('djMasterValue');
+    const modeOneShot = document.getElementById('djModeOneShot');
+    const modeLoop = document.getElementById('djModeLoop');
+    const stopAllBtn = document.getElementById('djStopAll');
+
+    if (!grid) {
+        console.log('[DJ Pads] UI elements not found, skipping setup');
+        return;
+    }
+
+    console.log('[DJ Pads] Initializing...');
+
+    // Render initial category and highlight FX tab
+    renderDJPads('fx');
+    updateCategoryTabs(); // Ensure FX tab is highlighted on load
+
+    // Category Tab Clicks
+    if (categoryTabs) {
+        categoryTabs.querySelectorAll('.dj-cat-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const category = tab.dataset.category;
+                if (category && category !== djCurrentCategory) {
+                    djCurrentCategory = category;
+                    updateCategoryTabs();
+                    renderDJPads(category);
+                }
+            });
+        });
+    }
+
+    // Mode Toggle
+    if (modeOneShot) {
+        modeOneShot.addEventListener('click', () => {
+            if (djMode !== 'oneshot') {
+                djMode = 'oneshot';
+                updateModeButtons();
+            }
+        });
+    }
+
+    if (modeLoop) {
+        modeLoop.addEventListener('click', () => {
+            if (djMode !== 'loop') {
+                djMode = 'loop';
+                updateModeButtons();
+            }
+        });
+    }
+
+    // Master Volume
+    if (masterVolume) {
+        masterVolume.addEventListener('input', () => {
+            const vol = parseFloat(masterVolume.value);
+            if (masterValue) masterValue.textContent = Math.round(vol * 100) + '%';
+            setDJVolume(vol);
+        });
+    }
+
+    // Stop All
+    if (stopAllBtn) {
+        stopAllBtn.addEventListener('click', () => {
+            console.log('[DJ Pads] Stop All clicked');
+            stopAllLoops();
+            updateAllPadStates();
+            showToast('All DJ sounds stopped', 'info');
+        });
+    } else {
+        console.warn('[DJ Pads] Stop All button not found');
+    }
+
+    // Pitch Slider
+    const pitchSlider = document.getElementById('djSoundPitch');
+    const pitchValue = document.getElementById('djSoundPitchVal');
+    if (pitchSlider) {
+        pitchSlider.addEventListener('input', () => {
+            const val = parseInt(pitchSlider.value);
+            setDJPitch(val);
+            pitchValue.textContent = val > 0 ? `+${val}` : val;
+        });
+    }
+
+    // Tone Slider
+    const toneSlider = document.getElementById('djSoundTone');
+    const toneValue = document.getElementById('djSoundToneVal');
+    if (toneSlider) {
+        toneSlider.addEventListener('input', () => {
+            const val = parseInt(toneSlider.value);
+            setDJTone(val);
+            // Format value display (e.g., 4000 -> "4k")
+            if (val >= 1000) {
+                toneValue.textContent = (val / 1000).toFixed(val % 1000 === 0 ? 0 : 1) + 'k';
+            } else {
+                toneValue.textContent = val;
+            }
+        });
+    }
+
+    // Speed Slider
+    const speedSlider = document.getElementById('djSoundSpeed');
+    const speedValue = document.getElementById('djSoundSpeedVal');
+    if (speedSlider) {
+        speedSlider.addEventListener('input', () => {
+            const val = parseFloat(speedSlider.value);
+            setDJSpeed(val);
+            speedValue.textContent = val.toFixed(1) + 'x';
+        });
+    }
+
+    console.log('[DJ Pads] Setup complete');
+}
+
+function updateCategoryTabs() {
+    const tabs = document.querySelectorAll('.dj-cat-tab');
+    tabs.forEach(tab => {
+        const cat = tab.dataset.category;
+        const catData = DJ_SOUNDS[cat];
+
+        if (cat === djCurrentCategory) {
+            // Active state with category color
+            const colorClass = catData?.color || 'from-purple-500 to-violet-600';
+            tab.className = `dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide whitespace-nowrap`;
+
+            // Apply category-specific colors
+            if (cat === 'fx') {
+                tab.classList.add('bg-purple-500/20', 'text-purple-400', 'border', 'border-purple-500/30');
+            } else if (cat === 'sampler') {
+                tab.classList.add('bg-pink-500/20', 'text-pink-400', 'border', 'border-pink-500/30');
+            } else if (cat === 'atmosphere') {
+                tab.classList.add('bg-cyan-500/20', 'text-cyan-400', 'border', 'border-cyan-500/30');
+            } else if (cat === 'rhythm') {
+                tab.classList.add('bg-orange-500/20', 'text-orange-400', 'border', 'border-orange-500/30');
+            } else if (cat === 'transition') {
+                tab.classList.add('bg-emerald-500/20', 'text-emerald-400', 'border', 'border-emerald-500/30');
+            }
+        } else {
+            // Inactive state
+            tab.className = 'dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-white/5 text-[var(--text-muted)] border border-white/10 whitespace-nowrap hover:bg-white/10';
+        }
+    });
+}
+
+function updateModeButtons() {
+    const modeOneShot = document.getElementById('djModeOneShot');
+    const modeLoop = document.getElementById('djModeLoop');
+
+    if (modeOneShot) {
+        if (djMode === 'oneshot') {
+            modeOneShot.className = 'dj-mode-btn px-2 py-1 rounded text-[9px] font-bold bg-pink-500/20 text-pink-400 border border-pink-500/30';
+        } else {
+            modeOneShot.className = 'dj-mode-btn px-2 py-1 rounded text-[9px] font-bold bg-white/5 text-[var(--text-muted)] border border-white/10 hover:bg-white/10';
+        }
+    }
+
+    if (modeLoop) {
+        if (djMode === 'loop') {
+            modeLoop.className = 'dj-mode-btn px-2 py-1 rounded text-[9px] font-bold bg-pink-500/20 text-pink-400 border border-pink-500/30';
+        } else {
+            modeLoop.className = 'dj-mode-btn px-2 py-1 rounded text-[9px] font-bold bg-white/5 text-[var(--text-muted)] border border-white/10 hover:bg-white/10';
+        }
+    }
+}
+
+function renderDJPads(category) {
+    const grid = document.getElementById('djPadsGrid');
+    if (!grid) return;
+
+    const catData = DJ_SOUNDS[category];
+    if (!catData) {
+        console.warn('[DJ Pads] Unknown category:', category);
+        return;
+    }
+
+    // Get gradient colors based on category
+    let gradientFrom = 'from-purple-500';
+    let gradientTo = 'to-violet-600';
+    let borderColor = 'border-purple-500/30';
+    let textColor = 'text-purple-400';
+    let glowColor = 'shadow-purple-500/30';
+
+    if (category === 'fx') {
+        gradientFrom = 'from-purple-500'; gradientTo = 'to-violet-600';
+        borderColor = 'border-purple-500/30'; textColor = 'text-purple-400'; glowColor = 'shadow-purple-500/30';
+    } else if (category === 'sampler') {
+        gradientFrom = 'from-pink-500'; gradientTo = 'to-rose-600';
+        borderColor = 'border-pink-500/30'; textColor = 'text-pink-400'; glowColor = 'shadow-pink-500/30';
+    } else if (category === 'atmosphere') {
+        gradientFrom = 'from-cyan-500'; gradientTo = 'to-teal-600';
+        borderColor = 'border-cyan-500/30'; textColor = 'text-cyan-400'; glowColor = 'shadow-cyan-500/30';
+    } else if (category === 'rhythm') {
+        gradientFrom = 'from-orange-500'; gradientTo = 'to-amber-600';
+        borderColor = 'border-orange-500/30'; textColor = 'text-orange-400'; glowColor = 'shadow-orange-500/30';
+    } else if (category === 'transition') {
+        gradientFrom = 'from-emerald-500'; gradientTo = 'to-green-600';
+        borderColor = 'border-emerald-500/30'; textColor = 'text-emerald-400'; glowColor = 'shadow-emerald-500/30';
+    }
+
+    grid.innerHTML = '';
+
+    Object.entries(catData.sounds).forEach(([id, sound]) => {
+        const isActive = isLoopActive(id);
+        const canLoop = sound.canLoop;
+
+        const pad = document.createElement('button');
+        pad.className = `dj-pad group relative flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-150 active:scale-95
+            ${isActive
+                ? `bg-gradient-to-br ${gradientFrom}/30 ${gradientTo}/20 ${borderColor} shadow-lg ${glowColor}`
+                : `bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20`}`;
+        pad.dataset.soundId = id;
+        pad.dataset.canLoop = canLoop;
+
+        // CRITICAL: Set explicit white text color on the button itself to override inherited black
+        pad.style.color = '#ffffff';
+
+        // Add loop indicator if looping
+        const loopIndicator = isActive ? `<div class="absolute top-1 right-1 w-2 h-2 rounded-full bg-gradient-to-r ${gradientFrom} ${gradientTo} animate-pulse"></div>` : '';
+
+        // Color values for active vs inactive states
+        const activeColor = isActive ? `color: var(--accent, #00d4ff);` : '';
+
+        pad.innerHTML = `
+            ${loopIndicator}
+            <span style="font-size: 1.5rem; margin-bottom: 0.25rem; color: white; text-shadow: 0 0 8px rgba(255,255,255,0.5);">${sound.icon}</span>
+            <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.95); ${activeColor}">${sound.label}</span>
+            ${canLoop ? `<span style="font-size: 8px; color: rgba(255,255,255,0.6); margin-top: 2px;">● LOOP</span>` : ''}
+        `;
+
+        // Click handler
+        pad.addEventListener('click', () => handlePadClick(id, canLoop, category));
+
+        // Touch feedback
+        pad.addEventListener('touchstart', () => {
+            pad.classList.add('scale-95');
+        }, { passive: true });
+        pad.addEventListener('touchend', () => {
+            pad.classList.remove('scale-95');
+        }, { passive: true });
+
+        grid.appendChild(pad);
+    });
+}
+
+async function handlePadClick(soundId, canLoop, category) {
+    // Initialize audio context if not already
+    if (!state.audioCtx || state.audioCtx.state === 'closed') {
+        console.log('[DJ Pads] No audio context, initializing...');
+        try {
+            // Import and call initAudio to create the audio context
+            const { initAudio } = await import('../audio/engine.js');
+            initAudio();
+
+            // Give it a moment to initialize
+            await new Promise(r => setTimeout(r, 100));
+
+            if (!state.audioCtx) {
+                console.error('[DJ Pads] Failed to create audio context');
+                showToast('Could not start audio. Please try again.', 'error');
+                return;
+            }
+        } catch (e) {
+            console.error('[DJ Pads] Audio init error:', e);
+            showToast('Audio initialization failed', 'error');
+            return;
+        }
+    }
+
+    // Resume audio context if suspended (browser autoplay policy)
+    if (state.audioCtx.state === 'suspended') {
+        try {
+            await state.audioCtx.resume();
+            console.log('[DJ Pads] Audio context resumed');
+        } catch (e) {
+            console.warn('[DJ Pads] Could not resume audio context:', e);
+        }
+    }
+
+    // Initialize DJ audio system
+    initDJAudio();
+
+    if (djMode === 'loop' && canLoop) {
+        // Toggle loop
+        if (isLoopActive(soundId)) {
+            stopLoop(soundId);
+        } else {
+            startLoop(soundId);
+        }
+        // Re-render to update pad state
+        setTimeout(() => renderDJPads(category), 50);
+    } else {
+        // One-shot
+        triggerOneShot(soundId);
+
+        // Visual feedback for one-shot
+        const pad = document.querySelector(`[data-sound-id="${soundId}"]`);
+        if (pad) {
+            pad.classList.add('ring-2', 'ring-white/50');
+            setTimeout(() => {
+                pad.classList.remove('ring-2', 'ring-white/50');
+            }, 150);
+        }
+    }
+}
+
+function updateAllPadStates() {
+    // Re-render current category to update all pad states
+    renderDJPads(djCurrentCategory);
 }

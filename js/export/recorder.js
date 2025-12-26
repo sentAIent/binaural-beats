@@ -5,46 +5,62 @@ let exportWorker = null;
 let exportCancelled = false;
 let exportStartTime = 0;
 
+// --- EXPORT QUEUE ---
+const exportQueue = [];
+let isProcessingQueue = false;
+let currentQueueIndex = 0;
+
 export function initExportWorker() {
     if (!exportWorker) {
-        exportWorker = new Worker('js/export/export-worker.js');
+        try {
+            console.log('[Export] Initializing worker...');
+            // Use absolute path from page root
+            const workerUrl = new URL('/js/export/export-worker.js', window.location.origin).href;
+            console.log('[Export] Worker URL:', workerUrl);
+            exportWorker = new Worker(workerUrl);
+            console.log('[Export] Worker created successfully');
 
-        exportWorker.onmessage = function (e) {
-            const { type, step, detail, percent, buffer, mimeType, ext, duration, processingTime, message } = e.data;
+            exportWorker.onmessage = function (e) {
+                console.log('[Export] Worker message received:', e.data?.type);
+                const { type, step, detail, percent, buffer, mimeType, ext, duration, processingTime, message } = e.data;
 
-            if (exportCancelled) return;
+                if (exportCancelled) return;
 
-            if (type === 'progress') {
-                updateExportProgress(step, detail, percent);
-            } else if (type === 'complete') {
-                console.log('[Export] Worker complete:', {
-                    bufferType: buffer?.constructor?.name,
-                    bufferSize: buffer?.byteLength,
-                    mimeType, ext, duration, processingTime
-                });
+                if (type === 'progress') {
+                    updateExportProgress(step, detail, percent);
+                } else if (type === 'complete') {
+                    console.log('[Export] Worker complete:', {
+                        bufferType: buffer?.constructor?.name,
+                        bufferSize: buffer?.byteLength,
+                        mimeType, ext, duration, processingTime
+                    });
 
-                if (!buffer || buffer.byteLength === 0) {
-                    console.error('[Export] ERROR: Buffer is empty or undefined!');
-                    alert('Export error: Audio buffer is empty');
+                    if (!buffer || buffer.byteLength === 0) {
+                        console.error('[Export] ERROR: Buffer is empty or undefined!');
+                        alert('Export error: Audio buffer is empty');
+                        hideExportProgress();
+                        return;
+                    }
+
+                    const blob = new Blob([buffer], { type: mimeType || 'audio/wav' });
+                    console.log('[Export] Created blob:', { size: blob.size, type: blob.type });
+                    finishExport(blob, ext, duration, processingTime);
+                } else if (type === 'error') {
+                    console.error('[Export] Worker error:', message);
+                    alert('Export error: ' + message);
                     hideExportProgress();
-                    return;
                 }
+            };
 
-                const blob = new Blob([buffer], { type: mimeType || 'audio/wav' });
-                console.log('[Export] Created blob:', { size: blob.size, type: blob.type });
-                finishExport(blob, ext, duration, processingTime);
-            } else if (type === 'error') {
-                console.error('[Export] Worker error:', message);
-                alert('Export error: ' + message);
+            exportWorker.onerror = function (e) {
+                console.error('[Export] Worker error event:', e);
+                alert('Export failed: ' + (e.message || 'Unknown worker error'));
                 hideExportProgress();
-            }
-        };
-
-        exportWorker.onerror = function (e) {
-            console.error('Worker error:', e);
-            alert('Export failed: ' + e.message);
-            hideExportProgress();
-        };
+            };
+        } catch (err) {
+            console.error('[Export] Failed to create worker:', err);
+            alert('Export not available: ' + err.message);
+        }
     }
 }
 
@@ -298,6 +314,7 @@ function createWavFromRaw(chunks, sampleRate) {
 }
 
 export function downloadFile(blob, name, ext) {
+    console.log('[Download] Starting download:', { name, ext, blobSize: blob?.size });
     if (!blob || blob.size === 0) {
         console.error('[Download] ERROR: Blob is empty or undefined!');
         alert('Error: Audio file is empty. Please try recording again.');
@@ -305,19 +322,25 @@ export function downloadFile(blob, name, ext) {
     }
     const filename = `${name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${ext}`;
     const url = URL.createObjectURL(blob);
+    console.log('[Download] Created URL:', url, 'Filename:', filename);
+
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
     a.style.cssText = 'position:fixed;left:0;top:0;opacity:0;pointer-events:none;';
     document.body.appendChild(a);
 
-    requestAnimationFrame(() => {
-        a.click();
-        setTimeout(() => {
-            if (document.body.contains(a)) document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 60000);
-    });
+    // Trigger click immediately without requestAnimationFrame
+    console.log('[Download] Triggering click...');
+    a.click();
+    console.log('[Download] Click triggered, file should be downloading');
+
+    // Cleanup after reasonable time
+    setTimeout(() => {
+        if (document.body.contains(a)) document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        console.log('[Download] Cleaned up');
+    }, 10000);
 }
 
 export function startExport() {
@@ -361,10 +384,25 @@ export function startExport() {
         return;
     }
 
+    // Convert Float32Arrays to regular arrays for reliable worker transfer
+    console.log('[Export] Preparing chunks for worker:', {
+        chunksCount: chunksSource.length,
+        firstChunkLength: chunksSource[0]?.[0]?.length,
+        sampleRate: state.audioCtx.sampleRate
+    });
+
+    // Serialize chunks as plain arrays for worker transfer
+    const serializedChunks = chunksSource.map(chunk => [
+        Array.from(chunk[0]),
+        Array.from(chunk[1])
+    ]);
+
+    console.log('[Export] Sending to worker with', serializedChunks.length, 'chunks');
+
     // Trigger Worker
     exportWorker.postMessage({
         type: 'export',
-        chunks: chunksSource,
+        chunks: serializedChunks,
         format: format,
         loopCount: count,
         sampleRate: state.audioCtx.sampleRate
@@ -460,4 +498,117 @@ export function getBlobDuration(blob) {
         audio.onloadedmetadata = () => { resolve(audio.duration); };
         audio.onerror = () => resolve(0);
     });
+}
+
+// --- EXPORT QUEUE FUNCTIONS ---
+
+// Add an export job to the queue
+export function addToExportQueue(config) {
+    const job = {
+        id: `export_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: config.name || 'Export',
+        format: config.format || 'wav-16',
+        loopCount: config.loopCount || 1,
+        chunks: config.chunks,
+        sampleRate: config.sampleRate || 44100,
+        status: 'pending'
+    };
+    exportQueue.push(job);
+    console.log(`[ExportQueue] Added job ${job.id}:`, job.name);
+    return job.id;
+}
+
+// Get current queue status
+export function getExportQueueStatus() {
+    return {
+        total: exportQueue.length,
+        completed: exportQueue.filter(j => j.status === 'completed').length,
+        pending: exportQueue.filter(j => j.status === 'pending').length,
+        processing: isProcessingQueue,
+        currentIndex: currentQueueIndex
+    };
+}
+
+// Process all jobs in queue
+export function processExportQueue(onProgress, onComplete) {
+    if (isProcessingQueue) {
+        console.warn('[ExportQueue] Already processing');
+        return;
+    }
+    if (exportQueue.length === 0) {
+        console.log('[ExportQueue] Queue is empty');
+        if (onComplete) onComplete();
+        return;
+    }
+
+    isProcessingQueue = true;
+    currentQueueIndex = 0;
+
+    initExportWorker();
+
+    function processNext() {
+        if (currentQueueIndex >= exportQueue.length) {
+            isProcessingQueue = false;
+            console.log('[ExportQueue] All jobs completed');
+            if (onComplete) onComplete();
+            exportQueue.length = 0; // Clear queue
+            return;
+        }
+
+        const job = exportQueue[currentQueueIndex];
+        job.status = 'processing';
+
+        if (onProgress) {
+            onProgress({
+                current: currentQueueIndex + 1,
+                total: exportQueue.length,
+                name: job.name
+            });
+        }
+
+        // Create a one-time message handler for this job
+        const originalHandler = exportWorker.onmessage;
+        exportWorker.onmessage = function (e) {
+            const { type, buffer, mimeType, ext, duration, processingTime, step, detail, percent } = e.data;
+
+            if (type === 'progress') {
+                // Update progress
+                updateExportProgress(step, detail, percent);
+            } else if (type === 'complete') {
+                job.status = 'completed';
+                const blob = new Blob([buffer], { type: mimeType || 'audio/wav' });
+
+                // Download this job
+                const filename = `${job.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${job.format}`;
+                downloadFile(blob, filename, ext);
+
+                // Process next job
+                currentQueueIndex++;
+                setTimeout(processNext, 500); // Small delay between downloads
+            } else if (type === 'error') {
+                job.status = 'error';
+                console.error('[ExportQueue] Job failed:', job.name, e.data.message);
+                currentQueueIndex++;
+                setTimeout(processNext, 100);
+            }
+        };
+
+        // Start export
+        exportWorker.postMessage({
+            type: 'export',
+            chunks: job.chunks,
+            format: job.format,
+            loopCount: job.loopCount,
+            sampleRate: job.sampleRate
+        });
+    }
+
+    processNext();
+}
+
+// Clear the queue
+export function clearExportQueue() {
+    exportQueue.length = 0;
+    isProcessingQueue = false;
+    currentQueueIndex = 0;
 }
