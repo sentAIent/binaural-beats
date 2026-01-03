@@ -1244,11 +1244,10 @@ body[data-theme="dawn"] .preset-btn.active {
 /* TOP BAR BUTTONS FOR LIGHT THEMES */
 /* ================================ */
 
-/* Mode toggle buttons (Binaural/Isochronic/Monaural) - DARK text */
+/* Mode toggle buttons (Binaural/Isochronic/Monaural) - dark text on light bar */
 body[data-theme="cloud"] #modeToggle .mode-btn,
 body[data-theme="dawn"] #modeToggle .mode-btn {
-    color: #1e293b !important;
-    font-weight: 600 !important;
+    color: var(--text-muted) !important;
 }
 
 body[data-theme="cloud"] #modeToggle .mode-btn.toggle-active,
@@ -1256,7 +1255,7 @@ body[data-theme="dawn"] #modeToggle .mode-btn.toggle-active {
     color: white !important;
 }
 
-/* Visual mode buttons (Sphere/Flow/Lava) - LIGHT TEXT with dark bg for contrast */
+/* Visual mode buttons (Sphere/Flow/Lava) - dark text for light themes */
 body[data-theme="cloud"] #topControlBar button[id$="Btn"],
 body[data-theme="dawn"] #topControlBar button[id$="Btn"],
 body[data-theme="cloud"] #sphereBtn,
@@ -1265,25 +1264,13 @@ body[data-theme="cloud"] #flowBtn,
 body[data-theme="dawn"] #flowBtn,
 body[data-theme="cloud"] #lavaBtn,
 body[data-theme="dawn"] #lavaBtn {
-    color: rgba(255, 255, 255, 0.95) !important;
-    background: rgba(0, 0, 0, 0.3) !important;
-    border: 1px solid rgba(0, 0, 0, 0.2) !important;
-    font-weight: 500 !important;
-    font-size: 0.75rem !important;
+    color: var(--text-muted) !important;
 }
 
-body[data-theme="cloud"] #topControlBar button[id$="Btn"]:hover,
-body[data-theme="dawn"] #topControlBar button[id$="Btn"]:hover {
-    background: rgba(0, 0, 0, 0.5) !important;
-    color: white !important;
-}
-
-/* Visual mode buttons active - white text on accent */
+/* Visual mode buttons active state - white text on accent */
 body[data-theme="cloud"] #topControlBar button[id$="Btn"].toggle-active,
 body[data-theme="dawn"] #topControlBar button[id$="Btn"].toggle-active {
     color: white !important;
-    background: var(--accent) !important;
-    border-color: var(--accent) !important;
 }
 
 /* Top bar text elements (slider labels, values) - dark text */
@@ -1301,286 +1288,33 @@ body[data-theme="dawn"] #timerDisplay {
 }
 
 /* ================================ */
-/* RIGHT PANEL - GLOBAL IMPROVEMENTS */
+/* RIGHT PANEL FIXES FOR LIGHT THEMES */
 /* ================================ */
 
-/* Base Font Size Increase (ALL THEMES) */
-#rightPanel {
-    font-size: 0.875rem !important;
-}
-
-/* Section Styling - GLASSMORPHISM (matches left panel) */
-#rightPanel .mixer-section {
-    margin-bottom: 2.5rem !important;
-    padding: 1.5rem !important;
-    border-radius: 1rem !important;
-    /* GLASSMORPHISM - match left panel */
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-
-#rightPanel .section-content {
-    margin-top: 1.25rem !important;
-    /* Increased from 1rem */
-}
-
-/* Headers - Larger (ALL THEMES) */
-#rightPanel h3,
-#rightPanel .section-header h3 {
-    font-size: 0.75rem !important;
-    /* 12px */
-    letter-spacing: 0.1em !important;
-    font-weight: 700 !important;
-}
-
-/* All Labels - Minimum 11px (ALL THEMES) */
-#rightPanel label,
-#rightPanel span:not([class*="icon"]),
-#rightPanel .text-xs,
-#rightPanel .text-\[10px\],
-#rightPanel .text-\[9px\] {
-    font-size: 0.6875rem !important;
-    /* 11px */
-}
-
-/* Values - 12px (ALL THEMES) */
-#rightPanel [id$="Value"],
-#rightPanel [id$="Val"],
-#rightPanel .slider-value {
-    font-size: 0.75rem !important;
-    /* 12px */
-    font-weight: 600 !important;
-}
-
-/* === COMPREHENSIVE FONT SIZE OVERRIDES === */
-/* Force minimum readable sizes for Tailwind inline classes */
-#rightPanel .text-\[8px\] {
-    font-size: 0.6875rem !important;
-    /* 11px minimum */
-}
-
-#rightPanel .text-\[9px\] {
-    font-size: 0.6875rem !important;
-    /* 11px minimum */
-}
-
-#rightPanel .text-\[10px\] {
-    font-size: 0.75rem !important;
-    /* 12px for better readability */
-}
-
-#rightPanel .text-xs {
-    font-size: 0.75rem !important;
-    /* 12px */
-}
-
-/* Journey button labels - bump up */
-#rightPanel .sweep-btn span {
-    font-size: 0.75rem !important;
-    /* 12px */
-}
-
-/* Journey buttons - GLASSMORPHISM (matches left panel presets) */
-.sweep-btn {
-    max-width: 500px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    /* GLASSMORPHISM */
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    transition: all 0.2s ease;
-}
-
-.sweep-btn:hover {
-    background: rgba(255, 255, 255, 0.1) !important;
+/* All buttons in right panel - use accent color borders */
+body[data-theme="cloud"] #rightPanel button,
+body[data-theme="dawn"] #rightPanel button {
     border-color: var(--accent) !important;
-    transform: translateY(-1px);
+    color: var(--accent) !important;
 }
 
-/* Section headings - more prominent */
-#rightPanel h3 {
-    font-size: 0.813rem !important;
-    /* 13px */
-    letter-spacing: 0.1em !important;
-    font-weight: 700 !important;
+body[data-theme="cloud"] #rightPanel button:hover,
+body[data-theme="dawn"] #rightPanel button:hover {
+    background: rgba(2, 132, 199, 0.15) !important;
 }
 
-/* Soundscape Items - GLASSMORPHISM (matches left panel) */
-.soundscape-item {
-    padding: 1.25rem !important;
-    margin-bottom: 1rem !important;
-    border-radius: 0.75rem !important;
-    max-width: 600px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    /* GLASSMORPHISM */
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+body[data-theme="dawn"] #rightPanel button:hover {
+    background: rgba(220, 38, 38, 0.15) !important;
 }
 
-/* Sliders - Thicker + Max Width (ALL THEMES) */
-#rightPanel input[type="range"] {
-    height: 8px !important;
-    border-radius: 4px !important;
-    max-width: 400px !important;
-    /* Prevent excessive stretching */
-}
-
-/* Main Out slider specifically */
-#mainOutSlider {
-    max-width: 300px !important;
-}
-
-/* L/R Fader slider */
-#lrSlider {
-    max-width: 250px !important;
-}
-
-/* DJ Pads - Bigger (ALL THEMES) */
-#djPadsGrid {
-    gap: 1rem !important;
-    padding: 0.5rem;
-}
-
-.dj-pad {
-    padding: 1.25rem 0.75rem !important;
-    min-height: 80px !important;
-}
-
-/* DJ Category Tabs - Bigger Text (ALL THEMES) */
-.dj-cat-tab {
-    padding: 0.5rem 1rem !important;
-    margin-right: 0.5rem !important;
-    font-size: 0.6875rem !important;
-    /* 11px */
-}
-
-/* ================================ */
-/* RIGHT PANEL - LIGHT THEME FIXES */
-/* ================================ */
-
-/* Right Panel Background */
-body[data-theme="cloud"] #rightPanel {
-    background: rgba(248, 250, 252, 0.98) !important;
-}
-
-body[data-theme="dawn"] #rightPanel {
-    background: rgba(254, 242, 242, 0.98) !important;
-}
-
-/* Section Borders - Stronger */
-body[data-theme="cloud"] .mixer-section,
-body[data-theme="dawn"] .mixer-section {
-    border: 1.5px solid rgba(0, 0, 0, 0.12) !important;
-    background: rgba(255, 255, 255, 0.7) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-}
-
-/* Headers - Dark Text */
-body[data-theme="cloud"] #rightPanel h3,
-body[data-theme="dawn"] #rightPanel h3 {
-    color: #0f172a !important;
-}
-
-/* All Text - Dark */
-body[data-theme="cloud"] #rightPanel label,
-body[data-theme="cloud"] #rightPanel span,
-body[data-theme="cloud"] #rightPanel p,
-body[data-theme="dawn"] #rightPanel label,
-body[data-theme="dawn"] #rightPanel span,
-body[data-theme="dawn"] #rightPanel p {
-    color: #334155 !important;
-}
-
-/* Sliders - Darker Background */
-body[data-theme="cloud"] #rightPanel input[type="range"],
-body[data-theme="dawn"] #rightPanel input[type="range"] {
-    background: rgba(0, 0, 0, 0.15) !important;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-#rightPanel .section-content {
-    margin-top: 0.75rem !important;
-}
-
-/* ======================================================= */
-/* RIGHT PANEL BUTTONS - ULTRA-SPECIFIC HOVER OVERRIDES */
-/* These must override Tailwind inline classes like hover:bg-white/10 */
-/* ======================================================= */
-
-/* Journey/Sweep buttons - DARK BG + WHITE TEXT on hover */
-body[data-theme="cloud"] #rightPanel .sweep-btn:hover,
-body[data-theme="dawn"] #rightPanel .sweep-btn:hover {
-    background: var(--accent) !important;
-    background-color: var(--accent) !important;
-    border-color: var(--accent) !important;
-}
-
-body[data-theme="cloud"] #rightPanel .sweep-btn:hover *,
-body[data-theme="dawn"] #rightPanel .sweep-btn:hover *,
-body[data-theme="cloud"] #rightPanel .sweep-btn:hover span,
-body[data-theme="dawn"] #rightPanel .sweep-btn:hover span,
-body[data-theme="cloud"] #rightPanel .sweep-btn:hover .text-\[10px\],
-body[data-theme="dawn"] #rightPanel .sweep-btn:hover .text-\[10px\],
-body[data-theme="cloud"] #rightPanel .sweep-btn:hover .text-\[8px\],
-body[data-theme="dawn"] #rightPanel .sweep-btn:hover .text-\[8px\] {
-    color: white !important;
-}
-
-/* ALL generic buttons - DARK BG + WHITE TEXT on hover */
-body[data-theme="cloud"] #rightPanel button:not(.dj-pad):not(.visual-btn):hover,
-body[data-theme="dawn"] #rightPanel button:not(.dj-pad):not(visual-btn):hover {
-    background: var(--accent) !important;
-    background-color: var(--accent) !important;
-    border-color: var(--accent) !important;
-}
-
-body[data-theme="cloud"] #rightPanel button:not(.dj-pad):not(.visual-btn):hover *,
-body[data-theme="dawn"] #rightPanel button:not(.dj-pad):not(.visual-btn):hover * {
-    color: white !important;
-}
-
-/* Soundscape buttons inside atmosphere container */
-body[data-theme="cloud"] #soundscapeContainer button:hover,
-body[data-theme="dawn"] #soundscapeContainer button:hover {
-    background: var(--accent) !important;
-    background-color: var(--accent) !important;
-    border-color: var(--accent) !important;
-}
-
-body[data-theme="cloud"] #soundscapeContainer button:hover *,
-body[data-theme="dawn"] #soundscapeContainer button:hover *,
-body[data-theme="cloud"] #soundscapeContainer button:hover span,
-body[data-theme="dawn"] #soundscapeContainer button:hover span {
-    color: white !important;
-}
-
-/* Soundscape item containers */
-body[data-theme="cloud"] .soundscape-item:hover,
-body[data-theme="dawn"] .soundscape-item:hover {
-    background: var(--accent) !important;
-    border-color: var(--accent) !important;
-}
-
-body[data-theme="cloud"] .soundscape-item:hover *,
-body[data-theme="dawn"] .soundscape-item:hover * {
-    color: white !important;
-}
-
-
-body[data-theme="cloud"] .soundscape-btn:hover,
-body[data-theme="dawn"] .soundscape-btn:hover,
-body[data-theme="cloud"] #soundscapeContainer button:hover,
-body[data-theme="dawn"] #soundscapeContainer button:hover {
-    background: var(--accent) !important;
-    color: white !important;
-    border-color: var(--accent) !important;
+/* Atmosphere/Soundscape buttons - ensure readable */
+body[data-theme="cloud"] .soundscape-btn,
+body[data-theme="dawn"] .soundscape-btn,
+body[data-theme="cloud"] #soundscapeContainer button,
+body[data-theme="dawn"] #soundscapeContainer button {
+    background: rgba(255, 255, 255, 0.5) !important;
+    border: 1px solid var(--accent) !important;
+    color: var(--accent) !important;
 }
 
 body[data-theme="cloud"] .soundscape-btn.active,
@@ -1589,116 +1323,54 @@ body[data-theme="cloud"] #soundscapeContainer button.active,
 body[data-theme="dawn"] #soundscapeContainer button.active {
     background: var(--accent) !important;
     color: white !important;
-    border-color: var(--accent) !important;
-    box-shadow: 0 4px 6px rgba(var(--accent-rgb), 0.2);
 }
 
-/* Slider tracks - clearer background */
+/* Slider tracks and values */
 body[data-theme="cloud"] #rightPanel input[type="range"],
 body[data-theme="dawn"] #rightPanel input[type="range"] {
-    background: rgba(0, 0, 0, 0.08) !important;
-    height: 6px !important;
-    /* Slightly thicker for better touch */
+    background: rgba(0, 0, 0, 0.2) !important;
 }
 
 /* Section headers in right panel */
 body[data-theme="cloud"] #rightPanel .section-header,
-body[data-theme="dawn"] #rightPanel .section-header {
-    margin-bottom: 0.5rem !important;
-    padding-bottom: 0.5rem !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
+body[data-theme="dawn"] #rightPanel .section-header,
 body[data-theme="cloud"] #rightPanel h3,
 body[data-theme="dawn"] #rightPanel h3 {
-    color: var(--text-main) !important;
-    opacity: 0.9;
-    font-size: 0.7rem !important;
-    /* Slightly larger/clearer */
-    letter-spacing: 0.05em !important;
+    color: var(--accent) !important;
 }
 
-/* Mixer section borders - subtle separation */
+/* Mixer section borders */
 body[data-theme="cloud"] .mixer-section,
 body[data-theme="dawn"] .mixer-section {
-    border: 1px solid rgba(0, 0, 0, 0.06) !important;
-    background: rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    border-color: var(--accent) !important;
 }
 
-/* Input borders & backgrounds */
+/* Input borders */
 body[data-theme="cloud"] #rightPanel input,
 body[data-theme="dawn"] #rightPanel input,
 body[data-theme="cloud"] #rightPanel select,
 body[data-theme="dawn"] #rightPanel select {
-    border-color: rgba(0, 0, 0, 0.1) !important;
-    color: var(--text-main) !important;
-    background: rgba(255, 255, 255, 0.8) !important;
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
 }
 
-/* Soundscape item spacing */
+/* Soundscape item default background */
 .soundscape-item {
-    padding: 0.75rem !important;
-    border-radius: 0.75rem !important;
-    margin-bottom: 0.5rem !important;
+    background-color: rgba(0, 0, 0, 0.2);
 }
 
 /* Soundscape items - light theme overrides */
 body[data-theme="cloud"] .soundscape-item,
 body[data-theme="dawn"] .soundscape-item {
-    background: rgba(255, 255, 255, 0.5) !important;
-    border: 1px solid rgba(0, 0, 0, 0.05) !important;
-    transition: all 0.2s ease;
-}
-
-body[data-theme="cloud"] .soundscape-item:hover,
-body[data-theme="dawn"] .soundscape-item:hover {
-    background: rgba(255, 255, 255, 0.8) !important;
-    border-color: rgba(0, 0, 0, 0.1) !important;
+    background: rgba(255, 255, 255, 0.7) !important;
+    border-color: var(--accent) !important;
 }
 
 body[data-theme="cloud"] .soundscape-item label,
 body[data-theme="cloud"] .soundscape-item span,
 body[data-theme="dawn"] .soundscape-item label,
 body[data-theme="dawn"] .soundscape-item span {
-    color: var(--text-main) !important;
-}
-
-/* DJ Pads Grid Spacing */
-#djPadsGrid {
-    gap: 0.75rem !important;
-    /* Cleaner spacing */
-    padding: 0.25rem;
-}
-
-/* DJ Pad Aesthetics - Light Theme */
-body[data-theme="cloud"] .dj-pad,
-body[data-theme="dawn"] .dj-pad {
-    background: rgba(255, 255, 255, 0.6) !important;
-    border: 1px solid rgba(0, 0, 0, 0.05) !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-    color: var(--text-main) !important;
-}
-
-body[data-theme="cloud"] .dj-pad:hover,
-body[data-theme="dawn"] .dj-pad:hover {
-    background: rgba(255, 255, 255, 0.9) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-body[data-theme="cloud"] .dj-pad.active,
-body[data-theme="dawn"] .dj-pad.active {
-    background: var(--accent) !important;
-    color: white !important;
-    border-color: var(--accent) !important;
-    box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.4);
-}
-
-/* DJ Pad Toggle Tabs */
-.dj-cat-tab {
-    padding: 0.4rem 0.8rem !important;
-    margin-right: 0.25rem;
+    color: var(--accent) !important;
 }
 
 /* Left panel items for light themes */
@@ -2486,25 +2158,17 @@ body[data-theme="dawn"] [class*="bg-slate-"] {
     background-color: var(--border) !important;
 }
 
-/* === VISUAL MODE BUTTONS (SPHERE, FLOW, LAVA) - LIGHT TEXT === */
+/* === VISUAL MODE BUTTONS (SPHERE, FLOW, LAVA) === */
 body[data-theme="cloud"] .visual-btn,
 body[data-theme="dawn"] .visual-btn {
-    color: rgba(255, 255, 255, 0.95) !important;
-    background: rgba(0, 0, 0, 0.35) !important;
-    border: 1px solid rgba(0, 0, 0, 0.25) !important;
-}
-
-body[data-theme="cloud"] .visual-btn:hover,
-body[data-theme="dawn"] .visual-btn:hover {
-    background: rgba(0, 0, 0, 0.55) !important;
-    color: white !important;
+    color: var(--text-main) !important;
+    background: rgba(255, 255, 255, 0.5) !important;
 }
 
 body[data-theme="cloud"] .visual-btn.toggle-active,
 body[data-theme="dawn"] .visual-btn.toggle-active {
     color: white !important;
     background: var(--accent) !important;
-    border-color: var(--accent) !important;
 }
 
 /* === SVG ICONS IN SIDEBARS === */
@@ -2533,79 +2197,4 @@ body[data-theme="dawn"] .custom-scrollbar::-webkit-scrollbar-thumb {
 body[data-theme="cloud"] .custom-scrollbar::-webkit-scrollbar-track,
 body[data-theme="dawn"] .custom-scrollbar::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.05) !important;
-}
-
-/* Classical Library - Increased Spacing */
-.classical-item {
-    padding: 1rem !important;
-    /* Increased from 0.5rem (p-2) */
-    margin-bottom: 0.75rem !important;
-    gap: 1rem !important;
-    /* Increased from 0.75rem */
-}
-
-/* Classical play button - larger and more padding */
-.classical-item .play-icon {
-    width: 40px !important;
-    /* Increased from 32px (w-8) */
-    height: 40px !important;
-    /* Increased from 32px (h-8) */
-    font-size: 14px !important;
-}
-
-/* Classical text - better readability */
-.classical-item .text-xs {
-    font-size: 0.8125rem !important;
-    /* 13px instead of 12px */
-}
-
-.classical-item .text-\[9px\] {
-    font-size: 0.6875rem !important;
-    /* 11px instead of 9px */
-}/* Section Headers - ELEGANT LINE FORMAT (matches left panel) */
-.section-title-line {
-    display: flex;
-    align-items: center;
-    text-align: center;
-    font-size: 0.625rem !important;
-    /* 10px */
-    letter-spacing: 0.15em !important;
-    text-transform: uppercase !important;
-    color: var(--text-muted) !important;
-    opacity: 0.6 !important;
-    margin-bottom: 1.5rem !important;
-    font-weight: 700 !important;
-}
-
-.section-title-line span {
-    white-space: nowrap;
-    padding: 0 1rem;
-}
-
-.section-title-line::before,
-.section-title-line::after {
-    content: '';
-    flex: 1;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-/* Dark themes - lighter lines */
-body[data-theme="midnight"] .section-title-line::before,
-body[data-theme="midnight"] .section-title-line::after,
-body[data-theme="cosmic"] .section-title-line::before,
-body[data-theme="cosmic"] .section-title-line::after {
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-/* Light themes - darker lines  */
-body[data-theme="cloud"] .section-title-line::before,
-body[data-theme="cloud"] .section-title-line::after,
-body[data-theme="dawn"] .section-title-line::before,
-body[data-theme="dawn"] .section-title-line::after {
-    border-color: rgba(0, 0, 0, 0.15);
-}
-
-body[data-theme="cloud"] .section-title-line,
-body[data-theme="dawn"] .section-title-line {
-    color: rgba(0, 0, 0, 0.5) !important;
 }

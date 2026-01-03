@@ -4,7 +4,7 @@
  */
 
 const MIN_PANEL_WIDTH = 200;
-const MAX_PANEL_WIDTH = 480;  // 150% of default right panel (320px * 1.5)
+const MAX_PANEL_WIDTH = 500;
 const DEFAULT_LEFT_WIDTH = 256;  // w-64 = 16rem = 256px
 const DEFAULT_RIGHT_WIDTH = 320; // w-80 = 20rem = 320px
 
