@@ -747,14 +747,9 @@
             <section class="mixer-section" data-section="journeys">
                 <div class="flex justify-between items-center mb-3 cursor-pointer section-header"
                     onclick="toggleMixerSection('journeys')">
-                    <div class="flex items-center gap-2">
-                        <svg class="section-arrow transition-transform duration-200" width="12" height="12"
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                        <h3 class="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Journeys
-                        </h3>
-                    </div>
+                    <h3 class="section-title-line w-full">
+                        <span>JOURNEYS</span>
+                    </h3>
                     <span id="sweepStatus" class="text-[9px] font-mono text-[var(--text-muted)] hidden">
                         <span class="inline-block w-2 h-2 bg-green-400 rounded-full animate-pulse mr-1"></span>Active
                     </span>
@@ -809,14 +804,9 @@
             <section class="mixer-section" data-section="djpads">
                 <div class="flex justify-between items-center mb-3 cursor-pointer section-header"
                     onclick="toggleMixerSection('djpads')">
-                    <div class="flex items-center gap-2">
-                        <svg class="section-arrow transition-transform duration-200" width="12" height="12"
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                        <h3 class="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">DJ Pads
-                        </h3>
-                    </div>
+                    <h3 class="section-title-line w-full">
+                        <span>DJ PADS</span>
+                    </h3>
                     <div class="flex items-center gap-2" onclick="event.stopPropagation()">
                         <span class="text-[10px] text-[var(--text-muted)]">VOL</span>
                         <input type="range" id="djMasterVolume" min="0" max="1" step="0.01" value="0.8"
@@ -917,14 +907,9 @@
             <section class="mixer-section" data-section="atmosphere">
                 <div class="flex justify-between items-center mb-4 cursor-pointer section-header"
                     onclick="toggleMixerSection('atmosphere')">
-                    <div class="flex items-center gap-2">
-                        <svg class="section-arrow transition-transform duration-200" width="12" height="12"
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                        <h3 class="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Atmosphere
-                        </h3>
-                    </div>
+                    <h3 class="section-title-line w-full">
+                        <span>ATMOSPHERE</span>
+                    </h3>
                     <div class="flex items-center gap-2" onclick="event.stopPropagation()">
                         <span class="text-[10px] text-[var(--text-muted)]">MASTER</span>
                         <input type="range" id="atmosMasterSlider" min="0" max="1" step="0.01" value="0.8"
@@ -944,14 +929,9 @@
             <section class="mixer-section" data-section="stories">
                 <div class="flex justify-between items-center mb-4 cursor-pointer section-header"
                     onclick="toggleMixerSection('stories')">
-                    <div class="flex items-center gap-2">
-                        <svg class="section-arrow transition-transform duration-200" width="12" height="12"
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                        <h3 class="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Sleep
-                            Stories</h3>
-                    </div>
+                    <h3 class="section-title-line w-full">
+                        <span>SLEEP STORIES</span>
+                    </h3>
                     <div class="flex items-center gap-2" onclick="event.stopPropagation()">
                         <span class="text-[10px] text-[var(--text-muted)]">VOL</span>
                         <input type="range" id="storyVolumeSlider" min="0" max="1" step="0.01" value="0.7"
@@ -974,15 +954,10 @@
             <!-- UPLOAD MUSIC (Custom Audio) -->
             <section class="mixer-section mb-6 relative z-10" data-section="uploads">
                 <div class="flex justify-between items-center mb-4 cursor-pointer section-header"
-                    onclick="toggleMixerSection('uploads')">
-                    <div class="flex items-center gap-2">
-                        <svg class="section-arrow transition-transform duration-200" width="12" height="12"
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                        <h3 class="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Upload
-                            Audio</h3>
-                    </div>
+                    onclick="toggleMixerSection('upload')">
+                    <h3 class="section-title-line w-full">
+                        <span>UPLOAD AUDIO</span>
+                    </h3>
                     <label for="audioUploadInput" onclick="event.stopPropagation()"
                         class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/30 text-[var(--accent)] text-[10px] font-bold uppercase tracking-wide cursor-pointer hover:bg-[var(--accent)]/20 transition-all">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1018,14 +993,9 @@
             <section class="mixer-section" data-section="classical">
                 <div class="flex justify-between items-center mb-4 cursor-pointer section-header"
                     onclick="toggleMixerSection('classical')">
-                    <div class="flex items-center gap-2">
-                        <svg class="section-arrow transition-transform duration-200" width="12" height="12"
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                        <h3 class="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Classical
-                            Library</h3>
-                    </div>
+                    <h3 class="section-title-line w-full">
+                        <span>CLASSICAL LIBRARY</span>
+                    </h3>
                     <label for="classicalUploadInput" onclick="event.stopPropagation()"
                         class="flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/30 text-[var(--accent)] text-[9px] font-bold uppercase tracking-wide cursor-pointer hover:bg-[var(--accent)]/20 transition-all">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1868,10 +1838,6 @@
         .mixer-section.collapsed .section-content {
             max-height: 0;
             opacity: 0;
-        }
-
-        .mixer-section.collapsed .section-arrow {
-            transform: rotate(-90deg);
         }
     </style>
     <script>
