@@ -1,4 +1,5 @@
 import { els } from '../state.js';
+import { updateTopBarWidth } from './resize-panels.js';
 
 // Swipe gesture detection for mobile sidebar navigation
 let touchStartX = 0;
@@ -53,12 +54,15 @@ function handleSwipe() {
         if (touchStartX < EDGE_ZONE) {
             if (leftPanel) {
                 leftPanel.classList.remove('-translate-x-full');
+                updateTopBarWidth();
                 console.log('[Swipe] Opening presets panel');
             }
         }
         // If right panel is open, close it
         else if (rightPanel && !rightPanel.classList.contains('translate-x-full')) {
             rightPanel.classList.add('translate-x-full');
+            document.body.classList.remove('right-panel-open');
+            updateTopBarWidth();
             console.log('[Swipe] Closing mixer panel');
         }
     }
@@ -69,12 +73,15 @@ function handleSwipe() {
         if (touchStartX > screenWidth - EDGE_ZONE) {
             if (rightPanel) {
                 rightPanel.classList.remove('translate-x-full');
+                document.body.classList.add('right-panel-open');
+                updateTopBarWidth();
                 console.log('[Swipe] Opening mixer panel');
             }
         }
         // If left panel is open, close it
         else if (leftPanel && !leftPanel.classList.contains('-translate-x-full')) {
             leftPanel.classList.add('-translate-x-full');
+            updateTopBarWidth();
             console.log('[Swipe] Closing presets panel');
         }
     }

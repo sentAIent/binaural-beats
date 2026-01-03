@@ -1,15 +1,27 @@
 export const THEMES = {
-    default: { bg: '#0f172a', panel: '#1e293b', border: '#334155', text: '#e2e8f0', muted: '#94a3b8', accent: '#2dd4bf', glow: 'rgba(45, 212, 191, 0.4)' },
-    midnight: { bg: '#202733', panel: '#2a3441', border: '#3b4758', text: '#e2e8f0', muted: '#94a3b8', accent: '#60a9ff', glow: 'rgba(96, 169, 255, 0.4)' },
-    ember: { bg: '#450a0a', panel: '#7f1d1d', border: '#991b1b', text: '#fff1f2', muted: '#fca5a5', accent: '#fb7185', glow: 'rgba(251, 113, 133, 0.4)' },
-    abyss: { bg: '#09090b', panel: '#18181b', border: '#27272a', text: '#fafafa', muted: '#a1a1aa', accent: '#e4e4e7', glow: 'rgba(255, 255, 255, 0.2)' },
-    cloud: { bg: '#f0f9ff', panel: '#e0f2fe', border: '#bae6fd', text: '#0c4a6e', muted: '#7dd3fc', accent: '#38bdf8', glow: 'rgba(56, 189, 248, 0.4)' },
-    dawn: { bg: '#fff1f2', panel: '#ffe4e6', border: '#fecdd3', text: '#881337', muted: '#f472b6', accent: '#fb7185', glow: 'rgba(251, 113, 133, 0.4)' },
-    // New High-Tech Themes
-    cyberpunk: { bg: '#09090b', panel: '#18181b', border: '#3f3f46', text: '#e4e4e7', muted: '#a1a1aa', accent: '#d946ef', glow: 'rgba(217, 70, 239, 0.6)' }, // Neon Pink
-    nebula: { bg: '#10002b', panel: '#240046', border: '#3c096c', text: '#e0aaff', muted: '#9d4edd', accent: '#c77dff', glow: 'rgba(199, 125, 255, 0.5)' }, // Deep Cosmic Purple
-    quantum: { bg: '#022c22', panel: '#0f766e', border: '#115e59', text: '#ccfbf1', muted: '#5eead4', accent: '#2dd4bf', glow: 'rgba(45, 212, 191, 0.6)' }, // Matrix Teal
-    sunset: { bg: '#431407', panel: '#7c2d12', border: '#9a3412', text: '#ffedd5', muted: '#fdba74', accent: '#f97316', glow: 'rgba(249, 115, 22, 0.5)' } // Synthwave Orange
+    // Dark Themes
+    default: { bg: '#0f172a', panel: '#1e293b', border: '#334155', text: '#e2e8f0', muted: '#94a3b8', accent: '#2dd4bf', glow: 'rgba(45, 212, 191, 0.4)', volumeAccent: '#d42d48', volumeGlow: 'rgba(212, 45, 72, 0.4)' },
+    midnight: { bg: '#0a1628', panel: '#162032', border: '#2a3a52', text: '#e2e8f0', muted: '#8ba3c4', accent: '#60a9ff', glow: 'rgba(96, 169, 255, 0.4)', volumeAccent: '#ffb660', volumeGlow: 'rgba(255, 182, 96, 0.4)' },
+    abyss: { bg: '#09090b', panel: '#18181b', border: '#27272a', text: '#fafafa', muted: '#a1a1aa', accent: '#e4e4e7', glow: 'rgba(255, 255, 255, 0.2)', volumeAccent: '#a78bfa', volumeGlow: 'rgba(167, 139, 250, 0.4)' },
+    ember: { bg: '#1a0505', panel: '#2d1010', border: '#4a1515', text: '#fce7e7', muted: '#e5a3a3', accent: '#fb7185', glow: 'rgba(251, 113, 133, 0.4)', volumeAccent: '#71fb85', volumeGlow: 'rgba(113, 251, 133, 0.4)' },
+    cyberpunk: { bg: '#0a0512', panel: '#150a20', border: '#2a1540', text: '#f0e6ff', muted: '#b794f4', accent: '#d946ef', glow: 'rgba(217, 70, 239, 0.6)', volumeAccent: '#46ef69', volumeGlow: 'rgba(70, 239, 105, 0.5)' },
+    nebula: { bg: '#10002b', panel: '#1a0040', border: '#2d0066', text: '#e8d5ff', muted: '#b794f6', accent: '#c77dff', glow: 'rgba(199, 125, 255, 0.5)', volumeAccent: '#c9ff7d', volumeGlow: 'rgba(201, 255, 125, 0.4)' },
+    quantum: { bg: '#021a15', panel: '#0a3028', border: '#154540', text: '#d5fff5', muted: '#7eddc8', accent: '#2dd4bf', glow: 'rgba(45, 212, 191, 0.6)', volumeAccent: '#d42d48', volumeGlow: 'rgba(212, 45, 72, 0.5)' },
+    sunset: { bg: '#1a0a02', panel: '#301508', border: '#4a200a', text: '#fff0e0', muted: '#e8b080', accent: '#f97316', glow: 'rgba(249, 115, 22, 0.5)', volumeAccent: '#1673f9', volumeGlow: 'rgba(22, 115, 249, 0.4)' },
+
+    // NEW Premium Dark Themes
+    aurora: { bg: '#051520', panel: '#0a2535', border: '#153a50', text: '#e0f8ff', muted: '#80d4f4', accent: '#22d3ee', glow: 'rgba(34, 211, 238, 0.5)', volumeAccent: '#ee22a8', volumeGlow: 'rgba(238, 34, 168, 0.4)' },
+    forest: { bg: '#0a120a', panel: '#142014', border: '#1e3018', text: '#e8f5e8', muted: '#90c090', accent: '#4ade80', glow: 'rgba(74, 222, 128, 0.5)', volumeAccent: '#de804a', volumeGlow: 'rgba(222, 128, 74, 0.4)' },
+    royal: { bg: '#0f0a1a', panel: '#1a1030', border: '#2a1850', text: '#f0e8ff', muted: '#b8a0e0', accent: '#a78bfa', glow: 'rgba(167, 139, 250, 0.5)', volumeAccent: '#8bfab0', volumeGlow: 'rgba(139, 250, 176, 0.4)' },
+    ocean: { bg: '#041525', panel: '#082538', border: '#0c3850', text: '#e0f0ff', muted: '#80b8e0', accent: '#3b82f6', glow: 'rgba(59, 130, 246, 0.5)', volumeAccent: '#f6b83b', volumeGlow: 'rgba(246, 184, 59, 0.4)' },
+    rose: { bg: '#1a0a10', panel: '#2a1020', border: '#401830', text: '#ffe8f0', muted: '#e0a0b8', accent: '#f472b6', glow: 'rgba(244, 114, 182, 0.5)', volumeAccent: '#72f4a0', volumeGlow: 'rgba(114, 244, 160, 0.4)' },
+    gold: { bg: '#151008', panel: '#251a0a', border: '#3a280f', text: '#fff8e8', muted: '#d4b880', accent: '#fbbf24', glow: 'rgba(251, 191, 36, 0.5)', volumeAccent: '#2496fb', volumeGlow: 'rgba(36, 150, 251, 0.4)' },
+    obsidian: { bg: '#080808', panel: '#121212', border: '#1c1c1c', text: '#f5f5f5', muted: '#888888', accent: '#ffffff', glow: 'rgba(255, 255, 255, 0.3)', volumeAccent: '#ff6b6b', volumeGlow: 'rgba(255, 107, 107, 0.4)' },
+    arctic: { bg: '#081520', panel: '#102030', border: '#183045', text: '#e8f4ff', muted: '#a0c8e8', accent: '#7dd3fc', glow: 'rgba(125, 211, 252, 0.5)', volumeAccent: '#fca07d', volumeGlow: 'rgba(252, 160, 125, 0.4)' },
+
+    // Soft Light Themes (with tinted backgrounds)
+    cloud: { bg: '#e8f4fc', panel: '#d4ebf7', border: '#a8d4f0', text: '#0f172a', muted: '#3b6d8c', accent: '#0284c7', glow: 'rgba(2, 132, 199, 0.4)', volumeAccent: '#dc2626', volumeGlow: 'rgba(220, 38, 38, 0.4)', glassBg: 'rgba(212, 235, 247, 0.95)', glassBorder: 'rgba(100, 160, 200, 0.3)' },
+    dawn: { bg: '#fef5eb', panel: '#fde8d4', border: '#f5c9a0', text: '#1c1917', muted: '#785a3a', accent: '#dc2626', glow: 'rgba(220, 38, 38, 0.4)', volumeAccent: '#16a34a', volumeGlow: 'rgba(22, 163, 74, 0.4)', glassBg: 'rgba(253, 232, 212, 0.95)', glassBorder: 'rgba(180, 140, 100, 0.3)' }
 };
 
 export const SOUNDSCAPES = [
@@ -113,7 +125,7 @@ export const state = {
     oscLeft: null, oscRight: null, panLeft: null, panRight: null,
     beatsGain: null, masterAtmosGain: null, masterGain: null, masterPanner: null,
     masterCompressor: null, analyserLeft: null, analyserRight: null,
-    isPlaying: false, isRecording: false, videoEnabled: false,
+    isPlaying: false, isRecording: false, isStopping: false, videoEnabled: false,
     animationId: null, visualMode: 'sphere',
     mediaRecorder: null, recordedChunks: [], destStreamNode: null,
     activeSoundscapes: {},
@@ -141,6 +153,7 @@ export const state = {
 
     // UI Refs that were global
     immersiveTimeout: null,
+    fadeTimeout: null, // For cancellable fade-out
 
     // Safety
     disclaimerAccepted: false,
@@ -158,6 +171,7 @@ export const state = {
     sweepEndFreq: 40,
     sweepDuration: 60, // seconds
     sweepInterval: null,
+    preSweepBeatFreq: null, // Original beat frequency before sweep started
 
     // NEW: Extended Hyper-Gamma unlock
     hyperGammaUnlocked: false,

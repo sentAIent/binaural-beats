@@ -55,7 +55,7 @@ export class Visualizer3D {
         // ... (unchanged)
         const geometry = new THREE.IcosahedronGeometry(2, 2);
         const material = new THREE.MeshBasicMaterial({
-            color: 0x2dd4bf, // Accent color
+            color: 0x60a9ff, // Accent color
             wireframe: true,
             transparent: true,
             opacity: 0.5
@@ -65,7 +65,7 @@ export class Visualizer3D {
         // Inner glow
         const coreGeo = new THREE.IcosahedronGeometry(1.8, 1);
         const coreMat = new THREE.MeshBasicMaterial({
-            color: 0x2dd4bf,
+            color: 0x60a9ff,
             transparent: true,
             opacity: 0.1,
             blending: THREE.AdditiveBlending
@@ -90,7 +90,7 @@ export class Visualizer3D {
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
 
         const material = new THREE.PointsMaterial({
-            color: 0xa78bfa,
+            color: 0x60a9ff,
             size: 0.15,
             map: this.createCircleTexture(),
             transparent: true,
@@ -124,7 +124,7 @@ export class Visualizer3D {
 
                 const geometry = new THREE.SphereGeometry(size, 24, 24);
                 const material = new THREE.MeshBasicMaterial({
-                    color: 0x2dd4bf,
+                    color: 0x60a9ff,
                     transparent: true,
                     opacity: 0.6,
                     blending: THREE.AdditiveBlending,
@@ -197,7 +197,7 @@ export class Visualizer3D {
         // Soft uniform glow
         const glowGeometry = new THREE.PlaneGeometry(30, 40);
         const glowMaterial = new THREE.MeshBasicMaterial({
-            color: 0x2dd4bf,
+            color: 0x60a9ff,
             transparent: true,
             opacity: 0.05,
             blending: THREE.AdditiveBlending,
@@ -235,7 +235,7 @@ export class Visualizer3D {
         this.wavesGroup = new THREE.Group();
         const geometry = new THREE.PlaneGeometry(30, 30, 64, 64);
         const material = new THREE.MeshBasicMaterial({
-            color: 0x2dd4bf,
+            color: 0x60a9ff,
             wireframe: true,
             transparent: true,
             opacity: 0.3,
@@ -278,6 +278,17 @@ export class Visualizer3D {
         if (this.lavaBaseGlow && this.lavaBaseGlow.material) {
             this.lavaBaseGlow.material.color.set(hex);
         }
+
+        // Render a single frame to show the color change even when paused
+        this.renderSingleFrame();
+    }
+
+    // Render a single frame without starting the animation loop
+    // Used to show color changes when visuals are paused
+    renderSingleFrame() {
+        if (!this.renderer || !this.scene || !this.camera) return;
+        this.renderer.clear();
+        this.renderer.render(this.scene, this.camera);
     }
 
     createCircleTexture() {
@@ -502,10 +513,40 @@ let viz3D;
 export function initVisualizer() {
     if (!viz3D && els.canvas) {
         viz3D = new Visualizer3D(els.canvas);
-        viz3D.render(state.analyserLeft, state.analyserRight);
+        // Render initial frame so Flow particles are visible on load
+        viz3D.renderSingleFrame();
+        // Don't auto-start render loop - visuals start paused
+        // resumeVisuals() will start the render loop when user clicks play
     }
 }
 
 export function getVisualizer() {
     return viz3D;
+}
+
+// Visual pause state - starts paused until user clicks play
+let visualsPaused = true;
+
+export function pauseVisuals() {
+    // Always mark as paused for button sync
+    visualsPaused = true;
+
+    // Cancel animation if running
+    if (viz3D && state.animationId) {
+        cancelAnimationFrame(state.animationId);
+        state.animationId = null;
+        console.log('[Visualizer] Visuals paused');
+    }
+}
+
+export function resumeVisuals() {
+    if (viz3D && !state.animationId && visualsPaused) {
+        viz3D.render(state.analyserLeft, state.analyserRight);
+        visualsPaused = false;
+        console.log('[Visualizer] Visuals resumed');
+    }
+}
+
+export function isVisualsPaused() {
+    return visualsPaused;
 }

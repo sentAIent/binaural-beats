@@ -96,7 +96,7 @@ For example, if 200Hz plays in your left ear and 210Hz in your right ear, you pe
     },
     {
         id: 'building-habit',
-        name: 'Building Habit',
+        name: 'Building Habits',
         emoji: '🌿',
         description: 'Establish your daily practice',
         duration: 'Week 3-4',
@@ -420,8 +420,11 @@ export function renderJourneyUI(container) {
         const stageCompleted = stage.lessons.every(l => journeyState.completedLessons.includes(l.id));
         const stageLessonsCompleted = stage.lessons.filter(l => journeyState.completedLessons.includes(l.id)).length;
 
+        // Extra padding for Building Habits and Deepening Practice sections
+        const sectionPadding = index > 0 ? 'pt-8 mt-10' : '';
+
         return `
-            <div class="mb-8 pb-4 ${index < JOURNEY_STAGES.length - 1 ? 'border-b border-white/5' : ''}">
+            <div class="${sectionPadding} ${index > 0 ? 'border-t border-white/10' : ''} mb-6 pb-4">
                 <div class="flex items-center gap-3 mb-4">
                     <span class="text-2xl">${stage.emoji}</span>
                     <div class="flex-1">
@@ -432,7 +435,7 @@ export function renderJourneyUI(container) {
                         </div>
                     </div>
                 </div>
-                <div class="grid grid-cols-6 gap-2">
+                <div class="grid gap-2" style="grid-template-columns: repeat(7, minmax(0, 1fr))">
                     ${stage.lessons.map(lesson => {
             const completed = journeyState.completedLessons.includes(lesson.id);
             const isMilestone = lesson.type === 'milestone';
@@ -444,7 +447,7 @@ export function renderJourneyUI(container) {
             } else if (isMilestone) {
                 btnClasses = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
             } else {
-                btnClasses = 'bg-white/10 text-white/90 border-white/20 hover:bg-white/20 hover:border-purple-400/50';
+                btnClasses = 'bg-white/10 text-white border-white/20 hover:bg-white/20 hover:border-purple-400/50';
             }
 
             return `
@@ -497,7 +500,8 @@ function showLessonModal(lesson) {
 
     const modal = document.createElement('div');
     modal.id = 'lessonModal';
-    modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm';
+    modal.className = 'fixed inset-0 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm';
+    modal.style.zIndex = '1100'; // Higher than .modal z-index: 1000
     modal.innerHTML = `
         <div class="glass-card w-full max-w-md rounded-2xl overflow-hidden">
             <div class="p-6 border-b border-white/10">
@@ -519,12 +523,12 @@ function showLessonModal(lesson) {
                 <div class="text-sm text-[var(--text-muted)] whitespace-pre-line mb-6">${lesson.content}</div>
                 ${lesson.action ? `
                 <button onclick="window.startLessonAction('${lesson.id}')" 
-                    class="w-full py-3 rounded-xl bg-gradient-to-r from-[var(--accent)] to-purple-500 text-white text-sm font-bold uppercase tracking-wide hover:opacity-90 transition-all">
+                    class="w-full py-3 rounded-xl bg-gradient-to-r from-[var(--accent)] to-purple-500 text-gray-900 text-sm font-bold uppercase tracking-wide hover:opacity-90 transition-all">
                     ${lesson.action.preset ? `Start ${lesson.action.duration} Min Session` : 'Begin Journey'}
                 </button>
                 ` : `
                 <button onclick="window.markLessonComplete('${lesson.id}')" 
-                    class="w-full py-3 rounded-xl bg-[var(--accent)] text-[var(--bg-main)] text-sm font-bold uppercase tracking-wide hover:opacity-90 transition-all">
+                    class="w-full py-3 rounded-xl bg-[var(--accent)] text-gray-900 text-sm font-bold uppercase tracking-wide hover:opacity-90 transition-all">
                     ${isLessonCompleted(lesson.id) ? '✓ Completed' : 'Mark as Complete'}
                 </button>
                 `}
@@ -539,32 +543,146 @@ function showLessonModal(lesson) {
     document.body.appendChild(modal);
 }
 
+// Track pending lesson for completion on timer end
+let pendingLessonId = null;
+
 // Start lesson action (preset or journey)
-window.startLessonAction = (lessonId) => {
+window.startLessonAction = async (lessonId) => {
     const lesson = getAllLessons().find(l => l.id === lessonId);
     if (!lesson?.action) return;
 
+    // Close modals
     document.getElementById('lessonModal')?.remove();
+    document.getElementById('journeyModal')?.classList.add('hidden');
 
+    // Get duration from lesson action (default 5 minutes if not specified)
+    const durationMinutes = lesson.action.duration || 5;
+
+    // Apply preset or start journey sweep
     if (lesson.action.preset) {
-        // Apply preset
         if (window.applyPreset) {
             window.applyPreset(lesson.action.preset);
         }
     } else if (lesson.action.journey) {
-        // Start journey
         if (window.startSweepPreset) {
             window.startSweepPreset(lesson.action.journey);
         }
     }
 
-    // Mark as complete after action
-    completeLesson(lessonId);
+    // Store pending lesson for completion
+    pendingLessonId = lessonId;
 
-    // Refresh journey UI if visible
-    const container = document.getElementById('journeyContainer');
-    if (container) renderJourneyUI(container);
+    try {
+        // Import required modules
+        const [sessionTimer, { startAudio, fadeIn, fadeOut, stopAudio }] = await Promise.all([
+            import('../audio/session-timer.js'),
+            import('../audio/engine.js')
+        ]);
+
+        // Start audio playback
+        await startAudio();
+        fadeIn(1.5);
+
+        // Set session duration in the dropdown (so timer UI shows)
+        const sessionDurationSelect = document.getElementById('sessionDuration');
+        if (sessionDurationSelect) {
+            sessionDurationSelect.value = String(durationMinutes);
+        }
+
+        // Start the timed session with timer UI
+        sessionTimer.startSession(durationMinutes, {
+            onTick: (data) => {
+                // Update timer display
+                const timerDisplay = document.getElementById('timerDisplay');
+                const timerProgress = document.getElementById('timerProgress');
+
+                if (timerDisplay) {
+                    timerDisplay.textContent = data.formatted;
+                    timerDisplay.style.opacity = '1';
+                }
+
+                if (timerProgress) {
+                    const circumference = 339.292;
+                    const offset = circumference - (data.progress / 100) * circumference;
+                    timerProgress.style.strokeDashoffset = offset;
+                }
+            },
+            onComplete: async () => {
+                console.log('[Journey] Timer complete, checking pendingLessonId:', pendingLessonId, 'expected:', lessonId);
+
+                // Mark lesson complete when timer finishes
+                if (pendingLessonId === lessonId) {
+                    const wasCompleted = completeLesson(lessonId);
+                    console.log('[Journey] Lesson completion result:', wasCompleted);
+                    pendingLessonId = null;
+
+                    // Show completion notification
+                    showLessonCompleteNotification(lesson);
+
+                    // Fade out and stop audio
+                    fadeOut(3, () => {
+                        stopAudio();
+                        // Reset play button to show play icon
+                        const playIcon = document.getElementById('playIcon');
+                        const pauseIcon = document.getElementById('pauseIcon');
+                        if (playIcon) playIcon.classList.remove('hidden');
+                        if (pauseIcon) pauseIcon.classList.add('hidden');
+                    });
+
+                    // Hide timer and remove timer-active class
+                    const timerRing = document.getElementById('timerRing');
+                    const timerDisplay = document.getElementById('timerDisplay');
+                    if (timerRing) {
+                        timerRing.style.opacity = '0';
+                        timerRing.classList.remove('timer-active');
+                    }
+                    if (timerDisplay) {
+                        timerDisplay.style.opacity = '0';
+                        timerDisplay.classList.remove('timer-active');
+                    }
+
+                    // Refresh journey UI if visible
+                    const container = document.getElementById('journeyContainer');
+                    if (container) renderJourneyUI(container);
+                } else {
+                    console.warn('[Journey] pendingLessonId mismatch, not completing');
+                }
+            }
+        });
+
+        // Show timer UI and add timer-active class for hover persistence
+        const timerRing = document.getElementById('timerRing');
+        const timerDisplay = document.getElementById('timerDisplay');
+        if (timerRing) {
+            timerRing.style.opacity = '1';
+            timerRing.classList.add('timer-active');
+        }
+        if (timerDisplay) {
+            timerDisplay.style.opacity = '1';
+            timerDisplay.classList.add('timer-active');
+        }
+
+        // Update play button state
+        const playIcon = document.getElementById('playIcon');
+        const pauseIcon = document.getElementById('pauseIcon');
+        if (playIcon) playIcon.classList.add('hidden');
+        if (pauseIcon) pauseIcon.classList.remove('hidden');
+
+        console.log(`[Journey] Started ${durationMinutes} min session for lesson: ${lessonId}`);
+    } catch (e) {
+        console.error('[Journey] Failed to start session:', e);
+    }
 };
+
+// Show completion notification
+function showLessonCompleteNotification(lesson) {
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-20 left-1/2 -translate-x-1/2 px-6 py-3 rounded-xl bg-green-500/90 text-white font-bold text-sm shadow-lg backdrop-blur-sm';
+    notification.style.zIndex = '9999';
+    notification.innerHTML = `✓ Lesson Complete: ${lesson.title}`;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
 
 // Mark lesson complete manually
 window.markLessonComplete = (lessonId) => {

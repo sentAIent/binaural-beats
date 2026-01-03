@@ -291,6 +291,9 @@ export function stopAudio() {
     if (!state.oscLeft) return;
     if (state.isRecording) stopRecording();
 
+    // Mark as not playing IMMEDIATELY for accurate button sync
+    state.isPlaying = false;
+
     // Stop any active sweep
     if (state.sweepInterval) {
         clearInterval(state.sweepInterval);
@@ -315,19 +318,19 @@ export function stopAudio() {
     state.masterGain.gain.setValueAtTime(state.masterGain.gain.value, now);
     state.masterGain.gain.linearRampToValueAtTime(0, now + 0.3);
 
+    // Delay oscillator cleanup to allow for volume fade
     setTimeout(() => {
         if (state.oscLeft) { state.oscLeft.stop(); state.oscLeft.disconnect(); }
         if (state.oscRight) { state.oscRight.stop(); state.oscRight.disconnect(); }
         state.oscLeft = null; state.oscRight = null;
         Object.keys(state.activeSoundscapes).forEach(id => stopSingleSoundscape(id));
-        state.isPlaying = false;
         // canvas clear if needed
     }, 350);
 
     // Clear lock screen controls
     clearMediaSession();
 
-    if (uiCallback) uiCallback(false);
+    // Note: UI callback removed - caller manages UI state to prevent race conditions
 }
 
 // --- AUDIO MODE SWITCHING ---
@@ -590,6 +593,11 @@ export function isSweepActive() {
     return state.sweepActive;
 }
 
+// Check if audio is currently playing
+export function isAudioPlaying() {
+    return state.isPlaying;
+}
+
 // Helpers
 function createPinkNoiseBuffer() {
     const bs = 2 * state.audioCtx.sampleRate;
@@ -820,7 +828,7 @@ export function updateMasterBalance() {
     const val = parseFloat(els.balanceSlider.value); // -1 to 1
     if (els.balanceValue) {
         const percent = Math.round(val * 100);
-        const text = percent === 0 ? "C" : percent < 0 ? `L ${Math.abs(percent)}` : `R ${percent}`;
+        const text = percent === 0 ? "0" : percent < 0 ? `L ${Math.abs(percent)}` : `R ${percent}`;
         els.balanceValue.textContent = text;
     }
     if (state.masterPanner && state.masterPanner.pan && state.isPlaying) {

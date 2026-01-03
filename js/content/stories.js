@@ -457,13 +457,13 @@ export function renderStoryCards(container) {
         const isPlaying = storyState.currentStory?.id === story.id && storyState.isPlaying;
 
         return `
-        <div class="story-card group relative flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-purple-500/50 transition-all ${story.premium ? 'premium-content' : ''} ${isPlaying ? 'playing border-purple-500 bg-purple-500/10' : ''}"
+        <div class="story-card group relative flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-purple-500/50 transition-all ${story.premium ? 'premium-content' : ''} ${isPlaying ? 'playing border-purple-500 bg-purple-500/10' : ''}"
             data-story-id="${story.id}">
             
             <!-- Premium badge -->
             <div class="absolute top-1 right-1 flex gap-1">
-                ${hasAudio ? '<span class="text-[8px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400">🎵</span>' : ''}
-                ${story.premium ? '<span class="text-[8px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400">PRO</span>' : ''}
+                ${hasAudio ? '<span class="text-[8px] px-1 py-0.5 rounded-full bg-green-500/20 text-green-400">🎵</span>' : ''}
+                ${story.premium ? '<span class="text-[8px] px-1 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-bold">PRO</span>' : ''}
             </div>
             
             <!-- Icon with play indicator -->
@@ -475,17 +475,17 @@ export function renderStoryCards(container) {
             </div>
             
             <!-- Title and duration -->
-            <span class="text-xs font-bold text-purple-300 text-center">${story.title}</span>
+            <span class="text-[10px] font-bold text-purple-300 text-center leading-tight">${story.title}</span>
             <span class="text-[8px] text-[var(--text-muted)] mt-0.5">${story.duration}${story.bpm ? ` • ${story.bpm} BPM` : ''}</span>
             
-            <!-- Action buttons (shown on hover) -->
-            <div class="absolute bottom-1 left-1 right-1 flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button class="story-play-btn px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[8px] font-bold hover:bg-purple-500/40 transition-all"
+            <!-- Action buttons - styled like other right menu buttons -->
+            <div class="flex justify-center gap-1 mt-2 w-full">
+                <button class="story-play-btn flex-1 px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-purple-300 text-[9px] font-bold hover:bg-purple-500/20 hover:border-purple-500/30 transition-all"
                     onclick="event.stopPropagation(); window.playStoryById('${story.id}')">
-                    ${isPlaying ? 'Stop' : 'Play'}
+                    ${isPlaying ? '⏹ Stop' : '▶ Play'}
                 </button>
-                <label class="story-upload-btn px-2 py-0.5 rounded-full bg-white/10 text-[var(--text-muted)] text-[8px] font-bold hover:bg-white/20 transition-all cursor-pointer"
-                    onclick="event.stopPropagation()">
+                <label class="story-upload-btn px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-[var(--text-muted)] text-[9px] font-bold hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer"
+                    onclick="event.stopPropagation()" title="${hasAudio ? 'Replace audio' : 'Upload audio'}">
                     ${hasAudio ? '🔄' : '📤'}
                     <input type="file" accept="audio/*" class="hidden" onchange="window.uploadStoryAudioHandler(event, '${story.id}')">
                 </label>

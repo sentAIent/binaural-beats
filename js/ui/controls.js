@@ -1,6 +1,6 @@
 import { state, els, THEMES, SOUNDSCAPES, PRESET_COMBOS } from '../state.js';
-import { startAudio, stopAudio, updateFrequencies, updateBeatsVolume, updateMasterVolume, updateMasterBalance, updateAtmosMaster, updateSoundscape, registerUICallback, fadeIn, fadeOut, cancelFadeOut, isVolumeHigh, playCompletionChime, setAudioMode, getAudioMode, startSweep, stopSweep, startSweepPreset, isSweepActive, SWEEP_PRESETS } from '../audio/engine.js';
-import { initVisualizer, getVisualizer } from '../visuals/visualizer.js';
+import { startAudio, stopAudio, updateFrequencies, updateBeatsVolume, updateMasterVolume, updateMasterBalance, updateAtmosMaster, updateSoundscape, registerUICallback, fadeIn, fadeOut, cancelFadeOut, isVolumeHigh, playCompletionChime, setAudioMode, getAudioMode, startSweep, stopSweep, startSweepPreset, isSweepActive, isAudioPlaying, SWEEP_PRESETS } from '../audio/engine.js';
+import { initVisualizer, getVisualizer, pauseVisuals, resumeVisuals, isVisualsPaused } from '../visuals/visualizer.js';
 import { startRecording, stopRecording, startExport, cancelExport, updateExportPreview } from '../export/recorder.js';
 import { openAuthModal, renderLibraryList } from './auth-controller.js';
 import { saveMixToCloud } from '../services/firebase.js';
@@ -11,6 +11,7 @@ import { setStoryVolume, storyState } from '../content/stories.js';
 import { setCustomAudioVolume } from '../content/audio-library.js';
 import { initClassical, isClassicalPlaying, stopClassical, onClassicalStateChange } from '../content/classical.js';
 import { initDJAudio, setDJVolume, setDJPitch, setDJTone, setDJSpeed, triggerOneShot, startLoop, stopLoop, isLoopActive, stopAllLoops, DJ_SOUNDS } from '../audio/dj-synth.js';
+import { createCursorUIInThemeModal } from './cursor.js';
 
 
 export function setupUI() {
@@ -53,6 +54,11 @@ export function setupUI() {
     els.journeyBtn = document.getElementById('journeyBtn');
     els.libraryPanel = document.getElementById('libraryPanel');
     els.libraryList = document.getElementById('libraryList');
+
+    // Button Labels
+    els.audioLabel = document.getElementById('audioLabel');
+    els.sessionLabel = document.getElementById('sessionLabel');
+    els.visualsLabel = document.getElementById('visualsLabel');
 
     // Sidebar & Layout Elements
     els.leftPanel = document.getElementById('leftPanel');
@@ -118,6 +124,14 @@ export function setupUI() {
     // Session Pause Button
     els.sessionPauseBtn = document.getElementById('sessionPauseBtn');
 
+    // Audio and Visual Play Buttons
+    els.audioPlayBtn = document.getElementById('audioPlayBtn');
+    els.audioPlayIcon = document.getElementById('audioPlayIcon');
+    els.audioPauseIcon = document.getElementById('audioPauseIcon');
+    els.visualPlayBtn = document.getElementById('visualPlayBtn');
+    els.visualPlayIcon = document.getElementById('visualPlayIcon');
+    els.visualPauseIcon = document.getElementById('visualPauseIcon');
+
     // NEW: Mode Toggle Elements
     els.modeToggle = document.getElementById('modeToggle');
     els.modeLabel = document.getElementById('modeLabel');
@@ -159,6 +173,16 @@ export function setupUI() {
 
     if (els.playBtn) {
         els.playBtn.addEventListener('click', handlePlayClick);
+    }
+
+    // Audio Play Button - toggles audio only
+    if (els.audioPlayBtn) {
+        els.audioPlayBtn.addEventListener('click', handleAudioToggle);
+    }
+
+    // Visual Play Button - toggles visuals only
+    if (els.visualPlayBtn) {
+        els.visualPlayBtn.addEventListener('click', handleVisualToggle);
     }
 
     if (els.recordBtn) {
@@ -386,11 +410,16 @@ export function setupUI() {
     if (els.rightToggle) els.rightToggle.addEventListener('click', () => {
         els.rightPanel.classList.remove('translate-x-full');
         updateVisualizerScale();
+        // Enforce light theme styles when panel opens
+        enforceLightThemeStyles();
     });
     if (els.closeRightBtn) els.closeRightBtn.addEventListener('click', () => {
         els.rightPanel.classList.add('translate-x-full');
         updateVisualizerScale();
     });
+
+    // Enforce light theme styles on initial load (after a delay to ensure DOM is ready)
+    setTimeout(enforceLightThemeStyles, 100);
 
     // Auto-open mixer on first load for desktop? Maybe not, keep immersive.
 
@@ -491,7 +520,7 @@ export function setupUI() {
     // Color Controls
     // Color history for back button
     let previousColor = null;
-    let currentColor = '#a78bfa'; // Default
+    let currentColor = '#60a9ff'; // Default
 
     function updateColorWithHistory(newColor) {
         previousColor = currentColor;
@@ -502,6 +531,11 @@ export function setupUI() {
 
         const viz = getVisualizer();
         if (viz) viz.setColor(newColor);
+
+        // Update button labels to match color
+        if (els.audioLabel) els.audioLabel.style.color = newColor;
+        if (els.sessionLabel) els.sessionLabel.style.color = newColor;
+        if (els.visualsLabel) els.visualsLabel.style.color = newColor;
 
         // Show back button if we have a previous color
         if (els.prevColorBtn && previousColor) {
@@ -665,11 +699,11 @@ async function handlePlayClick() {
         cancelFadeOut();
         state.isStopping = false;
         // Ensure UI reflects playing immediately
-        updateUIState(true);
+        syncAllButtons();
         return;
     }
 
-    if (state.isPlaying || isClassicalPlaying()) {
+    if (isAudioPlaying() || isClassicalPlaying()) {
         // STOPPING
         console.log('[Controls] Play Click -> Stopping...');
 
@@ -677,16 +711,20 @@ async function handlePlayClick() {
         state.isStopping = true;
 
         // 2. Force UI update immediately to show Play icon (Pause state)
-        updateUIState(false);
+        syncAllButtons();
 
         // 3. Perform the actual stop logic (with fade)
         stopSession();
         if (isClassicalPlaying()) stopClassical();
         endSessionTracking(false);
 
+        // 4. Pause visuals when stopping via main button
+        pauseVisuals();
+
         fadeOut(1.5, () => {
             stopAudio();
             state.isStopping = false; // Reset flag when actually stopped
+            syncAllButtons(); // Sync after audio fully stopped
         });
 
         hideTimerUI();
@@ -695,6 +733,9 @@ async function handlePlayClick() {
         try {
             await startAudio();
             fadeIn(1.5);
+
+            // Auto-start visuals when audio starts via main button
+            resumeVisuals();
 
             // Start analytics tracking
             const beatFreq = parseFloat(els.beatSlider?.value || 10);
@@ -715,14 +756,160 @@ async function handlePlayClick() {
                 });
                 showTimerUI();
             }
+
+            syncAllButtons(); // Sync after audio started
         } catch (e) {
             console.error("Start Audio Failed", e);
         }
     }
 }
 
+// --- AUDIO TOGGLE HANDLER (Left button) ---
+async function handleAudioToggle() {
+    if (!state.disclaimerAccepted) {
+        showDisclaimerModal();
+        return;
+    }
+
+    const audioPlaying = isAudioPlaying() || isClassicalPlaying();
+
+    if (audioPlaying) {
+        // Stop audio only
+        console.log('[Controls] Audio Toggle -> Stopping audio...');
+        stopSession();
+        if (isClassicalPlaying()) stopClassical();
+        endSessionTracking(false);
+        fadeOut(1.5, () => {
+            stopAudio();
+            syncAllButtons(); // Sync after audio fully stops
+        });
+        hideTimerUI();
+        syncAllButtons(); // Immediate sync
+    } else {
+        // Start audio only
+        try {
+            await startAudio();
+            fadeIn(1.5);
+
+            const beatFreq = parseFloat(els.beatSlider?.value || 10);
+            let presetName = 'Custom';
+            if (beatFreq < 4) presetName = 'Delta';
+            else if (beatFreq < 8) presetName = 'Theta';
+            else if (beatFreq < 14) presetName = 'Alpha';
+            else if (beatFreq < 30) presetName = 'Beta';
+            else if (beatFreq < 50) presetName = 'Gamma';
+            else presetName = 'Hyper-Gamma';
+            startSessionTracking(presetName);
+
+            syncAllButtons();
+        } catch (e) {
+            console.error("Start Audio Failed", e);
+        }
+    }
+}
+
+// --- VISUAL TOGGLE HANDLER (Right button) ---
+function handleVisualToggle() {
+    if (isVisualsPaused()) {
+        // Resume visuals
+        console.log('[Controls] Visual Toggle -> Resuming visuals...');
+        resumeVisuals();
+        syncAllButtons();
+    } else {
+        // Pause visuals
+        console.log('[Controls] Visual Toggle -> Pausing visuals...');
+        pauseVisuals();
+        syncAllButtons();
+    }
+}
+
+// --- SYNC AUDIO BUTTON ---
+function syncAudioButton(isPlaying) {
+    if (!els.audioPlayBtn) return;
+
+    if (isPlaying) {
+        els.audioPlayIcon?.classList.add('hidden');
+        els.audioPauseIcon?.classList.remove('hidden');
+        els.audioPlayBtn.classList.add('playing');
+        els.audioPlayBtn.style.boxShadow = "0 0 20px var(--accent-glow)";
+    } else {
+        els.audioPlayIcon?.classList.remove('hidden');
+        els.audioPauseIcon?.classList.add('hidden');
+        els.audioPlayBtn.classList.remove('playing');
+        els.audioPlayBtn.style.boxShadow = "";
+    }
+}
+
+// --- SYNC VISUAL BUTTON ---
+function syncVisualButton(isPlaying) {
+    if (!els.visualPlayBtn) return;
+
+    if (isPlaying) {
+        els.visualPlayIcon?.classList.add('hidden');
+        els.visualPauseIcon?.classList.remove('hidden');
+        els.visualPlayBtn.classList.add('playing');
+        els.visualPlayBtn.style.boxShadow = "0 0 20px var(--accent-glow)";
+    } else {
+        els.visualPlayIcon?.classList.remove('hidden');
+        els.visualPauseIcon?.classList.add('hidden');
+        els.visualPlayBtn.classList.remove('playing');
+        els.visualPlayBtn.style.boxShadow = "";
+    }
+}
+
+
+// --- SYNC MAIN PLAY BUTTON ---
+function syncMainButton(isPlaying) {
+    if (!els.playBtn) return;
+
+    if (isPlaying) {
+        els.playIcon?.classList.add('hidden');
+        els.pauseIcon?.classList.remove('hidden');
+        els.playBtn.classList.add('playing');
+        els.playBtn.style.boxShadow = "0 0 30px var(--accent-glow)";
+    } else {
+        els.playIcon?.classList.remove('hidden');
+        els.pauseIcon?.classList.add('hidden');
+        els.playBtn.classList.remove('playing');
+        els.playBtn.style.boxShadow = "";
+    }
+
+    // Mobile play button sync
+    if (els.mobilePlayIcon) els.mobilePlayIcon.classList.toggle('hidden', isPlaying);
+    if (els.mobilePauseIcon) els.mobilePauseIcon.classList.toggle('hidden', !isPlaying);
+    if (els.mobilePlayBtn) els.mobilePlayBtn.classList.toggle('playing', isPlaying);
+}
+
+// --- UNIFIED BUTTON SYNC ---
+// Single source of truth: queries actual state and syncs all three buttons
+function syncAllButtons() {
+    // Query actual states - these are the single sources of truth
+    const audioPlaying = (isAudioPlaying() || isClassicalPlaying()) && !state.isStopping;
+    const visualsPlaying = !isVisualsPaused();
+
+    // Main button shows pause if EITHER audio OR visuals are active
+    const isAnyPlaying = audioPlaying || visualsPlaying;
+
+    // Sync all buttons based on actual state
+    syncAudioButton(audioPlaying);
+    syncVisualButton(visualsPlaying);
+    syncMainButton(isAnyPlaying);
+
+    // Update status indicator
+    if (isAnyPlaying) {
+        els.statusIndicator?.classList.remove('bg-slate-600');
+        els.statusIndicator?.classList.add('bg-teal-400', 'animate-pulse');
+    } else {
+        els.statusIndicator?.classList.add('bg-slate-600');
+        els.statusIndicator?.classList.remove('bg-teal-400', 'animate-pulse');
+    }
+
+    console.log(`[Buttons] Synced - audio: ${audioPlaying}, visual: ${visualsPlaying} → main: ${isAnyPlaying ? 'PAUSE' : 'PLAY'}`);
+}
+
 
 // --- TIMER UI FUNCTIONS ---
+
 function setupTimerUI() {
     // Duration selector change handler
     if (els.sessionDuration) {
@@ -1221,52 +1408,29 @@ function showToast(message, type = 'info') {
 }
 
 export function updateUIState(isPlaying) {
-    // If ANY audio is playing (Binaural OR Classical), show Pause button
-    // BUT if we are in the process of stopping (fading out), show Play button (inactive state)
-    const active = (isPlaying || state.isPlaying || (typeof isClassicalPlaying === 'function' && isClassicalPlaying())) && !state.isStopping;
+    // Sync all buttons based on actual state (single source of truth)
+    syncAllButtons();
 
-    if (active) {
-        els.playIcon.classList.add('hidden');
-        els.pauseIcon.classList.remove('hidden');
-        els.playBtn.classList.add('playing');
+    // Determine if any audio/visual is active for non-button UI updates
+    const isAudioActive = (state.isPlaying || isClassicalPlaying()) && !state.isStopping;
+    const isVisualsActive = !isVisualsPaused();
+    const isAnyActive = isAudioActive || isVisualsActive;
 
-        // Pulse effect
-        els.playBtn.style.boxShadow = "0 0 30px var(--accent-glow)";
-
-        if (els.mobilePlayIcon) els.mobilePlayIcon.classList.add('hidden');
-        if (els.mobilePauseIcon) els.mobilePauseIcon.classList.remove('hidden');
-
-        els.statusIndicator.classList.remove('bg-slate-600');
-        els.statusIndicator.classList.add('bg-teal-400', 'animate-pulse');
+    // Non-button UI updates
+    if (isAnyActive) {
         els.recordBtn.disabled = false;
         resetImmersiveTimer();
     } else {
-        els.playIcon.classList.remove('hidden');
-        els.pauseIcon.classList.add('hidden');
-        els.playBtn.classList.remove('playing');
-
-        // Remove pulse
-        els.playBtn.style.boxShadow = "";
-
-        if (els.mobilePlayIcon) els.mobilePlayIcon.classList.remove('hidden');
-        if (els.mobilePauseIcon) els.mobilePauseIcon.classList.add('hidden');
-
-        els.statusIndicator.classList.add('bg-slate-600');
-        els.statusIndicator.classList.remove('bg-teal-400', 'animate-pulse');
         els.recordBtn.disabled = true;
         clearTimeout(state.immersiveTimeout);
         if (els.appOverlay) els.appOverlay.classList.remove('immersive-hidden');
-
-        // Mobile play button state
-        if (els.mobilePlayIcon) els.mobilePlayIcon.classList.remove('hidden');
-        if (els.mobilePauseIcon) els.mobilePauseIcon.classList.add('hidden');
-        if (els.mobilePlayBtn) els.mobilePlayBtn.classList.remove('playing');
 
         // Reset active preset type so next click starts fresh
         state.activePresetType = null;
         if (typeof updatePresetButtons === 'function') updatePresetButtons(null);
     }
 }
+
 
 
 export function resetImmersiveTimer() {
@@ -1284,7 +1448,13 @@ export function resetImmersiveTimer() {
 export function setVisualMode(mode) {
     state.visualMode = mode;
     const viz = getVisualizer();
-    if (viz) viz.setMode(mode);
+    if (viz) {
+        viz.setMode(mode);
+        // Render a single frame so the mode is visible even when paused
+        if (isVisualsPaused()) {
+            viz.renderSingleFrame();
+        }
+    }
 
     // Update button states with theme-aware styling
     const buttons = [
@@ -1311,10 +1481,108 @@ export function setVisualMode(mode) {
 export function setTheme(themeName) {
     const t = THEMES[themeName] || THEMES.default;
     const r = document.documentElement.style;
-    r.setProperty('--bg-main', t.bg); r.setProperty('--bg-panel', t.panel); r.setProperty('--border', t.border);
-    r.setProperty('--text-main', t.text); r.setProperty('--text-muted', t.muted); r.setProperty('--accent', t.accent);
-    r.setProperty('--accent-glow', t.glow); r.setProperty('--slider-track', t.border);
+
+    // Core theme colors
+    r.setProperty('--bg-main', t.bg);
+    r.setProperty('--bg-panel', t.panel);
+    r.setProperty('--border', t.border);
+    r.setProperty('--text-main', t.text);
+    r.setProperty('--text-muted', t.muted);
+    r.setProperty('--accent', t.accent);
+    r.setProperty('--accent-glow', t.glow);
+    r.setProperty('--slider-track', t.border);
+
+    // CRITICAL: Set data-theme on body for CSS selectors to work
+    document.body.dataset.theme = themeName;
+
+    // Dispatch event for components that need to react (e.g. Cursor)
+    window.dispatchEvent(new CustomEvent('themeChanged', {
+        detail: {
+            theme: t,
+            name: themeName
+        }
+    }));
+
+    // Volume slider colors (all themes have these)
+    if (t.volumeAccent) {
+        r.setProperty('--volume-accent', t.volumeAccent);
+        r.setProperty('--volume-glow', t.volumeGlow);
+    }
+
+    // Glass properties for light themes (with dark theme fallbacks)
+    r.setProperty('--glass-bg', t.glassBg || 'rgba(30, 41, 59, 0.8)');
+    r.setProperty('--glass-border', t.glassBorder || 'rgba(255, 255, 255, 0.1)');
+
     localStorage.setItem('mindwave_theme', themeName);
+
+    // DIRECT INLINE STYLE ENFORCEMENT for light themes
+    // This bypasses any CSS specificity issues
+    const isLightTheme = themeName === 'cloud' || themeName === 'dawn';
+    const leftPanel = document.getElementById('leftPanel');
+    const rightPanel = document.getElementById('rightPanel');
+
+    if (isLightTheme) {
+        const bgColor = t.panel;
+        if (leftPanel) leftPanel.style.backgroundColor = bgColor;
+        if (rightPanel) rightPanel.style.backgroundColor = bgColor;
+
+        // Also fix all preset buttons text
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.style.backgroundColor = 'rgba(255,255,255,0.7)';
+            btn.querySelectorAll('*').forEach(child => {
+                child.style.color = t.text;
+            });
+        });
+    } else {
+        // Clear inline styles for dark themes
+        if (leftPanel) leftPanel.style.backgroundColor = '';
+        if (rightPanel) rightPanel.style.backgroundColor = '';
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.style.backgroundColor = '';
+            btn.querySelectorAll('*').forEach(child => {
+                child.style.color = '';
+            });
+        });
+    }
+}
+
+/**
+ * Enforce light theme styles on sidebars and buttons
+ * Called when: panel opens, page loads, theme changes
+ */
+function enforceLightThemeStyles() {
+    const themeName = localStorage.getItem('mindwave_theme') || 'default';
+    const isLightTheme = themeName === 'cloud' || themeName === 'dawn';
+
+    if (!isLightTheme) return;
+
+    const t = THEMES[themeName];
+    if (!t) return;
+
+    const leftPanel = document.getElementById('leftPanel');
+    const rightPanel = document.getElementById('rightPanel');
+
+    // Apply light backgrounds
+    if (leftPanel) leftPanel.style.backgroundColor = t.panel;
+    if (rightPanel) rightPanel.style.backgroundColor = t.panel;
+
+    // Fix preset button text - make it DARK
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.style.backgroundColor = 'rgba(255,255,255,0.8)';
+        btn.style.borderColor = t.border;
+        btn.querySelectorAll('*').forEach(child => {
+            child.style.color = t.text;
+        });
+    });
+
+    // Fix all text labels in sidebars
+    const textElements = document.querySelectorAll('#leftPanel span, #leftPanel label, #rightPanel span, #rightPanel label');
+    textElements.forEach(el => {
+        // Don't override accent-colored headers
+        if (!el.style.color.includes('var(--accent)') && !el.classList.contains('text-\\[var\\(--accent\\)\\]')) {
+            el.style.color = t.text;
+        }
+    });
 }
 
 export function initMixer() {
@@ -1713,7 +1981,13 @@ export async function applyPreset(type, btnElement, autoStart = true) {
     if (els.visualColorPicker) els.visualColorPicker.value = color;
     if (els.colorPreview) els.colorPreview.style.backgroundColor = color;
 
-    // 5. Save
+    // 5. Auto-start visuals when applying preset (only if autoStart is true)
+    if (autoStart) {
+        resumeVisuals();
+        syncAllButtons();
+    }
+
+    // 6. Save
     saveStateToLocal();
 }
 
@@ -1794,6 +2068,9 @@ export async function applyComboPreset(comboId, btnElement) {
 
     // 8. Save state
     saveStateToLocal();
+
+    // 9. Ensure buttons synced after combo preset
+    syncAllButtons();
 }
 
 // --- THEME MODAL LOGIC ---
@@ -1810,23 +2087,16 @@ export function initThemeModal() {
         card.className = `theme-card group ${els.themeBtn && document.body.dataset.theme === key ? 'active' : ''}`;
         card.style.setProperty('--theme-bg', theme.bg);
 
-        // Card HTML
-        // Determine text color for card (dark background)
-        // For light themes (dawn/cloud), theme.text is dark, so we use theme.muted (light) or accent suitable for dark bg
-        let titleColor = theme.text;
-        if (key === 'cloud' || key === 'dawn') {
-            titleColor = theme.muted;
-        }
-
+        // Card HTML - use CSS classes for theme-aware text colors
         const displayName = key === 'default' ? 'Emerald' : key;
 
         card.innerHTML = `
             <div class="theme-preview">
                 <div class="absolute inset-0 opacity-50" style="background: radial-gradient(circle at 50% 50%, ${theme.accent}, transparent 70%);"></div>
             </div>
-            <div class="p-3">
-                <div class="text-sm font-bold capitalize mb-1" style="color: ${titleColor}">${displayName}</div>
-                <div class="text-[10px]" style="color: ${theme.muted}">
+            <div class="p-3 theme-card-content">
+                <div class="theme-card-title text-sm font-bold capitalize mb-1">${displayName}</div>
+                <div class="theme-card-desc text-[10px]">
                     ${getThemeDesc(key)}
                 </div>
             </div>
@@ -1883,6 +2153,9 @@ export function openThemeModal() {
         // Re-render to update 'active' state
         initThemeModal();
 
+        // Add cursor settings UI to the modal
+        createCursorUIInThemeModal();
+
         modal.classList.remove('hidden');
         // Force reflow
         void modal.offsetWidth;
@@ -1928,7 +2201,7 @@ export function updatePresetButtons(activeType) {
 // DJ PADS CONTROLLER
 // =============================================================================
 
-let djCurrentCategory = 'fx';
+let djCurrentCategory = 'ambient';
 let djMode = 'oneshot'; // 'oneshot' or 'loop'
 
 function setupDJPads() {
@@ -1947,9 +2220,9 @@ function setupDJPads() {
 
     console.log('[DJ Pads] Initializing...');
 
-    // Render initial category and highlight FX tab
-    renderDJPads('fx');
-    updateCategoryTabs(); // Ensure FX tab is highlighted on load
+    // Render initial category (ambient is the first category in DJ_SOUNDS)
+    renderDJPads('ambient');
+    updateCategoryTabs(); // Ensure Ambient tab is highlighted on load
 
     // Category Tab Clicks
     if (categoryTabs) {
@@ -2057,17 +2330,17 @@ function updateCategoryTabs() {
             const colorClass = catData?.color || 'from-purple-500 to-violet-600';
             tab.className = `dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide whitespace-nowrap`;
 
-            // Apply category-specific colors
-            if (cat === 'fx') {
+            // Apply category-specific colors based on DJ_SOUNDS categories
+            if (cat === 'ambient') {
                 tab.classList.add('bg-purple-500/20', 'text-purple-400', 'border', 'border-purple-500/30');
-            } else if (cat === 'sampler') {
+            } else if (cat === 'pulse') {
                 tab.classList.add('bg-pink-500/20', 'text-pink-400', 'border', 'border-pink-500/30');
-            } else if (cat === 'atmosphere') {
+            } else if (cat === 'texture') {
                 tab.classList.add('bg-cyan-500/20', 'text-cyan-400', 'border', 'border-cyan-500/30');
-            } else if (cat === 'rhythm') {
-                tab.classList.add('bg-orange-500/20', 'text-orange-400', 'border', 'border-orange-500/30');
-            } else if (cat === 'transition') {
+            } else if (cat === 'healing') {
                 tab.classList.add('bg-emerald-500/20', 'text-emerald-400', 'border', 'border-emerald-500/30');
+            } else if (cat === 'drops') {
+                tab.classList.add('bg-red-500/20', 'text-red-400', 'border', 'border-red-500/30');
             }
         } else {
             // Inactive state
@@ -2114,21 +2387,24 @@ function renderDJPads(category) {
     let textColor = 'text-purple-400';
     let glowColor = 'shadow-purple-500/30';
 
-    if (category === 'fx') {
+    if (category === 'ambient') {
         gradientFrom = 'from-purple-500'; gradientTo = 'to-violet-600';
         borderColor = 'border-purple-500/30'; textColor = 'text-purple-400'; glowColor = 'shadow-purple-500/30';
-    } else if (category === 'sampler') {
+    } else if (category === 'pulse') {
         gradientFrom = 'from-pink-500'; gradientTo = 'to-rose-600';
         borderColor = 'border-pink-500/30'; textColor = 'text-pink-400'; glowColor = 'shadow-pink-500/30';
-    } else if (category === 'atmosphere') {
+    } else if (category === 'texture') {
         gradientFrom = 'from-cyan-500'; gradientTo = 'to-teal-600';
         borderColor = 'border-cyan-500/30'; textColor = 'text-cyan-400'; glowColor = 'shadow-cyan-500/30';
-    } else if (category === 'rhythm') {
-        gradientFrom = 'from-orange-500'; gradientTo = 'to-amber-600';
-        borderColor = 'border-orange-500/30'; textColor = 'text-orange-400'; glowColor = 'shadow-orange-500/30';
-    } else if (category === 'transition') {
+    } else if (category === 'healing') {
         gradientFrom = 'from-emerald-500'; gradientTo = 'to-green-600';
         borderColor = 'border-emerald-500/30'; textColor = 'text-emerald-400'; glowColor = 'shadow-emerald-500/30';
+    } else if (category === 'drops') {
+        gradientFrom = 'from-red-500'; gradientTo = 'to-orange-600';
+        borderColor = 'border-red-500/30'; textColor = 'text-red-400'; glowColor = 'shadow-red-500/30';
+    } else if (category === 'bass') {
+        gradientFrom = 'from-indigo-500'; gradientTo = 'to-blue-600';
+        borderColor = 'border-indigo-500/30'; textColor = 'text-indigo-400'; glowColor = 'shadow-indigo-500/30';
     }
 
     grid.innerHTML = '';
@@ -2145,20 +2421,17 @@ function renderDJPads(category) {
         pad.dataset.soundId = id;
         pad.dataset.canLoop = canLoop;
 
-        // CRITICAL: Set explicit white text color on the button itself to override inherited black
-        pad.style.color = '#ffffff';
-
         // Add loop indicator if looping
         const loopIndicator = isActive ? `<div class="absolute top-1 right-1 w-2 h-2 rounded-full bg-gradient-to-r ${gradientFrom} ${gradientTo} animate-pulse"></div>` : '';
 
-        // Color values for active vs inactive states
-        const activeColor = isActive ? `color: var(--accent, #00d4ff);` : '';
+        // Use CSS classes instead of inline styles for theme-aware text colors
+        const activeClass = isActive ? 'dj-pad-active' : '';
 
         pad.innerHTML = `
             ${loopIndicator}
-            <span style="font-size: 1.5rem; margin-bottom: 0.25rem; color: white; text-shadow: 0 0 8px rgba(255,255,255,0.5);">${sound.icon}</span>
-            <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.95); ${activeColor}">${sound.label}</span>
-            ${canLoop ? `<span style="font-size: 8px; color: rgba(255,255,255,0.6); margin-top: 2px;">● LOOP</span>` : ''}
+            <span class="dj-pad-icon text-2xl mb-1">${sound.icon}</span>
+            <span class="dj-pad-label text-[10px] font-bold uppercase tracking-wide ${activeClass}">${sound.label}</span>
+            ${canLoop ? `<span class="dj-pad-loop text-[8px] mt-0.5">● LOOP</span>` : ''}
         `;
 
         // Click handler

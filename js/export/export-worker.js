@@ -184,40 +184,54 @@ self.onmessage = async function (e) {
                 writeStr(view, 36, 'data');
                 view.setUint32(40, dataSize, true);
 
-                // Interleave and write samples
-                let wavOffset = 44;
-                const chunkSize = 50000;
-                for (let i = 0; i < totalSamplesPerChannel; i++) {
-                    const sL = Math.max(-1, Math.min(1, masterL[i]));
-                    const sR = Math.max(-1, Math.min(1, masterR[i]));
+                // OPTIMIZED: Process in large chunks using Int16Array for faster encoding
+                if (!is24bit) {
+                    // 16-bit: Use Int16Array view for ~10x faster encoding
+                    const int16View = new Int16Array(buffer, 44);
+                    const chunkSize = 100000; // Process 100k samples at a time
 
-                    if (is24bit) {
-                        // 24-bit encoding
-                        const iL = Math.floor(sL * 8388607);
-                        const iR = Math.floor(sR * 8388607);
-                        view.setUint8(wavOffset, iL & 0xFF);
-                        view.setUint8(wavOffset + 1, (iL >> 8) & 0xFF);
-                        view.setUint8(wavOffset + 2, (iL >> 16) & 0xFF);
-                        view.setUint8(wavOffset + 3, iR & 0xFF);
-                        view.setUint8(wavOffset + 4, (iR >> 8) & 0xFF);
-                        view.setUint8(wavOffset + 5, (iR >> 16) & 0xFF);
-                        wavOffset += 6;
-                    } else {
-                        // 16-bit encoding
-                        view.setInt16(wavOffset, sL < 0 ? sL * 0x8000 : sL * 0x7FFF, true);
-                        view.setInt16(wavOffset + 2, sR < 0 ? sR * 0x8000 : sR * 0x7FFF, true);
-                        wavOffset += 4;
+                    for (let start = 0; start < totalSamplesPerChannel; start += chunkSize) {
+                        const end = Math.min(start + chunkSize, totalSamplesPerChannel);
+
+                        for (let i = start; i < end; i++) {
+                            const sL = Math.max(-1, Math.min(1, masterL[i]));
+                            const sR = Math.max(-1, Math.min(1, masterR[i]));
+                            const idx = i * 2;
+                            int16View[idx] = sL < 0 ? sL * 0x8000 : sL * 0x7FFF;
+                            int16View[idx + 1] = sR < 0 ? sR * 0x8000 : sR * 0x7FFF;
+                        }
+
+                        // Progress update per chunk
+                        const encProgress = 60 + ((end / totalSamplesPerChannel) * 35);
+                        self.postMessage({ type: 'progress', step: 'Encoding WAV', detail: Math.floor((end / totalSamplesPerChannel) * 100) + '%', percent: Math.floor(encProgress) });
                     }
+                } else {
+                    // 24-bit: Use Uint8Array view for faster byte writes
+                    const uint8View = new Uint8Array(buffer, 44);
+                    const chunkSize = 100000;
 
-                    // Progress update every chunk
-                    if (i % chunkSize === 0) {
-                        const encProgress = 60 + ((i / totalSamplesPerChannel) * 35);
-                        self.postMessage({ type: 'progress', step: 'Encoding WAV', detail: Math.floor((i / totalSamplesPerChannel) * 100) + '%', percent: Math.floor(encProgress) });
+                    for (let start = 0; start < totalSamplesPerChannel; start += chunkSize) {
+                        const end = Math.min(start + chunkSize, totalSamplesPerChannel);
+
+                        for (let i = start; i < end; i++) {
+                            const sL = Math.max(-1, Math.min(1, masterL[i]));
+                            const sR = Math.max(-1, Math.min(1, masterR[i]));
+                            const iL = Math.floor(sL * 8388607);
+                            const iR = Math.floor(sR * 8388607);
+                            const offset = i * 6;
+                            uint8View[offset] = iL & 0xFF;
+                            uint8View[offset + 1] = (iL >> 8) & 0xFF;
+                            uint8View[offset + 2] = (iL >> 16) & 0xFF;
+                            uint8View[offset + 3] = iR & 0xFF;
+                            uint8View[offset + 4] = (iR >> 8) & 0xFF;
+                            uint8View[offset + 5] = (iR >> 16) & 0xFF;
+                        }
+
+                        const encProgress = 60 + ((end / totalSamplesPerChannel) * 35);
+                        self.postMessage({ type: 'progress', step: 'Encoding WAV', detail: Math.floor((end / totalSamplesPerChannel) * 100) + '%', percent: Math.floor(encProgress) });
                     }
                 }
 
-                // Send the ArrayBuffer - main thread will create Blob
-                // (Blobs cannot be transferred via postMessage from workers)
                 ext = 'wav';
 
             } else if (format.startsWith('mp3')) {

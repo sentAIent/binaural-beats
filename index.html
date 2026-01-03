@@ -30,7 +30,7 @@
     <title>MindWave - Binaural Beats Studio</title>
     <!-- Compiled Tailwind utilities instead of CDN (300KB+ → ~20KB) -->
     <link rel="stylesheet" href="css/tailwind-compiled.css">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=20">
     <!-- Preload critical resources -->
     <link rel="preload" href="js/main.js" as="script" crossorigin>
     <script src="config.js" defer onerror="console.log('[Config] No config.js found - using mock mode')"></script>
@@ -164,7 +164,7 @@
             </div>
 
             <!-- Main Control Panel - Responsive & Centered -->
-            <div
+            <div id="topControlBar"
                 class="glass-card rounded-2xl px-3 py-2 pointer-events-auto backdrop-blur-2xl bg-[#0f172a]/90 border border-white/10 shadow-2xl flex flex-wrap items-center justify-center gap-3 max-w-[calc(100vw-320px)]">
 
                 <!-- Status Indicator -->
@@ -292,8 +292,8 @@
                     <div class="relative group" title="Particle Color">
                         <div id="colorPreview"
                             class="w-6 h-6 rounded-full border border-white/20 cursor-pointer shadow-[0_0_10px_rgba(255,255,255,0.2)] transition-transform active:scale-95"
-                            style="background-color: #a78bfa;"></div>
-                        <input type="color" id="visualColorPicker" value="#a78bfa"
+                            style="background-color: #60a9ff;"></div>
+                        <input type="color" id="visualColorPicker" value="#60a9ff"
                             class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
                     </div>
 
@@ -327,35 +327,83 @@
             <div class="flex flex-col items-center gap-3 pb-2">
                 <!-- Duration Selector MOVED BELOW -->
 
-                <!-- Play Button with Progress Ring -->
-                <div class="relative">
-                    <!-- Progress Ring SVG (behind button) -->
-                    <svg id="timerRing"
-                        class="absolute inset-0 w-28 h-28 -m-2 rotate-[-90deg] opacity-0 transition-opacity"
-                        viewBox="0 0 120 120">
-                        <circle cx="60" cy="60" r="54" fill="none" stroke="var(--border)" stroke-width="4"
-                            opacity="0.3" />
-                        <circle id="timerProgress" cx="60" cy="60" r="54" fill="none" stroke="var(--accent)"
-                            stroke-width="4" stroke-linecap="round" stroke-dasharray="339.292"
-                            stroke-dashoffset="339.292" />
-                    </svg>
+                <!-- Play Buttons Row: Audio | Main | Visual -->
+                <div class="flex items-end gap-4">
+                    <!-- Audio Play/Pause Button -->
+                    <div class="flex flex-col items-center gap-1">
+                        <button id="audioPlayBtn"
+                            class="glass-card w-14 h-14 rounded-full flex items-center justify-center shadow-[0_0_20px_var(--accent-glow)] hover:scale-105 active:scale-95 transition-all bg-white/5 border border-white/20 backdrop-blur-xl group"
+                            title="Toggle Audio">
+                            <svg id="audioPlayIcon"
+                                class="w-6 h-6 text-[var(--accent)] group-hover:text-white transition-colors ml-0.5"
+                                viewBox="0 0 24 24" fill="currentColor">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                            <svg id="audioPauseIcon"
+                                class="hidden w-6 h-6 text-[var(--accent)] group-hover:text-white transition-colors"
+                                viewBox="0 0 24 24" fill="currentColor">
+                                <rect x="6" y="4" width="4" height="16"></rect>
+                                <rect x="14" y="4" width="4" height="16"></rect>
+                            </svg>
+                        </button>
+                        <span id="audioLabel" class="text-[8px] font-bold uppercase tracking-widest"
+                            style="color: #60a9ff;">Audio</span>
+                    </div>
 
-                    <button id="playBtn"
-                        class="glass-card w-24 h-24 rounded-full flex items-center justify-center shadow-[0_0_50px_var(--accent-glow)] hover:scale-105 active:scale-95 transition-all bg-white/5 border border-white/20 backdrop-blur-xl group relative z-10">
-                        <svg id="playIcon"
-                            class="w-10 h-10 text-[var(--accent)] group-hover:text-white transition-colors ml-1"
-                            viewBox="0 0 24 24" fill="currentColor">
-                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                        </svg>
-                        <svg id="pauseIcon"
-                            class="hidden w-10 h-10 text-[var(--accent)] group-hover:text-white transition-colors"
-                            viewBox="0 0 24 24" fill="currentColor">
-                            <rect x="6" y="4" width="4" height="16"></rect>
-                            <rect x="14" y="4" width="4" height="16"></rect>
-                        </svg>
-                    </button>
+                    <!-- Main Play Button with Progress Ring -->
+                    <div class="flex flex-col items-center gap-1">
+                        <div class="relative">
+                            <!-- Progress Ring SVG (behind button) -->
+                            <svg id="timerRing"
+                                class="absolute inset-0 w-28 h-28 -m-2 rotate-[-90deg] opacity-0 transition-opacity"
+                                viewBox="0 0 120 120">
+                                <circle cx="60" cy="60" r="54" fill="none" stroke="var(--border)" stroke-width="4"
+                                    opacity="0.3" />
+                                <circle id="timerProgress" cx="60" cy="60" r="54" fill="none" stroke="var(--accent)"
+                                    stroke-width="4" stroke-linecap="round" stroke-dasharray="339.292"
+                                    stroke-dashoffset="339.292" />
+                            </svg>
+
+                            <button id="playBtn"
+                                class="glass-card w-24 h-24 rounded-full flex items-center justify-center shadow-[0_0_50px_var(--accent-glow)] hover:scale-105 active:scale-95 transition-all bg-white/5 border border-white/20 backdrop-blur-xl group relative z-10">
+                                <svg id="playIcon"
+                                    class="w-10 h-10 text-[var(--accent)] group-hover:text-white transition-colors ml-1"
+                                    viewBox="0 0 24 24" fill="currentColor">
+                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                                <svg id="pauseIcon"
+                                    class="hidden w-10 h-10 text-[var(--accent)] group-hover:text-white transition-colors"
+                                    viewBox="0 0 24 24" fill="currentColor">
+                                    <rect x="6" y="4" width="4" height="16"></rect>
+                                    <rect x="14" y="4" width="4" height="16"></rect>
+                                </svg>
+                            </button>
+                        </div>
+                        <span id="sessionLabel" class="text-[8px] font-bold uppercase tracking-widest"
+                            style="color: #60a9ff;">Session</span>
+                    </div>
+
+                    <!-- Visual Play/Pause Button -->
+                    <div class="flex flex-col items-center gap-1">
+                        <button id="visualPlayBtn"
+                            class="glass-card w-14 h-14 rounded-full flex items-center justify-center shadow-[0_0_20px_var(--accent-glow)] hover:scale-105 active:scale-95 transition-all bg-white/5 border border-white/20 backdrop-blur-xl group"
+                            title="Toggle Visuals">
+                            <svg id="visualPlayIcon"
+                                class="w-6 h-6 text-[var(--accent)] group-hover:text-white transition-colors ml-0.5"
+                                viewBox="0 0 24 24" fill="currentColor">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                            <svg id="visualPauseIcon"
+                                class="hidden w-6 h-6 text-[var(--accent)] group-hover:text-white transition-colors"
+                                viewBox="0 0 24 24" fill="currentColor">
+                                <rect x="6" y="4" width="4" height="16"></rect>
+                                <rect x="14" y="4" width="4" height="16"></rect>
+                            </svg>
+                        </button>
+                        <span id="visualsLabel" class="text-[8px] font-bold uppercase tracking-widest"
+                            style="color: #60a9ff;">Visuals</span>
+                    </div>
                 </div>
-
                 <!-- Timer Display -->
                 <div id="timerDisplay"
                     class="text-sm font-mono text-[var(--accent)] opacity-0 transition-opacity tabular-nums">
@@ -801,25 +849,25 @@
 
                     <!-- Category Tabs -->
                     <div class="flex gap-1 mb-3 overflow-x-auto pb-1" id="djCategoryTabs">
-                        <button data-category="fx"
+                        <button data-category="ambient"
                             class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-purple-500/20 text-purple-400 border border-purple-500/30 whitespace-nowrap hover:bg-white/10">
-                            🎛️ FX
+                            🎧 Ambient
                         </button>
-                        <button data-category="sampler"
+                        <button data-category="pulse"
                             class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-white/5 text-[var(--text-muted)] border border-white/10 whitespace-nowrap hover:bg-white/10">
-                            🎹 Samples
+                            💓 Pulse
                         </button>
-                        <button data-category="atmosphere"
+                        <button data-category="texture"
                             class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-white/5 text-[var(--text-muted)] border border-white/10 whitespace-nowrap hover:bg-white/10">
-                            🌌 Atmos
+                            🌌 Texture
                         </button>
-                        <button data-category="rhythm"
+                        <button data-category="healing"
                             class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-white/5 text-[var(--text-muted)] border border-white/10 whitespace-nowrap hover:bg-white/10">
-                            🥁 Rhythm
+                            🧘 Healing
                         </button>
-                        <button data-category="transition"
+                        <button data-category="drops"
                             class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-white/5 text-[var(--text-muted)] border border-white/10 whitespace-nowrap hover:bg-white/10">
-                            🔀 Trans
+                            💥 Drops
                         </button>
                     </div>
 
@@ -1251,7 +1299,7 @@
             </div>
 
             <!-- Grid Content -->
-            <div class="flex-1 overflow-y-auto custom-scrollbar p-6 bg-[#0f172a]/50">
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-6" style="background-color: var(--bg-main);">
                 <div id="themeGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     <!-- Theme Cards Injected via JS -->
                 </div>
@@ -1852,7 +1900,7 @@
         });
     </script>
 
-    <script type="module" src="js/main.js?v=16"></script>
+    <script type="module" src="js/main.js?v=20"></script>
 
     <!-- FAILSAFE: Remove loading screen after max 5 seconds regardless of module loading -->
     <script>

@@ -1,4 +1,5 @@
 import { setupUI } from './ui/controls.js';
+import { initCursor } from './ui/cursor.js';
 import { initFirebase } from './services/firebase.js';
 import { initAuthUI } from './ui/auth-controller.js';
 import { startOnboarding, shouldShowOnboarding } from './ui/onboarding.js';
@@ -6,6 +7,7 @@ import { initHaptics } from './utils/haptics.js';
 import { initShareFeature, copyShareLink } from './services/share.js';
 import { recordVisit } from './services/analytics.js';
 import { setupSwipeGestures } from './ui/layout.js';
+import { initResizablePanels } from './ui/resize-panels.js';
 
 // Content Modules - Loaded dynamically after UI is ready
 // import { initStoryPlayer, renderStoryCards, playStory, stopStory, setStoryVolume } from './content/stories.js';
@@ -32,11 +34,17 @@ document.addEventListener('DOMContentLoaded', () => {
     initHaptics();
     setupSwipeGestures();
 
+    // Resizable side panels
+    initResizablePanels();
+
     // Analytics
     recordVisit();
 
     // URL sharing
     initShareFeature();
+
+    // Custom Cursor
+    initCursor();
 
     // Hide loading screen immediately once core UI is ready
     const loadingScreen = document.getElementById('loadingScreen');

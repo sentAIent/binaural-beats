@@ -122,82 +122,97 @@ export function getDJControls() {
 }
 
 // =============================================================================
-// SOUND DEFINITIONS
+// SOUND DEFINITIONS - Meditation-focused sounds
 // =============================================================================
 
 export const DJ_SOUNDS = {
-    // ── FX / Beat Effects ────────────────────────────────────────────────────
-    fx: {
-        label: 'FX',
-        icon: '🎛️',
+    // ── Ambient Textures ──────────────────────────────────────────────────────
+    ambient: {
+        label: 'Ambient',
+        icon: '🎵',
         color: 'from-purple-500 to-violet-600',
         sounds: {
-            echo: { label: 'Echo', icon: '📢', canLoop: true },
-            reverb: { label: 'Reverb', icon: '🌊', canLoop: true },
-            flanger: { label: 'Flanger', icon: '✈️', canLoop: true },
-            filter: { label: 'Filter', icon: '🔊', canLoop: true },
-            beatroll: { label: 'Beat Roll', icon: '🔁', canLoop: true },
-            gater: { label: 'Gater', icon: '⚡', canLoop: true }
+            pad: { label: 'Warm Pad', icon: '🎹', canLoop: true },
+            drone: { label: 'Om Drone', icon: '🕉️', canLoop: true },
+            crystal: { label: 'Crystal Bowl', icon: '🔔', canLoop: true },
+            choir: { label: 'Ethereal Choir', icon: '👼', canLoop: true },
+            shimmer: { label: 'Shimmer', icon: '✨', canLoop: true },
+            subbass: { label: 'Sub Bass', icon: '🔈', canLoop: true }
         }
     },
 
-    // ── Sampler / Pad Sounds ─────────────────────────────────────────────────
-    sampler: {
-        label: 'Samples',
-        icon: '🎹',
+    // ── Gentle Pulses / Rhythms ───────────────────────────────────────────────
+    pulse: {
+        label: 'Pulse',
+        icon: '💓',
         color: 'from-pink-500 to-rose-600',
         sounds: {
-            airhorn: { label: 'Air Horn', icon: '📯', canLoop: true },
-            siren: { label: 'Siren', icon: '🚨', canLoop: true },
-            riser: { label: 'Riser', icon: '📈', canLoop: true },
-            drop: { label: 'Drop', icon: '💥', canLoop: true },
-            scratch: { label: 'Scratch', icon: '💿', canLoop: true },
-            vocal: { label: 'Vocal', icon: '🎤', canLoop: true }
+            heartbeat: { label: 'Heartbeat', icon: '❤️', canLoop: true },
+            shaker: { label: 'Soft Shaker', icon: '🎵', canLoop: true },
+            softkick: { label: 'Soft Pulse', icon: '🥁', canLoop: true },
+            rim: { label: 'Soft Click', icon: '🪘', canLoop: true },
+            tambourine: { label: 'Tambourine', icon: '🎶', canLoop: true },
+            brush: { label: 'Brush', icon: '🖌️', canLoop: true }
         }
     },
 
-    // ── Atmospheric Textures ─────────────────────────────────────────────────
-    atmosphere: {
-        label: 'Atmos',
-        icon: '🌌',
+    // ── Atmospheric Sweeps ────────────────────────────────────────────────────
+    texture: {
+        label: 'Texture',
+        icon: '🌊',
         color: 'from-cyan-500 to-teal-600',
         sounds: {
-            pad: { label: 'Pad', icon: '🎹', canLoop: true },
-            subbass: { label: 'Sub Bass', icon: '🔈', canLoop: true },
-            sweepup: { label: 'Sweep ↑', icon: '⬆️', canLoop: true },
-            sweepdown: { label: 'Sweep ↓', icon: '⬇️', canLoop: true },
-            tension: { label: 'Tension', icon: '😰', canLoop: true },
-            shimmer: { label: 'Shimmer', icon: '✨', canLoop: true }
+            sweepup: { label: 'Rise', icon: '⬆️', canLoop: false },
+            sweepdown: { label: 'Fall', icon: '⬇️', canLoop: false },
+            breathe: { label: 'Breathe', icon: '🌬️', canLoop: true },
+            gong: { label: 'Gong', icon: '🔔', canLoop: false },
+            chimes: { label: 'Chimes', icon: '🎐', canLoop: true },
+            wash: { label: 'White Wash', icon: '☁️', canLoop: true }
         }
     },
 
-    // ── Rhythmic Elements ────────────────────────────────────────────────────
-    rhythm: {
-        label: 'Rhythm',
-        icon: '🥁',
-        color: 'from-orange-500 to-amber-600',
-        sounds: {
-            kick808: { label: '808 Kick', icon: '🔊', canLoop: true },
-            clap: { label: 'Clap', icon: '👏', canLoop: true },
-            hihat: { label: 'Hi-Hat', icon: '🎩', canLoop: true },
-            snare: { label: 'Snare', icon: '🥁', canLoop: true },
-            shaker: { label: 'Shaker', icon: '🎵', canLoop: true },
-            beatloop: { label: 'Beat', icon: '🎶', canLoop: true }
-        }
-    },
-
-    // ── Transition FX ────────────────────────────────────────────────────────
-    transition: {
-        label: 'Trans',
-        icon: '🔀',
+    // ── Healing Frequencies ───────────────────────────────────────────────────
+    healing: {
+        label: 'Healing',
+        icon: '🧘',
         color: 'from-emerald-500 to-green-600',
         sounds: {
-            risefx: { label: 'Rise FX', icon: '🚀', canLoop: true },
-            fallfx: { label: 'Fall FX', icon: '🪂', canLoop: true },
-            brake: { label: 'Brake', icon: '🛑', canLoop: true },
-            revcymbal: { label: 'Rev Cym', icon: '🔔', canLoop: true },
-            tapestop: { label: 'Tape Stop', icon: '⏹️', canLoop: true },
-            noiseburst: { label: 'Noise', icon: '📻', canLoop: true }
+            solfeggio528: { label: '528 Hz', icon: '💚', canLoop: true },
+            solfeggio432: { label: '432 Hz', icon: '💜', canLoop: true },
+            solfeggio396: { label: '396 Hz', icon: '❤️', canLoop: true },
+            binaural: { label: 'Binaural Pulse', icon: '🧠', canLoop: true },
+            tibetan: { label: 'Tibetan Bell', icon: '🔔', canLoop: false },
+            singing: { label: 'Singing Bowl', icon: '🥣', canLoop: true }
+        }
+    },
+
+    // ── EDM Drops & Risers ────────────────────────────────────────────────────
+    drops: {
+        label: 'Drops',
+        icon: '💥',
+        color: 'from-red-500 to-orange-600',
+        sounds: {
+            riser: { label: 'Build Up', icon: '📈', canLoop: false },
+            impact: { label: 'Impact', icon: '💥', canLoop: false },
+            siren: { label: 'Festival Siren', icon: '🚨', canLoop: true },
+            laser: { label: 'Laser', icon: '⚡', canLoop: false },
+            snareroll: { label: 'Snare Roll', icon: '🥁', canLoop: true },
+            whitenoise: { label: 'White Noise', icon: '📻', canLoop: true }
+        }
+    },
+
+    // ── Bass & 808s ───────────────────────────────────────────────────────────
+    bass: {
+        label: 'Bass',
+        icon: '🔊',
+        color: 'from-indigo-500 to-blue-600',
+        sounds: {
+            kick808: { label: '808 Kick', icon: '🥁', canLoop: true },
+            subboom: { label: 'Sub Boom', icon: '💣', canLoop: false },
+            wobble: { label: 'Wobble', icon: '〰️', canLoop: true },
+            reese: { label: 'Reese Bass', icon: '🎸', canLoop: true },
+            growl: { label: 'Growl', icon: '🐺', canLoop: true },
+            thump: { label: 'Low Thump', icon: '🔈', canLoop: true }
         }
     }
 };
@@ -206,36 +221,7 @@ export const DJ_SOUNDS = {
 // SOUND SYNTHESIZERS
 // =============================================================================
 
-/**
- * Generate an 808 kick drum
- */
-function synth808Kick(ctx, output) {
-    const now = ctx.currentTime;
-
-    // Oscillator for the body
-    const osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(150, now);
-    osc.frequency.exponentialRampToValueAtTime(30, now + 0.15);
-
-    // Gain envelope
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(1, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-
-    // Distortion for punch
-    const dist = ctx.createWaveShaper();
-    dist.curve = makeDistortionCurve(50);
-
-    osc.connect(dist);
-    dist.connect(gain);
-    gain.connect(output);
-
-    osc.start(now);
-    osc.stop(now + 0.5);
-
-    return { duration: 0.5 };
-}
+// Note: synth808Kick is defined in the EDM SYNTHESIZERS section below
 
 /**
  * Generate a clap sound
@@ -386,85 +372,7 @@ function synthAirhorn(ctx, output) {
     return { duration: 1.0 };
 }
 
-/**
- * Generate a siren sound (loopable)
- */
-function synthSiren(ctx, output, isLoop = false) {
-    const now = ctx.currentTime;
-    const duration = isLoop ? 999 : 2;
-
-    const osc = ctx.createOscillator();
-    osc.type = 'sawtooth';
-
-    // LFO for siren sweep
-    const lfo = ctx.createOscillator();
-    lfo.type = 'sine';
-    lfo.frequency.value = 3; // 3 Hz sweep rate
-
-    const lfoGain = ctx.createGain();
-    lfoGain.gain.value = 300; // Sweep depth
-
-    lfo.connect(lfoGain);
-    lfoGain.connect(osc.frequency);
-    osc.frequency.value = 800;
-
-    const gain = ctx.createGain();
-    gain.gain.value = 0.4;
-
-    osc.connect(gain);
-    gain.connect(output);
-
-    lfo.start(now);
-    osc.start(now);
-
-    if (!isLoop) {
-        lfo.stop(now + duration);
-        osc.stop(now + duration);
-    }
-
-    return {
-        duration,
-        stop: () => {
-            const stopTime = ctx.currentTime;
-            gain.gain.setTargetAtTime(0, stopTime, 0.05);
-            setTimeout(() => {
-                try { osc.stop(); lfo.stop(); } catch (e) { }
-            }, 100);
-        },
-        nodes: [osc, lfo, gain]
-    };
-}
-
-/**
- * Generate a riser/build-up sweep
- */
-function synthRiser(ctx, output) {
-    const now = ctx.currentTime;
-    const duration = 2;
-
-    // Noise-based riser
-    const noise = createNoiseSource(ctx, 'white');
-
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(200, now);
-    filter.frequency.exponentialRampToValueAtTime(8000, now + duration);
-    filter.Q.value = 5;
-
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.1, now);
-    gain.gain.linearRampToValueAtTime(0.7, now + duration * 0.9);
-    gain.gain.linearRampToValueAtTime(0, now + duration);
-
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(output);
-
-    noise.start(now);
-    noise.stop(now + duration);
-
-    return { duration };
-}
+// Note: synthSiren and synthRiser are defined in the EDM SYNTHESIZERS section below
 
 /**
  * Generate an impact/drop sound
@@ -1446,6 +1354,1005 @@ function makeDistortionCurve(amount) {
 }
 
 // =============================================================================
+// NEW MEDITATION SYNTHESIZERS
+// =============================================================================
+
+/**
+ * Generate an Om drone (loopable)
+ */
+function synthDrone(ctx, output, isLoop = false) {
+    const now = ctx.currentTime;
+    const duration = isLoop ? 999 : 6;
+
+    // Om frequency (136.1 Hz - "Om" frequency) with harmonics
+    const fundamental = 136.1;
+    const oscs = [];
+
+    [1, 2, 3, 4].forEach((harmonic, i) => {
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = fundamental * harmonic;
+        osc.detune.value = (Math.random() - 0.5) * 5;
+        oscs.push(osc);
+    });
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 800;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.4, now + 0.3); // Fast attack
+
+    oscs.forEach((osc, i) => {
+        const oscGain = ctx.createGain();
+        oscGain.gain.value = 0.3 / (i + 1); // Harmonics quieter
+        osc.connect(oscGain);
+        oscGain.connect(filter);
+        osc.start(now);
+        if (!isLoop) osc.stop(now + duration);
+    });
+
+    filter.connect(gain);
+    gain.connect(output);
+
+    return {
+        duration,
+        stop: () => {
+            const stopTime = ctx.currentTime;
+            gain.gain.setTargetAtTime(0, stopTime, 0.5);
+            setTimeout(() => {
+                oscs.forEach(osc => { try { osc.stop(); } catch (e) { } });
+            }, 1000);
+        }
+    };
+}
+
+/**
+ * Generate crystal bowl sound
+ */
+function synthCrystal(ctx, output, isLoop = false) {
+    const now = ctx.currentTime;
+    const duration = isLoop ? 999 : 8;
+
+    // Crystal bowl frequencies (C4 = 261.63 Hz)
+    const freq = 261.63;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+
+    // Slight vibrato
+    const lfo = ctx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = 4;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 3;
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc.frequency);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.5, now + 0.5);
+    if (!isLoop) {
+        gain.gain.setValueAtTime(0.5, now + duration - 2);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+    }
+
+    osc.connect(gain);
+    gain.connect(output);
+
+    lfo.start(now);
+    osc.start(now);
+    if (!isLoop) {
+        lfo.stop(now + duration);
+        osc.stop(now + duration);
+    }
+
+    return {
+        duration,
+        stop: () => {
+            const stopTime = ctx.currentTime;
+            gain.gain.setTargetAtTime(0, stopTime, 0.3);
+            setTimeout(() => {
+                try { osc.stop(); lfo.stop(); } catch (e) { }
+            }, 600);
+        }
+    };
+}
+
+/**
+ * Generate ethereal choir (loopable)
+ */
+function synthChoir(ctx, output, isLoop = false) {
+    const now = ctx.currentTime;
+    const duration = isLoop ? 999 : 6;
+
+    // Multiple formant-like oscillators for "ahh" sound
+    const freqs = [220, 330, 440, 550];
+    const oscs = [];
+
+    freqs.forEach(f => {
+        const osc = ctx.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.value = f + (Math.random() - 0.5) * 5;
+        oscs.push(osc);
+    });
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 1200;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.25, now + 0.3); // Fast attack
+
+    oscs.forEach(osc => {
+        osc.connect(filter);
+        osc.start(now);
+        if (!isLoop) osc.stop(now + duration);
+    });
+
+    filter.connect(gain);
+    gain.connect(output);
+
+    return {
+        duration,
+        stop: () => {
+            const stopTime = ctx.currentTime;
+            gain.gain.setTargetAtTime(0, stopTime, 0.5);
+            setTimeout(() => {
+                oscs.forEach(osc => { try { osc.stop(); } catch (e) { } });
+            }, 1000);
+        }
+    };
+}
+
+/**
+ * Generate heartbeat (loopable)
+ */
+function synthHeartbeat(ctx, output, isLoop = false) {
+    const now = ctx.currentTime;
+
+    // Two short low-freq pulses (lub-dub)
+    const createBeat = (startTime) => {
+        // Lub
+        const osc1 = ctx.createOscillator();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(60, startTime);
+        osc1.frequency.exponentialRampToValueAtTime(30, startTime + 0.15);
+
+        const gain1 = ctx.createGain();
+        gain1.gain.setValueAtTime(0.6, startTime);
+        gain1.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
+
+        osc1.connect(gain1);
+        gain1.connect(output);
+        osc1.start(startTime);
+        osc1.stop(startTime + 0.2);
+
+        // Dub (slightly higher, quieter)
+        const osc2 = ctx.createOscillator();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(55, startTime + 0.25);
+        osc2.frequency.exponentialRampToValueAtTime(25, startTime + 0.4);
+
+        const gain2 = ctx.createGain();
+        gain2.gain.setValueAtTime(0.4, startTime + 0.25);
+        gain2.gain.exponentialRampToValueAtTime(0.01, startTime + 0.45);
+
+        osc2.connect(gain2);
+        gain2.connect(output);
+        osc2.start(startTime + 0.25);
+        osc2.stop(startTime + 0.5);
+    };
+
+    createBeat(now);
+
+    return { duration: 1 }; // Will auto-retrigger in loop mode
+}
+
+/**
+ * Generate soft kick pulse
+ */
+function synthSoftKick(ctx, output) {
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(80, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.5, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+    osc.connect(gain);
+    gain.connect(output);
+
+    osc.start(now);
+    osc.stop(now + 0.4);
+
+    return { duration: 0.5 };
+}
+
+/**
+ * Generate rim click
+ */
+function synthRim(ctx, output) {
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.value = 800;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+
+    osc.connect(gain);
+    gain.connect(output);
+
+    osc.start(now);
+    osc.stop(now + 0.05);
+
+    return { duration: 0.1 };
+}
+
+/**
+ * Generate tambourine jingle
+ */
+function synthTambourine(ctx, output) {
+    const now = ctx.currentTime;
+
+    const noise = createNoiseSource(ctx, 'white');
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 8000;
+    filter.Q.value = 3;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(output);
+
+    noise.start(now);
+    noise.stop(now + 0.15);
+
+    return { duration: 0.2 };
+}
+
+/**
+ * Generate brush sound
+ */
+function synthBrush(ctx, output) {
+    const now = ctx.currentTime;
+
+    const noise = createNoiseSource(ctx, 'pink');
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 3000;
+    filter.Q.value = 1;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.2, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(output);
+
+    noise.start(now);
+    noise.stop(now + 0.3);
+
+    return { duration: 0.4 };
+}
+
+/**
+ * Generate breathing sound (loopable)
+ */
+function synthBreathe(ctx, output, isLoop = false) {
+    const now = ctx.currentTime;
+    const duration = isLoop ? 999 : 4;
+
+    const noise = createNoiseSource(ctx, 'white');
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 800;
+
+    const gain = ctx.createGain();
+    // Inhale (2s) then exhale (2s)
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.15, now + 1);
+    gain.gain.linearRampToValueAtTime(0.2, now + 2);
+    gain.gain.linearRampToValueAtTime(0.1, now + 3);
+    gain.gain.linearRampToValueAtTime(0, now + 4);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(output);
+
+    noise.start(now);
+    if (!isLoop) noise.stop(now + duration);
+
+    return {
+        duration: 4,
+        stop: () => {
+            const stopTime = ctx.currentTime;
+            gain.gain.setTargetAtTime(0, stopTime, 0.2);
+            setTimeout(() => { try { noise.stop(); } catch (e) { } }, 500);
+        }
+    };
+}
+
+/**
+ * Generate gong strike
+ */
+function synthGong(ctx, output) {
+    const now = ctx.currentTime;
+
+    // Low fundamental with rich harmonics
+    const fundamental = 65;
+    const oscs = [];
+
+    [1, 2.4, 3.6, 5.2].forEach((mult, i) => {
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = fundamental * mult;
+        oscs.push(osc);
+    });
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.7, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 6);
+
+    oscs.forEach((osc, i) => {
+        const oscGain = ctx.createGain();
+        oscGain.gain.value = 0.4 / (i + 1);
+        osc.connect(oscGain);
+        oscGain.connect(gain);
+        osc.start(now);
+        osc.stop(now + 6);
+    });
+
+    gain.connect(output);
+
+    return { duration: 6 };
+}
+
+/**
+ * Generate wind chimes (loopable)
+ */
+function synthChimes(ctx, output, isLoop = false) {
+    const now = ctx.currentTime;
+    const duration = isLoop ? 999 : 4;
+
+    // Random high-pitched tones
+    const playChime = (time) => {
+        const freq = 800 + Math.random() * 1200;
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.15, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + 1.5);
+
+        osc.connect(gain);
+        gain.connect(output);
+        osc.start(time);
+        osc.stop(time + 1.5);
+    };
+
+    // Play several chimes with random timing
+    for (let i = 0; i < 4; i++) {
+        playChime(now + Math.random() * 0.5);
+    }
+
+    return { duration: 2 };
+}
+
+/**
+ * Generate white noise wash (loopable)
+ */
+function synthWash(ctx, output, isLoop = false) {
+    const now = ctx.currentTime;
+    const duration = isLoop ? 999 : 4;
+
+    const noise = createNoiseSource(ctx, 'pink');
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 2000;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.15, now + 1);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(output);
+
+    noise.start(now);
+    if (!isLoop) noise.stop(now + duration);
+
+    return {
+        duration,
+        stop: () => {
+            const stopTime = ctx.currentTime;
+            gain.gain.setTargetAtTime(0, stopTime, 0.3);
+            setTimeout(() => { try { noise.stop(); } catch (e) { } }, 600);
+        }
+    };
+}
+
+/**
+ * Generate solfeggio frequency tone (528 Hz - Love/DNA repair)
+ */
+function synthSolfeggio528(ctx, output, isLoop = false) {
+    return synthSolfeggioTone(ctx, output, 528, isLoop);
+}
+
+function synthSolfeggio432(ctx, output, isLoop = false) {
+    return synthSolfeggioTone(ctx, output, 432, isLoop);
+}
+
+function synthSolfeggio396(ctx, output, isLoop = false) {
+    return synthSolfeggioTone(ctx, output, 396, isLoop);
+}
+
+function synthSolfeggioTone(ctx, output, freq, isLoop = false) {
+    const now = ctx.currentTime;
+    const duration = isLoop ? 999 : 6;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.35, now + 0.2); // Fast attack
+
+    osc.connect(gain);
+    gain.connect(output);
+
+    osc.start(now);
+    if (!isLoop) osc.stop(now + duration);
+
+    return {
+        duration,
+        stop: () => {
+            const stopTime = ctx.currentTime;
+            gain.gain.setTargetAtTime(0, stopTime, 0.3);
+            setTimeout(() => { try { osc.stop(); } catch (e) { } }, 600);
+        }
+    };
+}
+
+/**
+ * Generate binaural pulse effect
+ */
+function synthBinauralPulse(ctx, output, isLoop = false) {
+    const now = ctx.currentTime;
+    const duration = isLoop ? 999 : 6;
+
+    // Create gentle amplitude modulation at theta frequency (6 Hz)
+    const carrier = ctx.createOscillator();
+    carrier.type = 'sine';
+    carrier.frequency.value = 200;
+
+    const lfo = ctx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = 6; // Theta pulse
+
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 0.15;
+
+    const masterGain = ctx.createGain();
+    masterGain.gain.value = 0.3;
+
+    lfo.connect(lfoGain);
+    lfoGain.connect(masterGain.gain);
+    carrier.connect(masterGain);
+    masterGain.connect(output);
+
+    lfo.start(now);
+    carrier.start(now);
+    if (!isLoop) {
+        lfo.stop(now + duration);
+        carrier.stop(now + duration);
+    }
+
+    return {
+        duration,
+        stop: () => {
+            const stopTime = ctx.currentTime;
+            masterGain.gain.setTargetAtTime(0, stopTime, 0.2);
+            setTimeout(() => {
+                try { carrier.stop(); lfo.stop(); } catch (e) { }
+            }, 500);
+        }
+    };
+}
+
+/**
+ * Generate Tibetan bell strike
+ */
+function synthTibetan(ctx, output) {
+    const now = ctx.currentTime;
+
+    // Rich bell harmonics
+    const fundamental = 440;
+    const harmonics = [1, 2.76, 5.4, 8.93];
+    const oscs = [];
+
+    harmonics.forEach((mult, i) => {
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = fundamental * mult;
+        oscs.push(osc);
+    });
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.5, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 5);
+
+    oscs.forEach((osc, i) => {
+        const oscGain = ctx.createGain();
+        oscGain.gain.value = 0.3 / (i + 1);
+        osc.connect(oscGain);
+        oscGain.connect(gain);
+        osc.start(now);
+        osc.stop(now + 5);
+    });
+
+    gain.connect(output);
+
+    return { duration: 5 };
+}
+
+/**
+ * Generate singing bowl (loopable)
+ */
+function synthSinging(ctx, output, isLoop = false) {
+    const now = ctx.currentTime;
+    const duration = isLoop ? 999 : 8;
+
+    const freq = 396; // Solfeggio frequency
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+
+    // Gentle wobble
+    const lfo = ctx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = 3;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 4;
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc.frequency);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.4, now + 0.3); // Fast attack
+
+    osc.connect(gain);
+    gain.connect(output);
+
+    lfo.start(now);
+    osc.start(now);
+    if (!isLoop) {
+        lfo.stop(now + duration);
+        osc.stop(now + duration);
+    }
+
+    return {
+        duration,
+        stop: () => {
+            const stopTime = ctx.currentTime;
+            gain.gain.setTargetAtTime(0, stopTime, 0.5);
+            setTimeout(() => {
+                try { osc.stop(); lfo.stop(); } catch (e) { }
+            }, 1000);
+        }
+    };
+}
+
+// =============================================================================
+// EDM SYNTHESIZERS (Drops & Bass)
+// =============================================================================
+
+/**
+ * Build-up riser
+ */
+function synthRiser(ctx, output) {
+    const now = ctx.currentTime;
+    const duration = 2;
+
+    const noise = createNoiseSource(ctx, 'white');
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(200, now);
+    filter.frequency.exponentialRampToValueAtTime(8000, now + duration);
+    filter.Q.value = 5;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.linearRampToValueAtTime(0.7, now + duration * 0.9);
+    gain.gain.linearRampToValueAtTime(0, now + duration);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(output);
+
+    noise.start(now);
+    noise.stop(now + duration);
+
+    return { duration };
+}
+
+/**
+ * Impact hit
+ */
+function synthImpact(ctx, output) {
+    const now = ctx.currentTime;
+
+    // Sub bass hit
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(100, now);
+    osc.frequency.exponentialRampToValueAtTime(25, now + 0.3);
+
+    // Noise layer
+    const noise = createNoiseSource(ctx, 'white');
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = 'lowpass';
+    noiseFilter.frequency.setValueAtTime(5000, now);
+    noiseFilter.frequency.exponentialRampToValueAtTime(80, now + 0.2);
+
+    const oscGain = ctx.createGain();
+    oscGain.gain.setValueAtTime(0.8, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.5, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+
+    osc.connect(oscGain); oscGain.connect(output);
+    noise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(output);
+
+    osc.start(now); osc.stop(now + 0.6);
+    noise.start(now); noise.stop(now + 0.2);
+
+    return { duration: 0.6 };
+}
+
+/**
+ * Festival siren (loopable)
+ */
+function synthSiren(ctx, output, isLoop = false) {
+    const now = ctx.currentTime;
+    const duration = isLoop ? 999 : 2;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+
+    const lfo = ctx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = 4;
+
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 400;
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc.frequency);
+    osc.frequency.value = 800;
+
+    const gain = ctx.createGain();
+    gain.gain.value = 0.3;
+
+    osc.connect(gain);
+    gain.connect(output);
+
+    lfo.start(now);
+    osc.start(now);
+    if (!isLoop) { lfo.stop(now + duration); osc.stop(now + duration); }
+
+    return {
+        duration,
+        stop: () => {
+            gain.gain.setTargetAtTime(0, ctx.currentTime, 0.05);
+            setTimeout(() => { try { osc.stop(); lfo.stop(); } catch (e) { } }, 100);
+        }
+    };
+}
+
+/**
+ * Laser zap
+ */
+function synthLaser(ctx, output) {
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(2000, now);
+    osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.4, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+    osc.connect(gain);
+    gain.connect(output);
+    osc.start(now);
+    osc.stop(now + 0.3);
+
+    return { duration: 0.3 };
+}
+
+/**
+ * Snare roll (retriggered)
+ */
+function synthSnareRoll(ctx, output) {
+    const now = ctx.currentTime;
+
+    const noise = createNoiseSource(ctx, 'white');
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 1000;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.4, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(output);
+
+    noise.start(now);
+    noise.stop(now + 0.1);
+
+    return { duration: 0.12 };
+}
+
+/**
+ * White noise sweep (loopable)
+ */
+function synthWhiteNoise(ctx, output, isLoop = false) {
+    const now = ctx.currentTime;
+    const duration = isLoop ? 999 : 4;
+
+    const noise = createNoiseSource(ctx, 'white');
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.2, now + 0.5);
+
+    noise.connect(gain);
+    gain.connect(output);
+    noise.start(now);
+    if (!isLoop) noise.stop(now + duration);
+
+    return {
+        duration,
+        stop: () => {
+            gain.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
+            setTimeout(() => { try { noise.stop(); } catch (e) { } }, 200);
+        }
+    };
+}
+
+/**
+ * 808 Kick
+ */
+function synth808Kick(ctx, output) {
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(150, now);
+    osc.frequency.exponentialRampToValueAtTime(30, now + 0.15);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.8, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+    // Distortion for punch
+    const dist = ctx.createWaveShaper();
+    dist.curve = makeDistortionCurve(50);
+
+    osc.connect(dist);
+    dist.connect(gain);
+    gain.connect(output);
+
+    osc.start(now);
+    osc.stop(now + 0.4);
+
+    return { duration: 0.5 };
+}
+
+/**
+ * Sub boom
+ */
+function synthSubBoom(ctx, output) {
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(60, now);
+    osc.frequency.exponentialRampToValueAtTime(20, now + 1);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.9, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
+
+    osc.connect(gain);
+    gain.connect(output);
+    osc.start(now);
+    osc.stop(now + 1.2);
+
+    return { duration: 1.2 };
+}
+
+/**
+ * Wobble bass (loopable)
+ */
+function synthWobble(ctx, output, isLoop = false) {
+    const now = ctx.currentTime;
+    const duration = isLoop ? 999 : 4;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.value = 80;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.Q.value = 10;
+
+    const lfo = ctx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = 4;
+
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 800;
+    lfo.connect(lfoGain);
+    lfoGain.connect(filter.frequency);
+    filter.frequency.value = 400;
+
+    const gain = ctx.createGain();
+    gain.gain.value = 0.4;
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(output);
+
+    lfo.start(now);
+    osc.start(now);
+    if (!isLoop) { lfo.stop(now + duration); osc.stop(now + duration); }
+
+    return {
+        duration,
+        stop: () => {
+            gain.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
+            setTimeout(() => { try { osc.stop(); lfo.stop(); } catch (e) { } }, 200);
+        }
+    };
+}
+
+/**
+ * Reese bass (loopable)
+ */
+function synthReese(ctx, output, isLoop = false) {
+    const now = ctx.currentTime;
+    const duration = isLoop ? 999 : 4;
+
+    // Two detuned sawtooths
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    osc1.type = 'sawtooth';
+    osc2.type = 'sawtooth';
+    osc1.frequency.value = 55;
+    osc2.frequency.value = 55;
+    osc2.detune.value = 15;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 800;
+
+    const gain = ctx.createGain();
+    gain.gain.value = 0.35;
+
+    osc1.connect(filter);
+    osc2.connect(filter);
+    filter.connect(gain);
+    gain.connect(output);
+
+    osc1.start(now);
+    osc2.start(now);
+    if (!isLoop) { osc1.stop(now + duration); osc2.stop(now + duration); }
+
+    return {
+        duration,
+        stop: () => {
+            gain.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
+            setTimeout(() => { try { osc1.stop(); osc2.stop(); } catch (e) { } }, 200);
+        }
+    };
+}
+
+/**
+ * Growl bass (loopable)
+ */
+function synthGrowl(ctx, output, isLoop = false) {
+    const now = ctx.currentTime;
+    const duration = isLoop ? 999 : 4;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.value = 60;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.Q.value = 8;
+
+    const lfo = ctx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = 8;
+
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 400;
+    lfo.connect(lfoGain);
+    lfoGain.connect(filter.frequency);
+    filter.frequency.value = 500;
+
+    const dist = ctx.createWaveShaper();
+    dist.curve = makeDistortionCurve(100);
+
+    const gain = ctx.createGain();
+    gain.gain.value = 0.3;
+
+    osc.connect(filter);
+    filter.connect(dist);
+    dist.connect(gain);
+    gain.connect(output);
+
+    lfo.start(now);
+    osc.start(now);
+    if (!isLoop) { lfo.stop(now + duration); osc.stop(now + duration); }
+
+    return {
+        duration,
+        stop: () => {
+            gain.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
+            setTimeout(() => { try { osc.stop(); lfo.stop(); } catch (e) { } }, 200);
+        }
+    };
+}
+
+/**
+ * Low thump (loopable)
+ */
+function synthThump(ctx, output) {
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(80, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.6, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+    osc.connect(gain);
+    gain.connect(output);
+    osc.start(now);
+    osc.stop(now + 0.3);
+
+    return { duration: 0.4 };
+}
+
+// =============================================================================
 // PUBLIC API
 // =============================================================================
 
@@ -1453,45 +2360,53 @@ function makeDistortionCurve(amount) {
  * Map sound IDs to synthesizer functions
  */
 const SYNTH_MAP = {
-    // FX
-    echo: synthEcho,
-    reverb: synthReverb,
-    flanger: synthFlanger,
-    filter: synthFilter,
-    beatroll: synthBeatRoll,
-    gater: synthGater,
-
-    // Sampler
-    airhorn: synthAirhorn,
-    siren: synthSiren,
-    riser: synthRiser,
-    drop: synthDrop,
-    scratch: synthScratch,
-    vocal: synthVocal,
-
-    // Atmosphere
+    // Ambient
     pad: synthPad,
+    drone: synthDrone,
+    crystal: synthCrystal,
+    choir: synthChoir,
+    shimmer: synthShimmer,
     subbass: synthSubBass,
+
+    // Pulse
+    heartbeat: synthHeartbeat,
+    shaker: synthShaker,
+    softkick: synthSoftKick,
+    rim: synthRim,
+    tambourine: synthTambourine,
+    brush: synthBrush,
+
+    // Texture
     sweepup: synthSweepUp,
     sweepdown: synthSweepDown,
-    tension: synthTension,
-    shimmer: synthShimmer,
+    breathe: synthBreathe,
+    gong: synthGong,
+    chimes: synthChimes,
+    wash: synthWash,
 
-    // Rhythm
+    // Healing
+    solfeggio528: synthSolfeggio528,
+    solfeggio432: synthSolfeggio432,
+    solfeggio396: synthSolfeggio396,
+    binaural: synthBinauralPulse,
+    tibetan: synthTibetan,
+    singing: synthSinging,
+
+    // Drops (EDM)
+    riser: synthRiser,
+    impact: synthImpact,
+    siren: synthSiren,
+    laser: synthLaser,
+    snareroll: synthSnareRoll,
+    whitenoise: synthWhiteNoise,
+
+    // Bass (EDM)
     kick808: synth808Kick,
-    clap: synthClap,
-    hihat: synthHiHat,
-    snare: synthSnare,
-    shaker: synthShaker,
-    beatloop: synthBeatLoop,
-
-    // Transition
-    risefx: synthRiseFX,
-    fallfx: synthFallFX,
-    brake: synthBrake,
-    revcymbal: synthRevCymbal,
-    tapestop: synthTapeStop,
-    noiseburst: synthNoiseBurst
+    subboom: synthSubBoom,
+    wobble: synthWobble,
+    reese: synthReese,
+    growl: synthGrowl,
+    thump: synthThump
 };
 
 /**
@@ -1590,6 +2505,9 @@ export function startLoop(soundId) {
 
     activeLoops[soundId] = result;
 
+    // Update Stop All button visibility
+    updateStopAllVisibility();
+
     return result;
 }
 
@@ -1607,6 +2525,9 @@ export function stopLoop(soundId) {
             clearInterval(loop.loopId);
         }
         delete activeLoops[soundId];
+
+        // Update Stop All button visibility
+        updateStopAllVisibility();
     }
 }
 
@@ -1622,6 +2543,8 @@ export function isLoopActive(soundId) {
  */
 export function stopAllLoops() {
     Object.keys(activeLoops).forEach(id => stopLoop(id));
+    // Ensure button is hidden after stopping all
+    updateStopAllVisibility();
 }
 
 /**
@@ -1629,6 +2552,27 @@ export function stopAllLoops() {
  */
 export function getCategories() {
     return DJ_SOUNDS;
+}
+
+/**
+ * Get count of active loops
+ */
+export function getActiveLoopCount() {
+    return Object.keys(activeLoops).length;
+}
+
+/**
+ * Update Stop All button visibility based on active loops
+ */
+function updateStopAllVisibility() {
+    const stopAllBtn = document.getElementById('djStopAll');
+    if (stopAllBtn) {
+        if (Object.keys(activeLoops).length > 0) {
+            stopAllBtn.classList.remove('hidden');
+        } else {
+            stopAllBtn.classList.add('hidden');
+        }
+    }
 }
 
 console.log('[DJ Synth] Module loaded');
