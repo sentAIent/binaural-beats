@@ -42,28 +42,44 @@ body {
     touch-action: manipulation;
 }
 
-/* Glassmorphic Cards */
+/* Enhanced Glassmorphic Cards with stronger blur and glow */
 .glass-card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(32px) saturate(180%);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+    background: rgba(30, 41, 59, 0.75);
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .glass-pill {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 9999px;
     color: var(--text-muted);
-    transition: all 0.2s ease;
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .active-mode {
-    background-color: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    background-color: rgba(255, 255, 255, 0.2);
+    box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 /* ==========================================
@@ -237,9 +253,14 @@ input[type=range]::-webkit-slider-runnable-track {
 
 .preset-btn.active {
     border-color: var(--accent) !important;
-    background-color: var(--accent-glow) !important;
+    background: linear-gradient(135deg, var(--accent-glow), rgba(45, 212, 191, 0.25)) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     color: white !important;
-    box-shadow: 0 0 15px var(--accent-glow);
+    box-shadow:
+        0 0 20px var(--accent-glow),
+        0 4px 16px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
     transform: scale(1.05);
     z-index: 10;
 }
@@ -357,7 +378,9 @@ input[type=range]::-webkit-slider-runnable-track {
     transition: opacity 0.3s ease, visibility 0.3s ease;
     pointer-events: none;
     z-index: 1000;
-    /* Must be above playBtn (z-10) */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.4);
 }
 
 .modal.active {
@@ -366,17 +389,21 @@ input[type=range]::-webkit-slider-runnable-track {
     pointer-events: auto;
 }
 
-/* Modal inner content - responsive sizing */
+/* Modal inner content - enhanced glassmorphism */
 .modal>.glass-card,
 .modal>div>.glass-card {
     max-height: calc(100vh - 120px);
-    /* Leave space for controls */
     max-height: calc(100dvh - 120px);
-    /* Dynamic viewport height for mobile */
     overflow-y: auto;
     overflow-x: hidden;
     pointer-events: auto;
-    /* Ensure buttons/inputs work */
+    background: rgba(30, 41, 59, 0.85);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 /* Mobile: even more space for bottom nav */
@@ -704,18 +731,25 @@ select {
 /* --- COCKPIT LAYOUT (Desktop) --- */
 @media (min-width: 1024px) {
 
-    /* Fixed Sidebars */
+    /* Fixed Sidebars with Enhanced Glassmorphism */
     #leftPanel {
         transform: translateX(0) !important;
-        background: rgba(15, 23, 42, 0.6);
-        /* Slightly more transparent on desktop */
-        backdrop-filter: blur(10px);
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(24px) saturate(150%);
+        -webkit-backdrop-filter: blur(24px) saturate(150%);
+        box-shadow:
+            2px 0 24px rgba(0, 0, 0, 0.3),
+            inset -1px 0 0 rgba(255, 255, 255, 0.1);
     }
 
     #rightPanel {
         transform: translateX(0) !important;
-        background: rgba(15, 23, 42, 0.6);
-        backdrop-filter: blur(10px);
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(24px) saturate(150%);
+        -webkit-backdrop-filter: blur(24px) saturate(150%);
+        box-shadow:
+            -2px 0 24px rgba(0, 0, 0, 0.3),
+            inset 1px 0 0 rgba(255, 255, 255, 0.1);
     }
 
     /* Hide Toggles & Close Buttons on Desktop */
@@ -2197,4 +2231,74 @@ body[data-theme="dawn"] .custom-scrollbar::-webkit-scrollbar-thumb {
 body[data-theme="cloud"] .custom-scrollbar::-webkit-scrollbar-track,
 body[data-theme="dawn"] .custom-scrollbar::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* ==========================================
+   TOP CONTROL BAR RESPONSIVE MODES
+   Progressive element hiding for narrow screens
+   ========================================== */
+
+/* Compact mode (<500px available) - hide most labels, keep essential controls */
+#topControlBar.control-bar-compact .text-\[10px\] {
+    display: none;
+}
+
+#topControlBar.control-bar-compact .w-px {
+    display: none;
+}
+
+#topControlBar.control-bar-compact {
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+}
+
+#topControlBar.control-bar-compact input[type="range"] {
+    width: 3rem;
+}
+
+#topControlBar.control-bar-compact .mode-btn {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    font-size: 0.625rem;
+}
+
+/* Narrow mode (500-700px) - hide some labels, show compact layout */
+#topControlBar.control-bar-narrow .text-\[10px\]:not(#baseValue):not(#beatValue):not(#volValue) {
+    display: none;
+}
+
+#topControlBar.control-bar-narrow {
+    gap: 0.625rem;
+}
+
+/* Medium mode (700-900px) - hide dividers only */
+#topControlBar.control-bar-medium .w-px:not(:first-of-type) {
+    display: none;
+}
+
+/* Mobile optimization - stack elements when very narrow */
+@media (max-width: 640px) {
+    #topControlBar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #topControlBar>div {
+        justify-content: center;
+    }
+}
+
+/* ==========================================
+   DJ STOP ALL BUTTON - CONDITIONAL STYLING
+   ========================================== */
+
+/* Stop All button - active/playing state (red) */
+#djStopAll.dj-playing {
+    background: rgba(239, 68, 68, 0.2) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+    color: #f87171 !important;
+}
+
+#djStopAll.dj-playing:hover {
+    background: rgba(239, 68, 68, 0.3) !important;
 }

@@ -38,11 +38,17 @@ export function initResizablePanels() {
     document.addEventListener('touchmove', handleTouchMove, { passive: false });
     document.addEventListener('touchend', handleMouseUp);
 
-    // Update top bar width on window resize
-    window.addEventListener('resize', updateTopBarWidth);
+    // Update top bar width and atmosphere columns on window resize
+    window.addEventListener('resize', () => {
+        updateTopBarWidth();
+        updateAtmosphereColumns();
+    });
 
-    // Initial call to set correct top bar width
-    setTimeout(updateTopBarWidth, 100);
+    // Initial calls to set correct top bar width and atmosphere columns
+    setTimeout(() => {
+        updateTopBarWidth();
+        updateAtmosphereColumns();
+    }, 100);
 
     console.log('[ResizePanels] Initialized');
 }
@@ -198,6 +204,25 @@ export function updateTopBarWidth() {
     // Set max-width (minimum 260px to keep it usable)
     const maxWidth = Math.max(260, availableWidth);
     topBar.style.maxWidth = `${maxWidth}px`;
+
+    // Add responsive class toggling based on available width
+    // This allows CSS to progressively hide less critical elements
+    if (availableWidth < 500) {
+        // Very narrow - most compact mode
+        topBar.classList.add('control-bar-compact');
+        topBar.classList.remove('control-bar-narrow', 'control-bar-medium');
+    } else if (availableWidth < 700) {
+        // Narrow - hide labels on sliders
+        topBar.classList.add('control-bar-narrow');
+        topBar.classList.remove('control-bar-compact', 'control-bar-medium');
+    } else if (availableWidth < 900) {
+        // Medium - hide some dividers
+        topBar.classList.add('control-bar-medium');
+        topBar.classList.remove('control-bar-compact', 'control-bar-narrow');
+    } else {
+        // Full width - show everything
+        topBar.classList.remove('control-bar-compact', 'control-bar-narrow', 'control-bar-medium');
+    }
 }
 
 /**
@@ -215,6 +240,11 @@ function setPanelWidth(panel, width) {
 
     // Scale text and icons
     scaleContent(panel, scale);
+
+    // Update atmosphere grid columns if this is the right panel
+    if (panel.id === 'rightPanel') {
+        updateAtmosphereColumns();
+    }
 }
 
 /**
@@ -276,6 +306,30 @@ function restorePanelWidths() {
 
     if (rightWidth && rightPanel) {
         setPanelWidth(rightPanel, parseInt(rightWidth, 10));
+    }
+}
+
+/**
+ * Update atmosphere grid columns based on right panel width
+ * Switch to 2 columns when panel is >50% of viewport width
+ */
+export function updateAtmosphereColumns() {
+    const rightPanel = document.getElementById('rightPanel');
+    const soundscapeContainer = document.getElementById('soundscapeContainer');
+
+    if (!rightPanel || !soundscapeContainer) return;
+
+    const panelWidth = rightPanel.offsetWidth;
+    const viewportWidth = window.innerWidth;
+    const widthPercentage = (panelWidth / viewportWidth) * 100;
+
+    // Switch to 2 columns when panel > 50% viewport width
+    if (widthPercentage > 50) {
+        soundscapeContainer.classList.remove('grid-cols-1');
+        soundscapeContainer.classList.add('grid-cols-2');
+    } else {
+        soundscapeContainer.classList.remove('grid-cols-2');
+        soundscapeContainer.classList.add('grid-cols-1');
     }
 }
 

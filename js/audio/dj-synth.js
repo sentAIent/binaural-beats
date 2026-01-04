@@ -2562,15 +2562,15 @@ export function getActiveLoopCount() {
 }
 
 /**
- * Update Stop All button visibility based on active loops
+ * Update Stop All button styling based on active loops
  */
 function updateStopAllVisibility() {
     const stopAllBtn = document.getElementById('djStopAll');
     if (stopAllBtn) {
         if (Object.keys(activeLoops).length > 0) {
-            stopAllBtn.classList.remove('hidden');
+            stopAllBtn.classList.add('dj-playing');
         } else {
-            stopAllBtn.classList.add('hidden');
+            stopAllBtn.classList.remove('dj-playing');
         }
     }
 }
