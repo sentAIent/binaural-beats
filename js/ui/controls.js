@@ -1668,7 +1668,9 @@ function syncSliderDisplays() {
     // LR Balance slider
     if (els.masterBalanceSlider && els.masterBalanceValue) {
         const val = parseFloat(els.masterBalanceSlider.value);
-        if (Math.abs(val) < 0.05) {
+        if (val === 0) {
+            els.masterBalanceValue.textContent = '0';
+        } else if (Math.abs(val) < 0.05) {
             els.masterBalanceValue.textContent = 'C';
         } else if (val < 0) {
             els.masterBalanceValue.textContent = `L ${Math.round(Math.abs(val) * 100)}%`;

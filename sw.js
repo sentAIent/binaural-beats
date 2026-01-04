@@ -1,7 +1,7 @@
 // MindWave Service Worker
 // Enables offline functionality and caching
 
-const CACHE_NAME = 'mindwave-v66';
+const CACHE_NAME = 'mindwave-v67';
 const STATIC_ASSETS = [
     '/',
     '/index.html',
