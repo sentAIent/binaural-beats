@@ -524,8 +524,8 @@ export function getVisualizer() {
     return viz3D;
 }
 
-// Visual pause state - starts paused until user clicks play
-let visualsPaused = true;
+// Visual pause state - starts playing on load for immediate feedback
+let visualsPaused = false;
 
 export function pauseVisuals() {
     // Always mark as paused for button sync

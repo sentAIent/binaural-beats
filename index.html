@@ -12,6 +12,17 @@
     <script>
         // VISUAL ERROR LOGGER
         window.onerror = function (msg, url, lineNo, columnNo, error) {
+            // Filter out expected errors
+            const msgStr = String(msg).toLowerCase();
+            if (msgStr.includes('firebase') ||
+                msgStr.includes('failed to fetch') ||
+                msgStr.includes('dynamically imported module') ||
+                msgStr.includes('serviceworker') ||
+                msgStr.includes('sw.js')) {
+                console.warn('[Ignored Error]', msg);
+                return false; // Suppress error box for these
+            }
+
             const box = document.getElementById('debug-error-box') || document.createElement('div');
             box.id = 'debug-error-box';
             box.style.cssText = 'position:fixed;top:0;left:0;right:0;background:rgba(255,0,0,0.9);color:white;padding:10px;z-index:99999;font-family:monospace;font-size:12px;pointer-events:none;';
@@ -20,6 +31,16 @@
             return false;
         };
         window.addEventListener('unhandledrejection', function (event) {
+            // Filter out expected promise rejections
+            const reasonStr = String(event.reason).toLowerCase();
+            if (reasonStr.includes('firebase') ||
+                reasonStr.includes('failed to fetch') ||
+                reasonStr.includes('dynamically imported module') ||
+                reasonStr.includes('serviceworker')) {
+                console.warn('[Ignored Promise Rejection]', event.reason);
+                return; // Suppress error box for these
+            }
+
             const box = document.getElementById('debug-error-box') || document.createElement('div');
             box.id = 'debug-error-box';
             box.style.cssText = 'position:fixed;top:0;left:0;right:0;background:rgba(255,0,0,0.9);color:white;padding:10px;z-index:99999;font-family:monospace;font-size:12px;pointer-events:none;';
