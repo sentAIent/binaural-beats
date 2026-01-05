@@ -120,27 +120,63 @@ export function initCursor() {
 }
 
 /**
- * Adds hover effects that scale the cursor down on clickable elements
+ * Adds hover effects - quick flash on clickable elements
  */
 function addCursorHoverEffects() {
     const clickableSelector = 'a, button, [role="button"], input, select, textarea, .cursor-pointer, [onclick]';
 
-    // Store original cursor size
-    let isHovering = false;
+    let flashTimeout = null;
+    let lastHoveredElement = null;
 
     document.addEventListener('mouseover', (e) => {
-        if (e.target.closest(clickableSelector) && !isHovering) {
-            isHovering = true;
-            updateCursorStyle(null, 0.7); // Scale down to 70%
+        const clickable = e.target.closest(clickableSelector);
+        if (clickable && clickable !== lastHoveredElement) {
+            lastHoveredElement = clickable;
+
+            // Clear any existing flash
+            if (flashTimeout) {
+                clearTimeout(flashTimeout);
+            }
+
+            // Flash: scale down + brighten
+            const baseColor = getEffectiveCursorColor();
+            const brightColor = brightenColor(baseColor, 25);
+            updateCursorStyle(brightColor, 0.7);
+
+            // Return to normal after 400ms
+            flashTimeout = setTimeout(() => {
+                updateCursorStyle(null, 1.0);
+                flashTimeout = null;
+            }, 400);
         }
     });
 
     document.addEventListener('mouseout', (e) => {
-        if (e.target.closest(clickableSelector) && isHovering) {
-            isHovering = false;
-            updateCursorStyle(null, 1.0); // Back to normal
+        if (e.target.closest(clickableSelector)) {
+            lastHoveredElement = null;
         }
     });
+}
+
+/**
+ * Brightens a hex color by a percentage
+ */
+function brightenColor(hex, percent) {
+    // Remove # if present
+    hex = hex.replace('#', '');
+
+    // Parse RGB
+    let r = parseInt(hex.substring(0, 2), 16);
+    let g = parseInt(hex.substring(2, 4), 16);
+    let b = parseInt(hex.substring(4, 6), 16);
+
+    // Brighten
+    r = Math.min(255, r + Math.round((255 - r) * (percent / 100)));
+    g = Math.min(255, g + Math.round((255 - g) * (percent / 100)));
+    b = Math.min(255, b + Math.round((255 - b) * (percent / 100)));
+
+    // Convert back to hex
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
 /**
@@ -153,7 +189,7 @@ function getEffectiveCursorColor() {
 }
 
 /**
- * Updates the cursor CSS with optional scaling
+ * Updates the cursor CSS with optional scaling and color
  */
 function updateCursorStyle(colorOverride = null, scale = 1.0) {
     const color = colorOverride || getEffectiveCursorColor();
