@@ -1,0 +1,156 @@
+<div class="main-container" data-test="main-panel">
+	<!-- Header -->
+
+	<div class="subpanel-header">
+		<span class="button-advanced" data-test="advanced">{{advancedLabel}}<i class="icon icon-angle-down"></i></span>
+		<h3>{{title}}</h3>
+		<p class="description">{{description}}</p>
+	</div>
+
+	<!-- Feeds -->
+
+	<div class="smooth-height-wrapper">
+		<div class="smooth-height-content">
+			<div class="wrapper-advanced">
+				<h4>General</h4>
+				<ul class="settings-list options-list">
+					<li class="slide-toggle has-toggle mantras-enabled" data-test="mantras-enabled">
+						<span class="toggle-slider"><svg class="toggle-switch" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50"/></svg></span>
+						<span class="setting-name">{{labelEnable}}</span>
+						<span class="option-message">Show mantras periodically throughout the day</span>
+					</li>
+					<li class="slide-toggle has-toggle frequencies">
+						<span class="toggle-options">
+							{{#each frequencyLevels}}
+								{{#if @index}}<span class="toggle-divider">|</span>{{/if}}
+								<span class="toggle-option frequency" data-level="{{this.level}}"><span class="toggle-label">{{this.label}}</span></span>
+							{{/each}}
+						</span>
+						<span class="setting-name">Frequency</span>
+						<span class="badge badge-plus">PLUS</span>
+						<span class="option-message">How often mantras appear in place of daily greetings</span>
+					</li>
+				</ul>
+
+				<h4>Feeds</h4>
+				<ul class="feeds settings-list options-list">
+					<li class="slide-toggle has-toggle momo">
+						<span class="toggle-slider"><svg class="toggle-switch" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50"/></svg></span>
+						<span class="setting-name">{{labelMomo}}</span>
+						<span class="option-message">See a daily mantra from our curated feed</span>
+					</li>
+					<li class="slide-toggle has-toggle custom" data-test="custom-feed">
+						<span class="toggle-slider"><svg class="toggle-switch" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50"/></svg></span>
+						<span class="setting-name">{{labelCustom}}</span>
+						<span class="badge badge-plus">PLUS</span>
+						<span class="option-message">Personalize with your own mantras, skip and pin mantras, and more!</span>
+					</li>
+				</ul>
+			</div>
+		</div>
+	</div>
+
+
+
+	<!-- Subnav + list add button -->
+
+	<nav class="settings-subnav">
+		<div class="subnav-titles">
+			<h4 class="customs">{{labelCustom}}</h4><!--
+			--><h4 class="favs" data-test="subnav-favs">Favorites</h4><!--
+			--><h4 class="history" data-test="subnav-history">History</h4>
+		</div>
+		<button class="button list-add-button" data-test="add-button">+ Add<span class="u--touch-hide"> Mantra
+					{{#unless isPlus}}<span class="badge badge-plus">Plus</span>{{/unless}}</span>
+		</button>
+	</nav>
+	<div class="settings-subnav-placeholder"></div>
+
+
+
+	<!-- Mantra lists -->
+	<div class="list-wrapper has-subnav">
+
+		<div class="settings-loading">
+			<p class="settings-empty-loading"><i class="loading-icon"></i>Loading...</p>
+		</div>
+
+		<!-- Add form + custom list -->
+		<div class="list-body mantra-list-body custom-wrapper">
+			<form class="settings-form-basic list-add-form">
+				<div class="settings-form-row">
+					<input class="list-add-input" placeholder="Mantra" maxlength="{{inputLengthMaxHtml}}" data-test="add-input" autocomplete="off">
+					<span class="char-count"></span>
+					<span class="cancel u--clickable">
+						<span class="icon-wrapper">
+							{{{ iconCancel }}}</span>
+					</span>
+				</div>
+				<span class="suggestions-section"><!--
+					--><span class="suggestions-label u--clickable show">Suggestions</span><!--
+					--><span class="suggestions-wrapper"><!--
+					{{#each suggestedMantras}}
+						--><span class="suggestion" data-index="{{@index}}">
+							<span class="body u--clickable">{{this}}</span>
+							<span class="remove u--clickable" title="Hide suggestion">
+								<span class="icon-wrapper">
+									<svg class="icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 212.982 212.982"><path d="M131.804 106.491l75.936-75.936c6.99-6.99 6.99-18.323 0-25.312-6.99-6.99-18.322-6.99-25.312 0L106.491 81.18 30.554 5.242c-6.99-6.99-18.322-6.99-25.312 0-6.989 6.99-6.989 18.323 0 25.312l75.937 75.936-75.937 75.937c-6.989 6.99-6.989 18.323 0 25.312 6.99 6.99 18.322 6.99 25.312 0l75.937-75.937 75.937 75.937c6.989 6.99 18.322 6.99 25.312 0 6.99-6.99 6.99-18.322 0-25.312l-75.936-75.936z"/></svg>
+								</span>
+							</span>
+						</span><!--
+					{{/each}}
+					--></span><!--
+					--><span class="suggestions-empty">No more suggestions</span>
+				</span>
+			</form>
+
+			<ul class="settings-list custom-list"></ul>
+			<div class="settings-empty custom-empty" data-test="subnav-custom-empty">
+				<p class="settings-empty-title empty-add-shortcut">Get inspired by adding your personal mantras</p>
+				<p class="settings-empty-description empty-add-shortcut">Click + Add Mantra to get started</p>
+			</div>
+		</div>
+
+
+		<!-- Favs list -->
+		<div class="list-body mantra-list-body favs-wrapper">
+			<ul class="settings-list favs-list" data-test="favs-list"></ul>
+			<div class="settings-empty favs-empty" data-test="subnav-favs-empty">
+				<p class="settings-empty-title">No favorite mantras</p>
+				<p class="settings-empty-description">Click the heart icon on a mantra to start your collection</p>
+			</div>
+		</div>
+
+
+
+		<!-- History list -->
+		<div class="list-body mantra-list-body history-wrapper">
+			<ul class="settings-list history-list" data-test="history-list"></ul>
+			<div class="settings-empty history-empty">
+				<p class="settings-empty-title">You will see your past mantras here</p>
+				<p class="settings-empty-description">Can't find any history for this account</p>
+			</div>
+		</div>
+
+	</div>
+
+	<!-- Off state -->
+
+	<div class="off-state">
+		<span class="button mantras-enabled">{{labelEnable}}</span>
+	</div>
+</div>
+
+
+
+<!-- ONBOARD -->
+<div class="settings-mantras-onboard" data-test="onboard-panel">
+	<div>
+		<h3>Introducing Mantras</h3>
+		<div class="text-wrapper">
+			<p class="text">Build positive mental habits with simple phrases known as mantras. Mantras will appear throughout the day in place of the <span class="current-greeting">{{ currentGreeting }}</span> greeting.</p>
+			<p class="text">Center yourself with friendly reminders, reinforce new thought patterns, and bring attention to the values or principles that are most important to you.</p>
+		</div>
+		<button class="hide-onboard button button-primary" data-test="get-started">Get Started</button>
+	</div>
+</div>

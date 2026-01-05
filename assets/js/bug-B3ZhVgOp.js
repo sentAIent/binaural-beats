@@ -1,0 +1,1 @@
+const s="/assets/svg/bug-6-ryEzMV.svg";export{s as default};

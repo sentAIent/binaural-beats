@@ -1,0 +1,1 @@
+const s="/assets/svg/ocean-bubbles-C1ONtaZ5.svg";export{s as default};

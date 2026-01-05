@@ -1,0 +1,1 @@
+import{I as t,h as r}from"./dynamic-import-helper-CTnsj-vI.js";const e={setup(){const e=t();return()=>{var t;return r("style",null==(t=e.default()[0])?void 0:t.text)}}};export{e as v};

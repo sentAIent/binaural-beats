@@ -1,0 +1,1 @@
+import{n as e}from"./_plugin-vue2_normalizer-DeUNqxFl.js";const t=e({name:"BaseDropdownText",props:{isTitle:{type:Boolean,default:!1}}},(function(){var e=this;return(0,e._self._c)("p",e._g({class:["base-dropdown-text",{title:e.isTitle}]},e.$listeners),[e._t("default")],2)}),[],!1,null,"cef936a2").exports;export{t as B};

@@ -1,0 +1,1 @@
+import{n as e}from"./_plugin-vue2_normalizer-DeUNqxFl.js";const s=e({name:"ToggleSwitch",props:{value:{type:Boolean,default:!1}}},(function(){var e=this;return(0,e._self._c)("div",e._g({staticClass:"toggle-switch",class:{on:e.value}},e.$listeners))}),[],!1,null,"317e51b5").exports;export{s as T};

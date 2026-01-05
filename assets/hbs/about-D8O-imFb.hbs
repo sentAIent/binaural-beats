@@ -1,0 +1,41 @@
+<div class="logo-version-container">
+	<img src="img/logo.svg" class="logo logo-light">
+	<img src="img/logo-white.svg" class="logo logo-dark">
+
+	<h3>{{partnerName}}</h3>
+	<p class="version">Version {{version}}</p>
+</div>
+
+{{#if isMomentum}}
+	<p class="tagline">Helping you stay calm, focused and productive</p>
+
+	<p class="links">
+		<a href="http://momentumdash.com" target="_blank">Website</a>
+		{{!-- <a href="http://momentumdash.com/careers" target="_blank"><span class="link-name">Careers</span> <span class="badge badge-hiring">Hiring!</span></a> --}}
+		<a href="https://momentumdash.com/legal" target="_blank">Terms & Privacy</a>
+		<a href="http://www.instagram.com/momentumdash" class="social" target="_blank">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon-social icon-instagram"><path d="M352 0H160C71.648 0 0 71.648 0 160v192c0 88.352 71.648 160 160 160h192c88.352 0 160-71.648 160-160V160C512 71.648 440.352 0 352 0zm112 352c0 61.76-50.24 112-112 112H160c-61.76 0-112-50.24-112-112V160C48 98.24 98.24 48 160 48h192c61.76 0 112 50.24 112 112v192z"></path><path d="M256 128c-70.688 0-128 57.312-128 128s57.312 128 128 128 128-57.312 128-128-57.312-128-128-128zm0 208c-44.096 0-80-35.904-80-80 0-44.128 35.904-80 80-80s80 35.872 80 80c0 44.096-35.904 80-80 80z"></path><circle cx="393.6" cy="118.4" r="17.056"></circle></svg>
+		</a>
+		<a href="https://www.facebook.com/momentumdash" class="social" target="_blank">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon-social icon-facebook"><path d="M288 176v-64c0-17.664 14.336-32 32-32h32V0h-64c-53.024 0-96 42.976-96 96v80h-64v80h64v256h96V256h64l32-80h-96z"></path></svg>
+		</a>
+		<a href="https://x.com/momentumdash" class="social" target="_blank">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300.251" class="icon-social icon-x"><path d="M178.57 127.15 290.27 0h-26.46l-97.03 110.38L89.34 0H0l117.13 166.93L0 300.25h26.46l102.4-116.59 81.8 116.59h89.34M36.01 19.54H76.66l187.13 262.13h-40.66"></path></svg>
+		</a>
+	</p>
+{{/if}}
+
+{{#if externalPartner}}
+	<div class="powered-by">
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="logo logo-light"><defs><radialGradient id="m" cx="42%" cy="12%" r="74%"><stop offset="0%" stop-color="#08c5a3"/><stop offset="100%" stop-color="#08a9c5"/></radialGradient></defs><circle cx="256" cy="256" r="256" fill="url(#m)"/><path d="M363.279 344.309v-95.746c0-34.76-18.012-54.983-47.715-54.983-27.176 0-50.875 20.856-50.875 56.879v93.85h-15.484v-96.695c0-33.5-18.327-54.035-47.083-54.035s-51.507 25.28-51.507 57.827v92.9h-15.483V183.151h15.483v28.756c10.428-16.748 24.964-32.548 53.719-32.548 28.124 0 45.5 16.116 54.352 34.76 10.428-18.012 27.807-34.76 58.143-34.76 38.235 0 61.935 26.86 61.935 67.307v97.642z" fill="#fff"/></svg>
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="logo logo-dark"><path fill="#fff" d="M512 256c0 141.385-114.615 256-256 256S0 397.385 0 256 114.615 0 256 0s256 114.615 256 256Zm-148.721-13.437v95.746l15.485-.001v-97.642c0-40.447-23.7-67.307-61.935-67.307-30.336 0-47.715 16.748-58.143 34.76-8.852-18.644-26.228-34.76-54.352-34.76-28.755 0-43.291 15.8-53.719 32.548v-28.756h-15.483v161.155h15.483v-92.9c0-32.547 22.751-57.827 51.507-57.827 28.756 0 47.083 20.535 47.083 54.035v96.695h15.484v-93.85c0-36.023 23.699-56.879 50.875-56.879 29.703 0 47.715 20.223 47.715 54.983Z"/></svg>
+		<div class="powered-by-label">Powered by Momentum</div>
+	</div>
+{{/if}}
+
+{{#if isMomentum}}
+	<div class="made">
+		<svg xmlns="http://www.w3.org/2000/svg" width="650" height="650" viewBox="-2015 -2000 4030 4030" fill="currentColor" class="icon icon-maple-left"><path d="m-90 2030 45-863a95 95 0 0 0-111-98l-859 151 116-320a65 65 0 0 0-20-73l-941-762 212-99a65 65 0 0 0 34-79l-186-572 542 115a65 65 0 0 0 73-38l105-247 423 454a65 65 0 0 0 111-57l-204-1052 327 189a65 65 0 0 0 91-27l332-652 332 652a65 65 0 0 0 91 27l327-189-204 1052a65 65 0 0 0 111 57l423-454 105 247a65 65 0 0 0 73 38l542-115-186 572a65 65 0 0 0 34 79l212 99-941 762a65 65 0 0 0-20 73l116 320-859-151a95 95 0 0 0-111 98l45 863z"/></svg>
+		<div>Made in Canada</div>
+	</div>
+{{/if}}

@@ -1,0 +1,1 @@
+const t=Math.sqrt(2);class n{draw(n){!function(n){const{context:r,radius:s}=n,c=s/t,e=2*c;r.rect(-c,-c,e,e)}(n)}getSidesCount(){return 4}}export{n as SquareDrawer};

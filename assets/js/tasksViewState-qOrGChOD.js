@@ -1,0 +1,1 @@
+import{u as s}from"./ViewState-DH0LvQYq.js";var t=(s=>(s.Lists="lists",s.Mock="mock",s))(t||{});const o=s("tasks",{views:{lists:{defaultView:!0,order:1},mock:{order:1}}});export{t as T,o as u};

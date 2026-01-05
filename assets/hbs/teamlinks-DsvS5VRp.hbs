@@ -1,0 +1,83 @@
+<div class="app-dash">
+	<div class="team-dash-links-wrapper" data-ob="links-dash">
+		<ol class="team-dash-links add-shadow"></ol>
+		<span class="more-links-wrapper">
+			<span class="more-links">{{moreDropdownText}}</span>
+			<i class="icon icon-angle-down"></i>
+		</span>
+	</div>
+</div>
+
+<div class="app-wrapper nipple nipple-top-left">
+	<div class="app links-app">
+		<header class="header app-header u--touch-only-flex">
+			<div class="header-center">
+				<div class="title-wrapper">
+					<div class="title">Links</div>
+				</div>
+			</div>
+
+			<div class="header-right">
+				<div class="mobile-add" title="Add New Link" data-test="links-add">
+					<span class="icon-wrapper hide">
+						<svg class="icon icon-plus" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 448"><path xmlns="http://www.w3.org/2000/svg" d="m408 184h-136c-4.417969 0-8-3.582031-8-8v-136c0-22.089844-17.910156-40-40-40s-40 17.910156-40 40v136c0 4.417969-3.582031 8-8 8h-136c-22.089844 0-40 17.910156-40 40s17.910156 40 40 40h136c4.417969 0 8 3.582031 8 8v136c0 22.089844 17.910156 40 40 40s40-17.910156 40-40v-136c0-4.417969 3.582031-8 8-8h136c22.089844 0 40-17.910156 40-40s-17.910156-40-40-40zm0 0"></path></svg>
+					</span>
+				</div>
+				<div class="mobile-edit" title="Edit Links" data-test="links-edit">
+					<span class="icon-wrapper hide">
+						<svg class="icon icon-ellipsis" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60"><path d="M8 22c-4.411 0-8 3.589-8 8s3.589 8 8 8 8-3.589 8-8-3.589-8-8-8zM52 22c-4.411 0-8 3.589-8 8s3.589 8 8 8 8-3.589 8-8-3.589-8-8-8zM30 22c-4.411 0-8 3.589-8 8s3.589 8 8 8 8-3.589 8-8-3.589-8-8-8z"></path></svg>
+					</span>
+				</div>
+				<div class="mobile-close" title="Close Links" data-test="links-close">
+					<span class="icon-wrapper u--mobile-show-bg hide">
+						<svg class="icon icon-hide" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 348.333 348.334"><path d="M336.559 68.611L231.016 174.165l105.543 105.549c15.699 15.705 15.699 41.145 0 56.85-7.844 7.844-18.128 11.769-28.407 11.769-10.296 0-20.581-3.919-28.419-11.769L174.167 231.003 68.609 336.563c-7.843 7.844-18.128 11.769-28.416 11.769-10.285 0-20.563-3.919-28.413-11.769-15.699-15.698-15.699-41.139 0-56.85l105.54-105.549L11.774 68.611c-15.699-15.699-15.699-41.145 0-56.844 15.696-15.687 41.127-15.687 56.829 0l105.563 105.554L279.721 11.767c15.705-15.687 41.139-15.687 56.832 0 15.705 15.699 15.705 41.145.006 56.844z"/></svg>
+					</span>
+				</div>
+			</div>
+		</header>
+
+		<div class="subviews-wrapper">
+			<div class="subviews no-transition"><!--
+			--><div class="subview links-main">
+					<div class="body">
+						<div class="links-lists">
+							<ol class="more-links-list pinned-links-list links-list"></ol>
+							<hr class="pinned-divider">
+							<ol class="more-links-list links-list">
+								{{#isChromium}}
+									<li data-momo-id="chromeTab" data-place="links" class="optional-link"><a
+											href="{{chromeNewTabUrl}}" data-analytics-id="browser tab" class="local">
+										{{{ browserIcon 'icon-favicon icon-svg'}}}
+										{{ browserName }} Tab</a></li>
+									{{#isChrome}}
+										<li data-momo-id="apps" class="optional-link" data-place="links"><a href="chrome://apps" data-analytics-id="chrome apps" id="app-return" class="local">
+											<svg class="icon-favicon icon-svg icon-apps" xmlns="http://www.w3.org/2000/svg"
+												 viewBox="0 0 32 32">
+												<path d="M3 3h6v6H3V3zm10 0h6v6h-6V3zm10 0h6v6h-6V3zM3 13h6v6H3v-6zm10 0h6v6h-6v-6zm10 0h6v6h-6v-6zM3 23h6v6H3v-6zm10 0h6v6h-6v-6zm10 0h6v6h-6v-6z"></path>
+											</svg>
+											Apps</a></li>
+									{{/isChrome}}
+								{{/isChromium}}
+							</ol>
+						</div>
+						<div class="add-error-message message">Connection required to add link. <span
+								class="message-action retry-add">Retry</span></div>
+						<div class="message-empty"><i class="loading-icon"></i>Loading...</div>
+						<div class="empty">
+							<div class="title">No links yet</div>
+							<div class="description">Add your favorite links</div>
+							<span class="button new-toggle empty-toggle">New Link</span>
+						</div>
+						<div class="footer-input">
+							<span class="new-toggle"><span class="icon icon-favicon icon-plus"></span> New Link</span>
+						</div>
+					</div>
+				</div><!--
+
+			-->{{> (lookup . 'addGroup') }}
+
+			</div><!--
+	 --></div>
+	</div>
+	<div class="touch-overlay"></div>
+</div>
