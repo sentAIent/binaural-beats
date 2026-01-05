@@ -87,7 +87,7 @@ let currentShape = 'sun';
 let customColor = null; // null = use theme accent
 
 /**
- * Initialize Custom Cursor
+ * Initialize Custom Cursor with hover effects
  */
 export function initCursor() {
     // Load saved shape
@@ -102,18 +102,125 @@ export function initCursor() {
         customColor = savedColor;
     }
 
-    // Initial setup
+    // Initial setup - static cursor
     updateCursorStyle();
+
+    // Create animated cursor element for hover effects
+    createAnimatedCursor();
 
     // Listen for theme changes (only update if no custom color)
     window.addEventListener('themeChanged', (e) => {
         console.log('[Cursor] Theme changed, updating cursor');
         if (!customColor) {
             updateCursorStyle(e.detail.theme.accent);
+            updateAnimatedCursorColor();
         }
     });
 
     console.log('[Cursor] Initialized with shape:', currentShape, 'color:', customColor || 'theme accent');
+}
+
+/**
+ * Creates an animated cursor element that reacts to hover
+ */
+function createAnimatedCursor() {
+    // Create cursor element
+    const cursorDot = document.createElement('div');
+    cursorDot.id = 'animated-cursor';
+    cursorDot.style.cssText = `
+        position: fixed;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 99999;
+        mix-blend-mode: difference;
+        transition: transform 0.15s ease-out, opacity 0.15s ease-out, background-color 0.2s ease-out;
+        opacity: 0.8;
+    `;
+    document.body.appendChild(cursorDot);
+
+    // Update cursor color
+    updateAnimatedCursorColor();
+
+    // Track mouse position
+    let mouseX = 0, mouseY = 0;
+    let cursorX = 0, cursorY = 0;
+    let isHovering = false;
+
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    });
+
+    // Smooth follow animation
+    function animate() {
+        const dx = mouseX - cursorX;
+        const dy = mouseY - cursorY;
+
+        cursorX += dx * 0.2;
+        cursorY += dy * 0.2;
+
+        cursorDot.style.left = cursorX - 6 + 'px';
+        cursorDot.style.top = cursorY - 6 + 'px';
+
+        requestAnimationFrame(animate);
+    }
+    animate();
+
+    // Detect hovering over clickable elements
+    const clickableSelector = 'a, button, [role="button"], input, select, textarea, .cursor-pointer, [onclick]';
+
+    document.addEventListener('mouseover', (e) => {
+        if (e.target.closest(clickableSelector)) {
+            isHovering = true;
+            cursorDot.style.transform = 'scale(1.5)';
+            cursorDot.style.opacity = '1';
+            // Brighten color on hover
+            const baseColor = getEffectiveCursorColor();
+            cursorDot.style.backgroundColor = brightenColor(baseColor, 30);
+        }
+    });
+
+    document.addEventListener('mouseout', (e) => {
+        if (e.target.closest(clickableSelector)) {
+            isHovering = false;
+            cursorDot.style.transform = 'scale(1)';
+            cursorDot.style.opacity = '0.8';
+            updateAnimatedCursorColor();
+        }
+    });
+}
+
+/**
+ * Updates the animated cursor color
+ */
+function updateAnimatedCursorColor() {
+    const cursor = document.getElementById('animated-cursor');
+    if (cursor) {
+        cursor.style.backgroundColor = getEffectiveCursorColor();
+    }
+}
+
+/**
+ * Brightens a hex color by a percentage
+ */
+function brightenColor(hex, percent) {
+    // Remove # if present
+    hex = hex.replace('#', '');
+
+    // Parse RGB
+    let r = parseInt(hex.substring(0, 2), 16);
+    let g = parseInt(hex.substring(2, 4), 16);
+    let b = parseInt(hex.substring(4, 6), 16);
+
+    // Brighten
+    r = Math.min(255, r + Math.round((255 - r) * (percent / 100)));
+    g = Math.min(255, g + Math.round((255 - g) * (percent / 100)));
+    b = Math.min(255, b + Math.round((255 - b) * (percent / 100)));
+
+    // Convert back to hex
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
 /**
@@ -187,6 +294,7 @@ export function setCursorColor(color) {
         localStorage.removeItem('mindwave_cursor_color');
     }
     updateCursorStyle();
+    updateAnimatedCursorColor(); // Update animated cursor too
 
     // Update color picker UI
     const picker = document.getElementById('cursorColorPicker');
