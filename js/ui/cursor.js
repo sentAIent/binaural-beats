@@ -102,18 +102,17 @@ export function initCursor() {
         customColor = savedColor;
     }
 
-    // Initial setup - static cursor
+    // Initial setup
     updateCursorStyle();
 
-    // Create animated cursor element for hover effects
-    createAnimatedCursor();
+    // Add hover detection for cursor scaling
+    addCursorHoverEffects();
 
     // Listen for theme changes (only update if no custom color)
     window.addEventListener('themeChanged', (e) => {
         console.log('[Cursor] Theme changed, updating cursor');
         if (!customColor) {
             updateCursorStyle(e.detail.theme.accent);
-            updateAnimatedCursorColor();
         }
     });
 
@@ -121,106 +120,27 @@ export function initCursor() {
 }
 
 /**
- * Creates an animated cursor element that reacts to hover
+ * Adds hover effects that scale the cursor down on clickable elements
  */
-function createAnimatedCursor() {
-    // Create cursor element
-    const cursorDot = document.createElement('div');
-    cursorDot.id = 'animated-cursor';
-    cursorDot.style.cssText = `
-        position: fixed;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        pointer-events: none;
-        z-index: 99999;
-        mix-blend-mode: difference;
-        transition: transform 0.15s ease-out, opacity 0.15s ease-out, background-color 0.2s ease-out;
-        opacity: 0.8;
-    `;
-    document.body.appendChild(cursorDot);
-
-    // Update cursor color
-    updateAnimatedCursorColor();
-
-    // Track mouse position
-    let mouseX = 0, mouseY = 0;
-    let cursorX = 0, cursorY = 0;
-    let isHovering = false;
-
-    document.addEventListener('mousemove', (e) => {
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-    });
-
-    // Smooth follow animation
-    function animate() {
-        const dx = mouseX - cursorX;
-        const dy = mouseY - cursorY;
-
-        cursorX += dx * 0.2;
-        cursorY += dy * 0.2;
-
-        cursorDot.style.left = cursorX - 6 + 'px';
-        cursorDot.style.top = cursorY - 6 + 'px';
-
-        requestAnimationFrame(animate);
-    }
-    animate();
-
-    // Detect hovering over clickable elements
+function addCursorHoverEffects() {
     const clickableSelector = 'a, button, [role="button"], input, select, textarea, .cursor-pointer, [onclick]';
 
+    // Store original cursor size
+    let isHovering = false;
+
     document.addEventListener('mouseover', (e) => {
-        if (e.target.closest(clickableSelector)) {
+        if (e.target.closest(clickableSelector) && !isHovering) {
             isHovering = true;
-            cursorDot.style.transform = 'scale(1.5)';
-            cursorDot.style.opacity = '1';
-            // Brighten color on hover
-            const baseColor = getEffectiveCursorColor();
-            cursorDot.style.backgroundColor = brightenColor(baseColor, 30);
+            updateCursorStyle(null, 0.7); // Scale down to 70%
         }
     });
 
     document.addEventListener('mouseout', (e) => {
-        if (e.target.closest(clickableSelector)) {
+        if (e.target.closest(clickableSelector) && isHovering) {
             isHovering = false;
-            cursorDot.style.transform = 'scale(1)';
-            cursorDot.style.opacity = '0.8';
-            updateAnimatedCursorColor();
+            updateCursorStyle(null, 1.0); // Back to normal
         }
     });
-}
-
-/**
- * Updates the animated cursor color
- */
-function updateAnimatedCursorColor() {
-    const cursor = document.getElementById('animated-cursor');
-    if (cursor) {
-        cursor.style.backgroundColor = getEffectiveCursorColor();
-    }
-}
-
-/**
- * Brightens a hex color by a percentage
- */
-function brightenColor(hex, percent) {
-    // Remove # if present
-    hex = hex.replace('#', '');
-
-    // Parse RGB
-    let r = parseInt(hex.substring(0, 2), 16);
-    let g = parseInt(hex.substring(2, 4), 16);
-    let b = parseInt(hex.substring(4, 6), 16);
-
-    // Brighten
-    r = Math.min(255, r + Math.round((255 - r) * (percent / 100)));
-    g = Math.min(255, g + Math.round((255 - g) * (percent / 100)));
-    b = Math.min(255, b + Math.round((255 - b) * (percent / 100)));
-
-    // Convert back to hex
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
 /**
@@ -233,9 +153,9 @@ function getEffectiveCursorColor() {
 }
 
 /**
- * Updates the cursor CSS
+ * Updates the cursor CSS with optional scaling
  */
-function updateCursorStyle(colorOverride = null) {
+function updateCursorStyle(colorOverride = null, scale = 1.0) {
     const color = colorOverride || getEffectiveCursorColor();
 
     let styleTag = document.getElementById('dynamic-cursor-styles');
@@ -250,14 +170,40 @@ function updateCursorStyle(colorOverride = null) {
         return;
     }
 
-    const svg = CURSOR_SHAPES[currentShape].create(color);
-    const dataUri = `url("data:image/svg+xml,${encodeURIComponent(svg)}") 12 12, auto`;
+    // Get base SVG and scale it
+    const baseSvg = CURSOR_SHAPES[currentShape].create(color);
+    const scaledSvg = scaleSvgCursor(baseSvg, scale);
+    const hotspot = Math.round(12 * scale); // Keep hotspot centered
+    const dataUri = `url("data:image/svg+xml,${encodeURIComponent(scaledSvg)}") ${hotspot} ${hotspot}, auto`;
 
     styleTag.textContent = `
         body, a, button, [role="button"], input, select, textarea, .cursor-pointer {
             cursor: ${dataUri} !important;
         }
     `;
+}
+
+/**
+ * Scales an SVG cursor
+ */
+function scaleSvgCursor(svg, scale) {
+    if (scale === 1.0) return svg;
+
+    // Parse the SVG to get width/height
+    const widthMatch = svg.match(/width="(\d+)"/);
+    const heightMatch = svg.match(/height="(\d+)"/);
+
+    if (!widthMatch || !heightMatch) return svg;
+
+    const originalWidth = parseInt(widthMatch[1]);
+    const originalHeight = parseInt(heightMatch[1]);
+    const newWidth = Math.round(originalWidth * scale);
+    const newHeight = Math.round(originalHeight * scale);
+
+    // Replace width and height attributes
+    return svg
+        .replace(/width="\d+"/, `width="${newWidth}"`)
+        .replace(/height="\d+"/, `height="${newHeight}"`);
 }
 
 /**
@@ -294,7 +240,6 @@ export function setCursorColor(color) {
         localStorage.removeItem('mindwave_cursor_color');
     }
     updateCursorStyle();
-    updateAnimatedCursorColor(); // Update animated cursor too
 
     // Update color picker UI
     const picker = document.getElementById('cursorColorPicker');
