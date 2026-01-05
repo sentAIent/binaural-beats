@@ -882,7 +882,7 @@ function syncMainButton(isPlaying) {
 
 // --- UNIFIED BUTTON SYNC ---
 // Single source of truth: queries actual state and syncs all three buttons
-function syncAllButtons() {
+export function syncAllButtons() {
     // Query actual states - these are the single sources of truth
     const audioPlaying = (isAudioPlaying() || isClassicalPlaying()) && !state.isStopping;
     const visualsPlaying = !isVisualsPaused();
@@ -1854,7 +1854,7 @@ async function confirmSave() {
             soundscapes: { ...state.soundscapeSettings },
             // NEW: Enhanced settings
             audioMode: state.audioMode || 'binaural',
-            visualColor: els.visualColorPicker?.value || '#2dd4bf',
+            visualColor: els.visualColorPicker?.value || '#60a9ff',
             visualMode: state.visualMode || 'particles',
             theme: localStorage.getItem('mindwave_theme') || 'default'
         },

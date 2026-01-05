@@ -162,10 +162,10 @@ export const DJ_SOUNDS = {
         icon: '🌊',
         color: 'from-cyan-500 to-teal-600',
         sounds: {
-            sweepup: { label: 'Rise', icon: '⬆️', canLoop: false },
-            sweepdown: { label: 'Fall', icon: '⬇️', canLoop: false },
+            sweepup: { label: 'Rise', icon: '⬆️', canLoop: true },
+            sweepdown: { label: 'Fall', icon: '⬇️', canLoop: true },
             breathe: { label: 'Breathe', icon: '🌬️', canLoop: true },
-            gong: { label: 'Gong', icon: '🔔', canLoop: false },
+            gong: { label: 'Gong', icon: '🔔', canLoop: true },
             chimes: { label: 'Chimes', icon: '🎐', canLoop: true },
             wash: { label: 'White Wash', icon: '☁️', canLoop: true }
         }
@@ -181,7 +181,7 @@ export const DJ_SOUNDS = {
             solfeggio432: { label: '432 Hz', icon: '💜', canLoop: true },
             solfeggio396: { label: '396 Hz', icon: '❤️', canLoop: true },
             binaural: { label: 'Binaural Pulse', icon: '🧠', canLoop: true },
-            tibetan: { label: 'Tibetan Bell', icon: '🔔', canLoop: false },
+            tibetan: { label: 'Tibetan Bell', icon: '🔔', canLoop: true },
             singing: { label: 'Singing Bowl', icon: '🥣', canLoop: true }
         }
     },
@@ -192,10 +192,10 @@ export const DJ_SOUNDS = {
         icon: '💥',
         color: 'from-red-500 to-orange-600',
         sounds: {
-            riser: { label: 'Build Up', icon: '📈', canLoop: false },
-            impact: { label: 'Impact', icon: '💥', canLoop: false },
+            riser: { label: 'Build Up', icon: '📈', canLoop: true },
+            impact: { label: 'Impact', icon: '💥', canLoop: true },
             siren: { label: 'Festival Siren', icon: '🚨', canLoop: true },
-            laser: { label: 'Laser', icon: '⚡', canLoop: false },
+            laser: { label: 'Laser', icon: '⚡', canLoop: true },
             snareroll: { label: 'Snare Roll', icon: '🥁', canLoop: true },
             whitenoise: { label: 'White Noise', icon: '📻', canLoop: true }
         }
@@ -587,60 +587,90 @@ function synthSubBass(ctx, output, isLoop = false) {
 /**
  * Generate sweep up
  */
-function synthSweepUp(ctx, output) {
-    const now = ctx.currentTime;
+function synthSweepUp(ctx, output, isLoop = false) {
     const duration = 1.5;
+    const interval = 2000; // 2 seconds between retrigggers
 
-    const noise = createNoiseSource(ctx, 'white');
+    const playSweep = (startTime) => {
+        const noise = createNoiseSource(ctx, 'white');
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(100, startTime);
+        filter.frequency.exponentialRampToValueAtTime(10000, startTime + duration);
+        filter.Q.value = 8;
 
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(100, now);
-    filter.frequency.exponentialRampToValueAtTime(10000, now + duration);
-    filter.Q.value = 8;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.3, startTime);
+        gain.gain.linearRampToValueAtTime(0.6, startTime + duration * 0.8);
+        gain.gain.linearRampToValueAtTime(0, startTime + duration);
 
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.3, now);
-    gain.gain.linearRampToValueAtTime(0.6, now + duration * 0.8);
-    gain.gain.linearRampToValueAtTime(0, now + duration);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(output);
 
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(output);
+        noise.start(startTime);
+        noise.stop(startTime + duration);
+    };
 
-    noise.start(now);
-    noise.stop(now + duration);
+    if (isLoop) {
+        playSweep(ctx.currentTime);
+        const loopId = setInterval(() => {
+            playSweep(ctx.currentTime);
+        }, interval);
 
-    return { duration };
+        return {
+            duration: 999,
+            stop: () => clearInterval(loopId),
+            loopId
+        };
+    } else {
+        playSweep(ctx.currentTime);
+        return { duration };
+    }
 }
 
 /**
  * Generate sweep down
  */
-function synthSweepDown(ctx, output) {
-    const now = ctx.currentTime;
+function synthSweepDown(ctx, output, isLoop = false) {
     const duration = 1.5;
+    const interval = 2000; // 2 seconds between retrigggers
 
-    const noise = createNoiseSource(ctx, 'white');
+    const playSweep = (startTime) => {
+        const noise = createNoiseSource(ctx, 'white');
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(10000, startTime);
+        filter.frequency.exponentialRampToValueAtTime(100, startTime + duration);
+        filter.Q.value = 8;
 
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(10000, now);
-    filter.frequency.exponentialRampToValueAtTime(100, now + duration);
-    filter.Q.value = 8;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.6, startTime);
+        gain.gain.linearRampToValueAtTime(0, startTime + duration);
 
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.6, now);
-    gain.gain.linearRampToValueAtTime(0, now + duration);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(output);
 
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(output);
+        noise.start(startTime);
+        noise.stop(startTime + duration);
+    };
 
-    noise.start(now);
-    noise.stop(now + duration);
+    if (isLoop) {
+        playSweep(ctx.currentTime);
+        const loopId = setInterval(() => {
+            playSweep(ctx.currentTime);
+        }, interval);
 
-    return { duration };
+        return {
+            duration: 999,
+            stop: () => clearInterval(loopId),
+            loopId
+        };
+    } else {
+        playSweep(ctx.currentTime);
+        return { duration };
+    }
 }
 
 /**
@@ -1691,36 +1721,53 @@ function synthBreathe(ctx, output, isLoop = false) {
 /**
  * Generate gong strike
  */
-function synthGong(ctx, output) {
-    const now = ctx.currentTime;
+function synthGong(ctx, output, isLoop = false) {
+    const duration = 6;
+    const interval = 8000; // 8 seconds between retrigggers (long resonance)
 
-    // Low fundamental with rich harmonics
-    const fundamental = 65;
-    const oscs = [];
+    const playGong = (startTime) => {
+        // Low fundamental with rich harmonics
+        const fundamental = 65;
+        const oscs = [];
 
-    [1, 2.4, 3.6, 5.2].forEach((mult, i) => {
-        const osc = ctx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.value = fundamental * mult;
-        oscs.push(osc);
-    });
+        [1, 2.4, 3.6, 5.2].forEach((mult, i) => {
+            const osc = ctx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.value = fundamental * mult;
+            oscs.push(osc);
+        });
 
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.7, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 6);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.7, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
 
-    oscs.forEach((osc, i) => {
-        const oscGain = ctx.createGain();
-        oscGain.gain.value = 0.4 / (i + 1);
-        osc.connect(oscGain);
-        oscGain.connect(gain);
-        osc.start(now);
-        osc.stop(now + 6);
-    });
+        oscs.forEach((osc, i) => {
+            const oscGain = ctx.createGain();
+            oscGain.gain.value = 0.4 / (i + 1);
+            osc.connect(oscGain);
+            oscGain.connect(gain);
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+        });
 
-    gain.connect(output);
+        gain.connect(output);
+    };
 
-    return { duration: 6 };
+    if (isLoop) {
+        playGong(ctx.currentTime);
+        const loopId = setInterval(() => {
+            playGong(ctx.currentTime);
+        }, interval);
+
+        return {
+            duration: 999,
+            stop: () => clearInterval(loopId),
+            loopId
+        };
+    } else {
+        playGong(ctx.currentTime);
+        return { duration };
+    }
 }
 
 /**
@@ -1873,44 +1920,62 @@ function synthBinauralPulse(ctx, output, isLoop = false) {
             setTimeout(() => {
                 try { carrier.stop(); lfo.stop(); } catch (e) { }
             }, 500);
-        }
+        },
+        nodes: [carrier, lfo, lfoGain, masterGain]
     };
 }
 
 /**
  * Generate Tibetan bell strike
  */
-function synthTibetan(ctx, output) {
-    const now = ctx.currentTime;
+function synthTibetan(ctx, output, isLoop = false) {
+    const duration = 5;
+    const interval = 7000; // 7 seconds between retrigggers
 
-    // Rich bell harmonics
-    const fundamental = 440;
-    const harmonics = [1, 2.76, 5.4, 8.93];
-    const oscs = [];
+    const playBell = (startTime) => {
+        // Rich bell harmonics
+        const fundamental = 440;
+        const harmonics = [1, 2.76, 5.4, 8.93];
+        const oscs = [];
 
-    harmonics.forEach((mult, i) => {
-        const osc = ctx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.value = fundamental * mult;
-        oscs.push(osc);
-    });
+        harmonics.forEach((mult, i) => {
+            const osc = ctx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.value = fundamental * mult;
+            oscs.push(osc);
+        });
 
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.5, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 5);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.5, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
 
-    oscs.forEach((osc, i) => {
-        const oscGain = ctx.createGain();
-        oscGain.gain.value = 0.3 / (i + 1);
-        osc.connect(oscGain);
-        oscGain.connect(gain);
-        osc.start(now);
-        osc.stop(now + 5);
-    });
+        oscs.forEach((osc, i) => {
+            const oscGain = ctx.createGain();
+            oscGain.gain.value = 0.3 / (i + 1);
+            osc.connect(oscGain);
+            oscGain.connect(gain);
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+        });
 
-    gain.connect(output);
+        gain.connect(output);
+    };
 
-    return { duration: 5 };
+    if (isLoop) {
+        playBell(ctx.currentTime);
+        const loopId = setInterval(() => {
+            playBell(ctx.currentTime);
+        }, interval);
+
+        return {
+            duration: 999,
+            stop: () => clearInterval(loopId),
+            loopId
+        };
+    } else {
+        playBell(ctx.currentTime);
+        return { duration };
+    }
 }
 
 /**
@@ -1967,66 +2032,99 @@ function synthSinging(ctx, output, isLoop = false) {
 /**
  * Build-up riser
  */
-function synthRiser(ctx, output) {
-    const now = ctx.currentTime;
+function synthRiser(ctx, output, isLoop = false) {
     const duration = 2;
+    const interval = 3000; // 3 seconds between retrigggers
 
-    const noise = createNoiseSource(ctx, 'white');
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(200, now);
-    filter.frequency.exponentialRampToValueAtTime(8000, now + duration);
-    filter.Q.value = 5;
+    const playRiser = (startTime) => {
+        const noise = createNoiseSource(ctx, 'white');
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(200, startTime);
+        filter.frequency.exponentialRampToValueAtTime(8000, startTime + duration);
+        filter.Q.value = 5;
 
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.1, now);
-    gain.gain.linearRampToValueAtTime(0.7, now + duration * 0.9);
-    gain.gain.linearRampToValueAtTime(0, now + duration);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.1, startTime);
+        gain.gain.linearRampToValueAtTime(0.7, startTime + duration * 0.9);
+        gain.gain.linearRampToValueAtTime(0, startTime + duration);
 
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(output);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(output);
 
-    noise.start(now);
-    noise.stop(now + duration);
+        noise.start(startTime);
+        noise.stop(startTime + duration);
+    };
 
-    return { duration };
+    if (isLoop) {
+        playRiser(ctx.currentTime);
+        const loopId = setInterval(() => {
+            playRiser(ctx.currentTime);
+        }, interval);
+
+        return {
+            duration: 999,
+            stop: () => clearInterval(loopId),
+            loopId
+        };
+    } else {
+        playRiser(ctx.currentTime);
+        return { duration };
+    }
 }
 
 /**
  * Impact hit
  */
-function synthImpact(ctx, output) {
-    const now = ctx.currentTime;
+function synthImpact(ctx, output, isLoop = false) {
+    const duration = 0.6;
+    const interval = 2000; // 2 seconds between retrigggers
 
-    // Sub bass hit
-    const osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(100, now);
-    osc.frequency.exponentialRampToValueAtTime(25, now + 0.3);
+    const playImpact = (startTime) => {
+        // Sub bass hit
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(100, startTime);
+        osc.frequency.exponentialRampToValueAtTime(25, startTime + 0.3);
 
-    // Noise layer
-    const noise = createNoiseSource(ctx, 'white');
-    const noiseFilter = ctx.createBiquadFilter();
-    noiseFilter.type = 'lowpass';
-    noiseFilter.frequency.setValueAtTime(5000, now);
-    noiseFilter.frequency.exponentialRampToValueAtTime(80, now + 0.2);
+        // Noise layer
+        const noise = createNoiseSource(ctx, 'white');
+        const noiseFilter = ctx.createBiquadFilter();
+        noiseFilter.type = 'lowpass';
+        noiseFilter.frequency.setValueAtTime(5000, startTime);
+        noiseFilter.frequency.exponentialRampToValueAtTime(80, startTime + 0.2);
 
-    const oscGain = ctx.createGain();
-    oscGain.gain.setValueAtTime(0.8, now);
-    oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+        const oscGain = ctx.createGain();
+        oscGain.gain.setValueAtTime(0.8, startTime);
+        oscGain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
 
-    const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.5, now);
-    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.5, startTime);
+        noiseGain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
 
-    osc.connect(oscGain); oscGain.connect(output);
-    noise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(output);
+        osc.connect(oscGain); oscGain.connect(output);
+        noise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(output);
 
-    osc.start(now); osc.stop(now + 0.6);
-    noise.start(now); noise.stop(now + 0.2);
+        osc.start(startTime); osc.stop(startTime + duration);
+        noise.start(startTime); noise.stop(startTime + 0.2);
+    };
 
-    return { duration: 0.6 };
+    if (isLoop) {
+        playImpact(ctx.currentTime);
+        const loopId = setInterval(() => {
+            playImpact(ctx.currentTime);
+        }, interval);
+
+        return {
+            duration: 999,
+            stop: () => clearInterval(loopId),
+            loopId
+        };
+    } else {
+        playImpact(ctx.currentTime);
+        return { duration };
+    }
 }
 
 /**
@@ -2071,24 +2169,41 @@ function synthSiren(ctx, output, isLoop = false) {
 /**
  * Laser zap
  */
-function synthLaser(ctx, output) {
-    const now = ctx.currentTime;
+function synthLaser(ctx, output, isLoop = false) {
+    const duration = 0.3;
+    const interval = 500; // 0.5 seconds between rapid fire shots
 
-    const osc = ctx.createOscillator();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(2000, now);
-    osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+    const playLaser = (startTime) => {
+        const osc = ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(2000, startTime);
+        osc.frequency.exponentialRampToValueAtTime(100, startTime + duration);
 
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.4, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.4, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
 
-    osc.connect(gain);
-    gain.connect(output);
-    osc.start(now);
-    osc.stop(now + 0.3);
+        osc.connect(gain);
+        gain.connect(output);
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+    };
 
-    return { duration: 0.3 };
+    if (isLoop) {
+        playLaser(ctx.currentTime);
+        const loopId = setInterval(() => {
+            playLaser(ctx.currentTime);
+        }, interval);
+
+        return {
+            duration: 999,
+            stop: () => clearInterval(loopId),
+            loopId
+        };
+    } else {
+        playLaser(ctx.currentTime);
+        return { duration };
+    }
 }
 
 /**

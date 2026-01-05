@@ -574,14 +574,18 @@ window.startLessonAction = async (lessonId) => {
 
     try {
         // Import required modules
-        const [sessionTimer, { startAudio, fadeIn, fadeOut, stopAudio }] = await Promise.all([
+        const [sessionTimer, { startAudio, fadeIn, fadeOut, stopAudio }, { resumeVisuals }, { syncAllButtons }] = await Promise.all([
             import('../audio/session-timer.js'),
-            import('../audio/engine.js')
+            import('../audio/engine.js'),
+            import('../visuals/visualizer.js'),
+            import('../ui/controls.js')
         ]);
 
-        // Start audio playback
+        // Start audio playback and visuals
         await startAudio();
         fadeIn(1.5);
+        resumeVisuals();
+        syncAllButtons();
 
         // Set session duration in the dropdown (so timer UI shows)
         const sessionDurationSelect = document.getElementById('sessionDuration');
