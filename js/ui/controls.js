@@ -621,6 +621,7 @@ export function setupUI() {
     // Theme
     const savedTheme = localStorage.getItem('mindwave_theme');
     if (savedTheme) setTheme(savedTheme);
+    else setTheme('default'); // Default to cyan/emerald theme
 
     // Check disclaimer acceptance from localStorage
     state.disclaimerAccepted = localStorage.getItem('mindwave_disclaimer_accepted') === 'true';
@@ -2205,6 +2206,36 @@ export function updatePresetButtons(activeType) {
 
 let djCurrentCategory = 'ambient';
 let djMode = 'oneshot'; // 'oneshot' or 'loop'
+let djShowAllCategories = true; // Default to showing all categories when DJ Studio expands
+
+// Helper functions that need to be accessible to the global reset function
+let renderAllDJPads;
+let updateShowAllButton;
+
+// Global function for Expand All button to reset DJ Studio to Show All view
+// Must be at module level to be available when index.html needs it
+window.resetDJStudioToShowAll = function () {
+    console.log('[DJ Studio] Reset function called, djShowAllCategories is:', djShowAllCategories);
+
+    // Always force reset to show all
+    djShowAllCategories = true;
+
+    // Force re-render with a slight delay to ensure DOM is ready
+    setTimeout(() => {
+        console.log('[DJ Studio] Resetting to Show All Categories from Expand All button');
+
+        if (renderAllDJPads) renderAllDJPads();
+        if (updateShowAllButton) updateShowAllButton();
+
+        // Deactivate all category tabs
+        const tabs = document.querySelectorAll('.dj-cat-tab');
+        tabs.forEach(tab => {
+            tab.className = 'dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-white/5 text-[var(--text-muted)] border border-white/10 whitespace-nowrap hover:bg-white/10';
+        });
+
+        console.log('[DJ Studio] Reset complete, processed', tabs.length, 'tabs');
+    }, 10);
+};
 
 function setupDJPads() {
     const grid = document.getElementById('djPadsGrid');
@@ -2214,6 +2245,7 @@ function setupDJPads() {
     const modeOneShot = document.getElementById('djModeOneShot');
     const modeLoop = document.getElementById('djModeLoop');
     const stopAllBtn = document.getElementById('djStopAll');
+    const showAllBtn = document.getElementById('djShowAllCategoriesBtn'); // NEW
 
     if (!grid) {
         console.log('[DJ Pads] UI elements not found, skipping setup');
@@ -2222,9 +2254,9 @@ function setupDJPads() {
 
     console.log('[DJ Pads] Initializing...');
 
-    // Render initial category (ambient is the first category in DJ_SOUNDS)
-    renderDJPads('ambient');
-    updateCategoryTabs(); // Ensure Ambient tab is highlighted on load
+    // Render all categories by default to show full DJ Studio collection
+    renderAllDJPads();
+    updateShowAllButton(); // Ensure "All" button shows active state on load
 
     // Category Tab Clicks
     if (categoryTabs) {
@@ -2233,12 +2265,37 @@ function setupDJPads() {
                 const category = tab.dataset.category;
                 if (category && category !== djCurrentCategory) {
                     djCurrentCategory = category;
+                    djShowAllCategories = false; // Exit "show all" mode
+                    updateShowAllButton(); // Update button state
                     updateCategoryTabs();
                     renderDJPads(category);
                 }
             });
         });
     }
+
+    // NEW: Show All Categories Button
+    if (showAllBtn) {
+        showAllBtn.addEventListener('click', () => {
+            djShowAllCategories = !djShowAllCategories;
+
+            if (djShowAllCategories) {
+                renderAllDJPads();
+                // Deactivate category tabs
+                const tabs = document.querySelectorAll('.dj-cat-tab');
+                tabs.forEach(tab => {
+                    tab.className = 'dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-white/5 text-[var(--text-muted)] border border-white/10 whitespace-nowrap hover:bg-white/10';
+                });
+            } else {
+                // Return to current category
+                updateCategoryTabs();
+                renderDJPads(djCurrentCategory);
+            }
+
+            updateShowAllButton();
+        });
+    }
+
 
     // Mode Toggle
     if (modeOneShot) {
@@ -2514,5 +2571,117 @@ async function handlePadClick(soundId, canLoop, category) {
 
 function updateAllPadStates() {
     // Re-render current category to update all pad states
-    renderDJPads(djCurrentCategory);
+    if (djShowAllCategories) {
+        renderAllDJPads();
+    } else {
+        renderDJPads(djCurrentCategory);
+    }
+}
+
+// NEW: Render all pads from all categories
+renderAllDJPads = function () {
+    const grid = document.getElementById('djPadsGrid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+    grid.className = 'grid grid-cols-3 gap-2'; // Keep same grid
+
+    // Categories to render in order
+    const categories = ['ambient', 'pulse', 'texture', 'healing', 'drops'];
+
+    categories.forEach(category => {
+        const catData = DJ_SOUNDS[category];
+        if (!catData) return;
+
+
+        // Add category header
+        const header = document.createElement('div');
+        header.className = 'text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)] flex items-center gap-2';
+        // Use inline styles for spacing and grid layout since Tailwind classes may not be compiled
+        header.style.gridColumn = '1 / -1'; // Span all columns (equivalent to col-span-3)
+        header.style.marginTop = category === categories[0] ? '0' : '24px'; // 24px spacing between categories
+        header.style.marginBottom = '8px';
+
+        // Category-specific styling
+        let headerColor = 'text-purple-400';
+        if (category === 'pulse') headerColor = 'text-pink-400';
+        else if (category === 'texture') headerColor = 'text-cyan-400';
+        else if (category === 'healing') headerColor = 'text-emerald-400';
+        else if (category === 'drops') headerColor = 'text-red-400';
+
+        const icon = catData.sounds[Object.keys(catData.sounds)[0]]?.icon || '';
+        header.innerHTML = `<span class="${headerColor}">${icon} ${category.toUpperCase()}</span>`;
+        header.innerHTML += '<div class="flex-1 h-px bg-white/10"></div>';
+        grid.appendChild(header);
+
+        // Get gradient colors based on category
+        let gradientFrom, gradientTo, borderColor, glowColor;
+        if (category === 'ambient') {
+            gradientFrom = 'from-purple-500'; gradientTo = 'to-violet-600';
+            borderColor = 'border-purple-500/30'; glowColor = 'shadow-purple-500/30';
+        } else if (category === 'pulse') {
+            gradientFrom = 'from-pink-500'; gradientTo = 'to-rose-600';
+            borderColor = 'border-pink-500/30'; glowColor = 'shadow-pink-500/30';
+        } else if (category === 'texture') {
+            gradientFrom = 'from-cyan-500'; gradientTo = 'to-teal-600';
+            borderColor = 'border-cyan-500/30'; glowColor = 'shadow-cyan-500/30';
+        } else if (category === 'healing') {
+            gradientFrom = 'from-emerald-500'; gradientTo = 'to-green-600';
+            borderColor = 'border-emerald-500/30'; glowColor = 'shadow-emerald-500/30';
+        } else if (category === 'drops') {
+            gradientFrom = 'from-red-500'; gradientTo = 'to-orange-600';
+            borderColor = 'border-red-500/30'; glowColor = 'shadow-red-500/30';
+        }
+
+        // Add all pads for this category
+        Object.entries(catData.sounds).forEach(([id, sound]) => {
+            const isActive = isLoopActive(id);
+            const canLoop = sound.canLoop;
+
+            const pad = document.createElement('button');
+            pad.className = `dj-pad group relative flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-150 active:scale-95
+                ${isActive
+                    ? `bg-gradient-to-br ${gradientFrom}/30 ${gradientTo}/20 ${borderColor} shadow-lg ${glowColor}`
+                    : `bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20`}`;
+            pad.dataset.soundId = id;
+            pad.dataset.canLoop = canLoop;
+
+            const loopIndicator = isActive ? `<div class="absolute top-1 right-1 w-2 h-2 rounded-full bg-gradient-to-r ${gradientFrom} ${gradientTo} animate-pulse"></div>` : '';
+            const activeClass = isActive ? 'dj-pad-active' : '';
+
+            pad.innerHTML = `
+                ${loopIndicator}
+                <span class="dj-pad-icon text-2xl mb-1">${sound.icon}</span>
+                <span class="dj-pad-label text-[10px] font-bold uppercase tracking-wide ${activeClass}">${sound.label}</span>
+                ${canLoop ? `<span class="dj-pad-loop text-[8px] mt-0.5">● LOOP</span>` : ''}
+            `;
+
+            pad.addEventListener('click', () => handlePadClick(id, canLoop, category));
+
+            pad.addEventListener('touchstart', () => {
+                pad.classList.add('scale-95');
+            }, { passive: true });
+            pad.addEventListener('touchend', () => {
+                pad.classList.remove('scale-95');
+            }, { passive: true });
+
+            grid.appendChild(pad);
+        });
+    });
+
+    console.log('[DJ Pads] Rendered all categories');
+}
+
+// NEW: Update Show All button state
+updateShowAllButton = function () {
+    const btn = document.getElementById('djShowAllCategoriesBtn');
+    if (!btn) return;
+
+    if (djShowAllCategories) {
+        btn.className = 'px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-cyan-500/40 text-cyan-300 border border-cyan-500/50 whitespace-nowrap hover:bg-cyan-500/50 transition-all flex items-center gap-1 shrink-0';
+        btn.title = 'Show Single Category';
+    } else {
+        btn.className = 'px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 whitespace-nowrap hover:bg-cyan-500/30 transition-all flex items-center gap-1 shrink-0';
+        btn.title = 'Show All Categories';
+    }
 }
