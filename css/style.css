@@ -1393,9 +1393,16 @@ body[data-theme="dawn"] #rightPanel select {
     color: var(--accent) !important;
 }
 
-/* Soundscape item default background */
+
+/* Soundscape item default background and text colors for dark themes */
 .soundscape-item {
     background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Ensure all text is visible on dark backgrounds */
+.soundscape-item label,
+.soundscape-item span {
+    color: var(--text-main) !important;
 }
 
 /* Soundscape items - light theme overrides */
@@ -1409,7 +1416,7 @@ body[data-theme="cloud"] .soundscape-item label,
 body[data-theme="cloud"] .soundscape-item span,
 body[data-theme="dawn"] .soundscape-item label,
 body[data-theme="dawn"] .soundscape-item span {
-    color: var(--accent) !important;
+    color: var(--text-main) !important;
 }
 
 /* Left panel items for light themes */
