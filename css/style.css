@@ -1343,17 +1343,22 @@ body[data-theme="dawn"] #rightPanel button:hover {
 
 /* Atmosphere/Soundscape buttons - ensure readable */
 body[data-theme="cloud"] .soundscape-btn,
+body[data-theme="cloud"] #soundscapeContainer button {
+    background: rgba(212, 235, 247, 0.7) !important;
+    border: 1px solid var(--accent) !important;
+    color: var(--accent) !important;
+}
+
 body[data-theme="dawn"] .soundscape-btn,
-body[data-theme="cloud"] #soundscapeContainer button,
 body[data-theme="dawn"] #soundscapeContainer button {
-    background: rgba(255, 255, 255, 0.5) !important;
+    background: rgba(253, 232, 212, 0.7) !important;
     border: 1px solid var(--accent) !important;
     color: var(--accent) !important;
 }
 
 body[data-theme="cloud"] .soundscape-btn.active,
-body[data-theme="dawn"] .soundscape-btn.active,
 body[data-theme="cloud"] #soundscapeContainer button.active,
+body[data-theme="dawn"] .soundscape-btn.active,
 body[data-theme="dawn"] #soundscapeContainer button.active {
     background: var(--accent) !important;
     color: white !important;
