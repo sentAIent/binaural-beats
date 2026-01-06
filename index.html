@@ -762,9 +762,9 @@
             <h2 class="text-xs font-bold tracking-widest text-[var(--accent)]">STUDIO MIXER</h2>
             <div class="flex items-center gap-2">
                 <button id="collapseAllBtn"
-                    class="opacity-70 hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--accent)] transition-all"
+                    class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[var(--accent)] transition-all opacity-70 hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--accent)]"
                     title="Collapse All Sections">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="6 9 12 15 18 9"></polyline>
                         <polyline points="6 3 12 9 18 3"></polyline>
                     </svg>
@@ -846,14 +846,18 @@
 
             <!-- DJ PADS (Pioneer XDJ-style) -->
             <section class="mixer-section" data-section="djpads">
-                <div class="flex justify-between items-center mb-3 cursor-pointer section-header"
-                    onclick="toggleMixerSection('djpads')">
+                <div class="flex justify-between items-center mb-3 section-header">
                     <div class="flex items-center gap-2">
-                        <svg class="section-arrow transition-transform duration-200" width="12" height="12"
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                        <h3 class="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">DJ Pads
+                        <button
+                            class="p-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[var(--accent)] transition-all text-[var(--text-muted)] hover:text-[var(--accent)]"
+                            onclick="toggleMixerSection('djpads')" title="Toggle DJ Studio Section">
+                            <svg class="section-arrow transition-transform duration-200" width="14" height="14"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9" />
+                                <polyline points="6 3 12 9 18 3" />
+                            </svg>
+                        </button>
+                        <h3 class="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">DJ Studio
                         </h3>
                     </div>
                     <div class="flex items-center gap-2" onclick="event.stopPropagation()">
@@ -886,27 +890,41 @@
                         </button>
                     </div>
 
-                    <!-- Category Tabs -->
-                    <div class="flex gap-1 mb-3 overflow-x-auto pb-1" id="djCategoryTabs">
-                        <button data-category="ambient"
-                            class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-purple-500/20 text-purple-400 border border-purple-500/30 whitespace-nowrap hover:bg-white/10">
-                            🎧 Ambient
-                        </button>
-                        <button data-category="pulse"
-                            class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-white/5 text-[var(--text-muted)] border border-white/10 whitespace-nowrap hover:bg-white/10">
-                            💓 Pulse
-                        </button>
-                        <button data-category="texture"
-                            class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-white/5 text-[var(--text-muted)] border border-white/10 whitespace-nowrap hover:bg-white/10">
-                            🌌 Texture
-                        </button>
-                        <button data-category="healing"
-                            class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-white/5 text-[var(--text-muted)] border border-white/10 whitespace-nowrap hover:bg-white/10">
-                            🧘 Healing
-                        </button>
-                        <button data-category="drops"
-                            class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-white/5 text-[var(--text-muted)] border border-white/10 whitespace-nowrap hover:bg-white/10">
-                            💥 Drops
+                    <!-- Category Tabs with Show All Button -->
+                    <div class="flex items-center justify-between gap-2 mb-3">
+                        <div class="flex gap-1 overflow-x-auto pb-1" id="djCategoryTabs">
+                            <button data-category="ambient"
+                                class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-purple-500/20 text-purple-400 border border-purple-500/30 whitespace-nowrap hover:bg-white/10">
+                                🎧 Ambient
+                            </button>
+                            <button data-category="pulse"
+                                class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-white/5 text-[var(--accent)] border border-white/10 whitespace-nowrap hover:bg-white/10">
+                                💓 Pulse
+                            </button>
+                            <button data-category="texture"
+                                class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-white/5 text-[var(--accent)] border border-white/10 whitespace-nowrap hover:bg-white/10">
+                                🌌 Texture
+                            </button>
+                            <button data-category="healing"
+                                class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-white/5 text-[var(--accent)] border border-white/10 whitespace-nowrap hover:bg-white/10">
+                                🧘 Healing
+                            </button>
+                            <button data-category="drops"
+                                class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-white/5 text-[var(--accent)] border border-white/10 whitespace-nowrap hover:bg-white/10">
+                                💥 Drops
+                            </button>
+                        </div>
+                        <button id="djShowAllCategoriesBtn"
+                            class="px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 whitespace-nowrap hover:bg-cyan-500/30 transition-all flex items-center gap-1 shrink-0"
+                            title="Show All Categories">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                            </svg>
+                            All
                         </button>
                     </div>
 
@@ -940,12 +958,12 @@
                         </div>
 
                         <!-- Speed (retrigger rate multiplier) -->
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 pb-3">
                             <span class="text-[9px] text-[var(--text-muted)] w-12">SPEED</span>
                             <input type="range" id="djSoundSpeed" min="0.5" max="2" step="0.1" value="1"
                                 class="flex-1 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
                             <span id="djSoundSpeedVal"
-                                class="text-[9px] font-mono text-pink-400 tabular-nums w-8 text-right">1x</span>
+                                class="text-[9px] font-mono text-[var(--accent)] tabular-nums w-8 text-right">1x</span>
                         </div>
                     </div>
                 </div>
@@ -1217,7 +1235,7 @@
             <div>
                 <div class="flex justify-between mb-2">
                     <span class="text-xs font-bold text-[var(--accent)]">MAIN OUT</span>
-                    <span id="masterVolValue" class="text-xs font-mono">100%</span>
+                    <span id="masterVolValue" class="text-xs font-mono text-[var(--accent)]">100%</span>
                 </div>
                 <input type="range" id="masterVolSlider" min="0" max="1" step="0.01" value="1.0"
                     class="w-full h-2 bg-slate-700 rounded-full appearance-none cursor-pointer accent-[var(--accent)]">
@@ -1226,17 +1244,17 @@
             <!-- Balance -->
             <div>
                 <div class="flex justify-between mb-1">
-                    <span class="text-xs font-bold text-[var(--text-muted)]">L/R FADER</span>
+                    <span class="text-xs font-bold text-[var(--accent)]">L/R FADER</span>
                 </div>
                 <!-- Custom styled balance slider with L/R labels -->
                 <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-mono text-[var(--text-muted)]">L</span>
+                    <span class="text-[10px] font-mono text-[var(--accent)]">L</span>
                     <div class="relative flex-1 h-2 flex items-center">
                         <div class="absolute w-0.5 h-3 bg-white/30 left-1/2 -translate-x-1/2 rounded-full z-10"></div>
                         <input type="range" id="balanceSlider" min="-1" max="1" step="0.1" value="0"
                             class="relative w-full h-2 bg-slate-700/50 rounded-full appearance-none cursor-pointer accent-[var(--text-muted)] hover:accent-[var(--accent)] transition-all">
                     </div>
-                    <span class="text-[10px] font-mono text-[var(--text-muted)]">R</span>
+                    <span class="text-[10px] font-mono text-[var(--accent)]">R</span>
                 </div>
                 <div class="text-center mt-1 overflow-visible">
                     <span id="balanceValue"
@@ -1935,6 +1953,61 @@
                     const section = document.querySelector(`[data-section="${sectionName}"]`);
                     if (section) section.classList.add('collapsed');
                 }
+            });
+
+            // Collapse All / Expand All functionality
+            const collapseAllBtn = document.getElementById('collapseAllBtn');
+
+            collapseAllBtn.addEventListener('click', () => {
+                const sections = document.querySelectorAll('.mixer-section');
+
+                // Check current state: are ANY sections expanded?
+                const anyExpanded = Array.from(sections).some(section => !section.classList.contains('collapsed'));
+
+                const states = {};
+
+                sections.forEach(section => {
+                    const sectionName = section.getAttribute('data-section');
+                    if (anyExpanded) {
+                        // If any are expanded, collapse ALL
+                        section.classList.add('collapsed');
+                        states[sectionName] = true;
+                    } else {
+                        // If all are collapsed, expand ALL
+                        section.classList.remove('collapsed');
+                        states[sectionName] = false;
+
+                        // Reset DJ Studio to "Show All Categories" when expanding
+                        if (sectionName === 'djpads') {
+                            // Use setTimeout to ensure module has loaded
+                            setTimeout(() => {
+                                if (typeof window.resetDJStudioToShowAll === 'function') {
+                                    window.resetDJStudioToShowAll();
+                                }
+                            }, 0);
+                        }
+                    }
+                });
+
+                localStorage.setItem('mixerSectionStates', JSON.stringify(states));
+
+                // Update button based on NEW state (after action)
+                const allCollapsedNow = anyExpanded; // If we had expanded ones, they're all collapsed now
+
+                // Update icon
+                collapseAllBtn.innerHTML = allCollapsedNow ?
+                    // Expand All icon (chevrons up)
+                    `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                        <polyline points="18 21 12 15 6 21"></polyline>
+                    </svg>` :
+                    // Collapse All icon (chevrons down)
+                    `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                        <polyline points="6 3 12 9 18 3"></polyline>
+                    </svg>`;
+
+                collapseAllBtn.title = allCollapsedNow ? 'Expand All Sections' : 'Collapse All Sections';
             });
         });
     </script>
