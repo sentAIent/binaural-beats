@@ -1595,8 +1595,7 @@ export function initMixer() {
         }
         const settings = state.soundscapeSettings[s.id];
         const item = document.createElement('div');
-        item.className = "p-2 rounded border border-[var(--border)] flex flex-col gap-1";
-        item.style.backgroundColor = "rgba(0,0,0,0.2)";
+        item.className = "soundscape-item p-2 rounded border border-[var(--border)] flex flex-col gap-1";
         item.innerHTML = `<label class="text-[10px] font-semibold truncate mb-1 block" style="color: var(--accent);" title="${s.label}">${s.label}${s.bpm ? ` <span class="text-[8px] text-[var(--text-muted)] font-normal">${s.bpm} BPM</span>` : ''}</label>
 <div class="flex items-center gap-2"><span class="text-[8px] w-6" style="color: var(--text-muted);">VOL</span><input type="range" min="0" max="0.5" step="0.01" value="${settings.vol}" class="flex-1 h-1" data-id="${s.id}" data-type="vol"><span class="text-[9px] font-mono w-8 text-right tabular-nums" style="color: var(--accent);" data-val="vol">${Math.round(settings.vol * 200)}%</span></div>
 <div class="flex items-center gap-2"><span class="text-[8px] w-6" style="color: var(--text-muted);">TONE</span><input type="range" min="0" max="1" step="0.01" value="${settings.tone}" class="flex-1 tone-slider h-1" data-id="${s.id}" data-type="tone"><span class="text-[9px] font-mono w-8 text-right tabular-nums" style="color: var(--accent);" data-val="tone">${Math.round(settings.tone * 100)}%</span></div>
