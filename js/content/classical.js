@@ -209,7 +209,7 @@ function renderClassicalList() {
     container.innerHTML = allTracks.map(piece => {
         const isUserTrack = !piece.isBuiltIn;
         return `
-        <div class="classical-item flex items-center gap-3 p-2.5 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-all group"
+        <div class="classical-item flex items-center gap-3 p-4 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-all group"
              data-id="${piece.id}">
             <div class="w-9 h-9 flex items-center justify-center rounded-full bg-[var(--accent)]/20 text-[var(--accent)] play-icon cursor-pointer shrink-0"
                  onclick="window.playClassicalPiece('${piece.id}')">
