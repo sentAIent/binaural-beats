@@ -1372,8 +1372,8 @@ body[data-theme="dawn"] #rightPanel input[type="range"] {
 
 /* Ensure slider thumbs/dots are fully visible with vertical spacing */
 #rightPanel input[type="range"] {
-    margin-top: 6px;
-    margin-bottom: 6px;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 /* Section headers in right panel */
