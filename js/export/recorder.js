@@ -81,22 +81,38 @@ export function stopRecording() {
     }
 }
 
-// Simple export - just downloads the blob
+// Simple export - just downloads the blob instantly
 export function startExport() {
-    console.log('[Export] Starting download');
+    console.log('[Export] Starting instant download');
 
     if (!state.currentModalBlob) {
+        console.error('[Export] No blob found');
         alert("No recording to export!");
         return;
     }
 
-    const filename = `${state.currentModalName || 'recording'}.webm`;
+    // Hide any progress UI that might be showing
+    if (els.loopProcessing) {
+        els.loopProcessing.classList.add('hidden');
+    }
+
+    console.log('[Export] Blob size:', state.currentModalBlob.size, 'bytes');
+
+    // Trigger instant download
+    const filename = `${state.currentModalName || 'mindwave_recording'}.webm`;
     const url = URL.createObjectURL(state.currentModalBlob);
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+
+    // Cleanup
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 100);
 
     console.log('[Export] Download triggered:', filename);
 }
