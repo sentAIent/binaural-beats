@@ -9,5 +9,5 @@ const firebaseConfig = {
   measurementId: "G-TENPZ98XDX"
 };
 
-// Export for use in app
-export default firebaseConfig;
+// Make it globally available (no export needed for regular scripts)
+window.firebaseConfig = firebaseConfig;
