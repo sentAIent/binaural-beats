@@ -1409,6 +1409,13 @@ body[data-theme="dawn"] #djSoundSpeed {
     background: rgba(0, 0, 0, 0.15) !important;
 }
 
+/* DJ Studio slider backgrounds for dark themes - ensure contrast */
+body:not([data-theme="cloud"]):not([data-theme="dawn"]) #djSoundPitch,
+body:not([data-theme="cloud"]):not([data-theme="dawn"]) #djSoundTone,
+body:not([data-theme="cloud"]):not([data-theme="dawn"]) #djSoundSpeed {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
 /* DJ Studio value labels - ensure they use theme accent on all backgrounds */
 #djSoundPitchVal,
 #djSoundToneVal,
