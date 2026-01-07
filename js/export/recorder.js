@@ -14,8 +14,8 @@ export function initExportWorker() {
     if (!exportWorker) {
         try {
             console.log('[Export] Initializing worker...');
-            // Use absolute path from page root
-            const workerUrl = new URL('/js/export/export-worker.js', window.location.origin).href;
+            // Use relative path for subdirectory deployment compatibility
+            const workerUrl = new URL('./js/export/export-worker.js', window.location.href).href;
             console.log('[Export] Worker URL:', workerUrl);
             exportWorker = new Worker(workerUrl);
             console.log('[Export] Worker created successfully');
