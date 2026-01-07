@@ -2076,7 +2076,12 @@ export async function applyComboPreset(comboId, btnElement) {
     // 8. Save state
     saveStateToLocal();
 
-    // 9. Ensure buttons synced after combo preset
+    // 9. Auto-start visuals when combo preset is applied
+    if (isVisualsPaused()) {
+        resumeVisuals();
+    }
+
+    // 10. Ensure buttons synced after combo preset
     syncAllButtons();
 }
 
