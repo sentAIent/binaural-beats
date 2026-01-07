@@ -175,6 +175,7 @@ export function startRecording() {
 }
 
 export function stopRecording() {
+    console.log('[Recording] stopRecording called - state.isRecording:', state.isRecording);
     state.isRecording = false;
     els.recordBtn.classList.remove('recording-active');
     // Switch back to RECORD Circle
