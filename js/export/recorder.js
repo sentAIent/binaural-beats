@@ -53,9 +53,15 @@ export function startRecording() {
             els.playbackVideo.classList.add('hidden');
             els.audioOnlyPlayer.classList.remove('hidden');
             els.playbackAudio.src = URL.createObjectURL(blob);
-            els.playbackAudio.play().catch(e => console.warn("Auto-play blocked", e));
 
-            console.log('[Recording] Modal displayed');
+            // Don't autoplay - let user manually play/pause
+            console.log('══════════════════════════════════════════════════');
+            console.log('🎵 RECORDING COMPLETE! Export modal is now showing.');
+            console.log('📥 Click "Export High-Res" or "Quick Save" to download');
+            console.log('🔊 Use audio controls to preview before downloading');
+            console.log('══════════════════════════════════════════════════');
+
+            console.log('[Recording] Modal displayed - ready for export');
         };
 
         state.mediaRecorder.start(100); // Collect data every 100ms
@@ -83,10 +89,12 @@ export function stopRecording() {
 
 // Simple export - just downloads the blob instantly
 export function startExport() {
-    console.log('[Export] Starting instant download');
+    console.log('══════════════════════════════════════════════════');
+    console.log('📥 EXPORT STARTED - Downloading file instantly...');
+    console.log('══════════════════════════════════════════════════');
 
     if (!state.currentModalBlob) {
-        console.error('[Export] No blob found');
+        console.error('[Export] ERROR: No blob found - cannot export!');
         alert("No recording to export!");
         return;
     }
@@ -94,6 +102,7 @@ export function startExport() {
     // Hide any progress UI that might be showing
     if (els.loopProcessing) {
         els.loopProcessing.classList.add('hidden');
+        console.log('[Export] Hiding progress UI');
     }
 
     console.log('[Export] Blob size:', state.currentModalBlob.size, 'bytes');
@@ -106,15 +115,16 @@ export function startExport() {
     a.download = filename;
     a.style.display = 'none';
     document.body.appendChild(a);
+
+    console.log('[Export] Triggering download for:', filename);
     a.click();
 
     // Cleanup
     setTimeout(() => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        console.log('[Export] ✅ Download complete! File should be saved to Downloads folder');
     }, 100);
-
-    console.log('[Export] Download triggered:', filename);
 }
 
 export function cancelExport() {
