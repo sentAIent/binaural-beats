@@ -618,10 +618,17 @@ export function setupUI() {
     try { restoreStateFromLocal(); } catch (e) { console.error("State Restore Failed:", e); }
     try { initVisualizer(); } catch (e) { console.error("Visualizer Init Failed:", e); }
 
-    // Theme
+
+    // Theme - force default (emerald) if no saved theme or if it's a light theme that shouldn't be default
     const savedTheme = localStorage.getItem('mindwave_theme');
-    if (savedTheme) setTheme(savedTheme);
-    else setTheme('default'); // Default to cyan/emerald theme
+    if (!savedTheme || savedTheme === 'cloud' || savedTheme === 'dawn') {
+        // Clear and set to default emerald theme
+        localStorage.removeItem('mindwave_theme');
+        setTheme('default');
+    } else {
+        setTheme(savedTheme);
+    }
+
 
     // Check disclaimer acceptance from localStorage
     state.disclaimerAccepted = localStorage.getItem('mindwave_disclaimer_accepted') === 'true';
