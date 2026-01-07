@@ -1609,6 +1609,11 @@ export function initMixer() {
             volVal.textContent = Math.round(v * 200) + '%';
             updateSoundscape(s.id, 'vol', v);
             saveStateToLocal();
+
+            // Auto-start visuals when atmosphere volume is increased
+            if (v > 0 && isVisualsPaused()) {
+                resumeVisuals();
+            }
         });
 
         // Tone slider with value update
