@@ -121,6 +121,13 @@ export function startRecording() {
         // RAW AUDIO CAPTURE
         state.recordedBuffers = [];
 
+        console.log('[Recording] Checking worklet state:', {
+            workletNode: state.workletNode,
+            workletInitialized: state.workletInitialized,
+            audioCtx: state.audioCtx,
+            hasWorkletNode: !!state.workletNode
+        });
+
         if (!state.workletNode) {
             console.warn("AudioWorklet not initialized, falling back to MediaRecorder");
             const audioMimeType = "audio/webm;codecs=opus";
