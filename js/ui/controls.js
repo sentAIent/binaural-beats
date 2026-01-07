@@ -187,9 +187,16 @@ export function setupUI() {
 
     if (els.recordBtn) {
         els.recordBtn.addEventListener('click', () => {
+            console.log('[Record Button] Clicked - isPlaying:', state.isPlaying, 'isRecording:', state.isRecording);
             if (!state.isPlaying) alert("Start audio session first.");
-            else if (state.isRecording) stopRecording();
-            else startRecording();
+            else if (state.isRecording) {
+                console.log('[Record Button] Calling stopRecording');
+                stopRecording();
+            }
+            else {
+                console.log('[Record Button] Calling startRecording');
+                startRecording();
+            }
         });
     }
 
