@@ -540,7 +540,7 @@ export function pauseVisuals() {
 }
 
 export function resumeVisuals() {
-    if (viz3D && !state.animationId && visualsPaused) {
+    if (viz3D && !state.animationId) {
         viz3D.render(state.analyserLeft, state.analyserRight);
         visualsPaused = false;
         console.log('[Visualizer] Visuals resumed');
