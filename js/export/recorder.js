@@ -344,69 +344,93 @@ export function downloadFile(blob, name, ext) {
 }
 
 export function startExport() {
-    // Monetization Check Removed - All users have access
-    // const tier = state.userTier || 'free';
-
-    const count = parseInt(els.loopCountInput.value) || 1;
-    const format = els.formatSelect ? els.formatSelect.value : 'wav-16';
+    const count = parseInt(els.loopCountInput?.value) || 1;
+    const format = els.formatSelect?.value || 'wav-16';
     const baseName = state.currentModalName || "mindwave_recording";
 
     showExportProgress();
+    exportStartTime = Date.now();
 
+    console.log('[Export] Starting export:', { count, format, baseName, isVideo: state.currentModalIsVideo });
+
+    // VIDEO EXPORT
     if (state.currentModalIsVideo) {
         if (!state.currentModalBlob) {
-            alert("Video data missing.");
+            alert("Video data missing. Please record again.");
             hideExportProgress();
             return;
         }
-        // Disabled alert per user request: if (count > 1) alert("Note: Seamless looping is currently available for Audio Only mode. Downloading original video file.");
         updateExportProgress('Downloading', 'Saving Video...', 100);
         downloadFile(state.currentModalBlob, baseName, 'webm');
         hideExportProgress();
         return;
     }
 
-    initExportWorker();
+    // AUDIO EXPORT - Simplified approach
+    // Priority 1: Use recorded blob (fastest, most reliable)
+    if (state.currentModalBlob) {
+        console.log('[Export] Using recorded blob:', state.currentModalBlob.size, 'bytes');
 
-    let chunksSource = state.cleanRecordedBuffers;
-    if (!chunksSource || chunksSource.length === 0) {
-        // Fallback: If we have a blob (from MediaRecorder fallback), download it directly
-        if (state.currentModalBlob) {
-            console.warn("High quality buffer missing, downloading compressed fallback.");
+        if (count === 1) {
+            // Simple download for single loop
+            updateExportProgress('Preparing', 'Creating download...', 50);
+            updateExportProgress('Ready', 'Starting download...', 100);
+            downloadFile(state.currentModalBlob, baseName, 'webm');
+            setTimeout(hideExportProgress, 1000);
+            return;
+        } else {
+            // For multi-loop, inform user and download single
+            console.log('[Export] Multi-loop requested but only single recording available');
+            alert(`Looping feature requires high-quality recording mode.\nDownloading single recording instead.`);
             updateExportProgress('Downloading', 'Saving Audio...', 100);
-            downloadFile(state.currentModalBlob, baseName, 'webm'); // Likely webm/opus
-            hideExportProgress();
+            downloadFile(state.currentModalBlob, baseName, 'webm');
+            setTimeout(hideExportProgress, 1000);
             return;
         }
+    }
 
-        alert("No high quality audio data available.");
+    // Priority 2: Use high-quality buffers if available (for looping/WAV export)
+    const chunksSource = state.cleanRecordedBuffers;
+    if (!chunksSource || chunksSource.length === 0) {
+        console.error('[Export] No audio data available');
+        alert("No audio recording found.\n\nPlease:\n1. Click the Record button\n2. Let it record for a few seconds\n3. Click Stop\n4. Then try export again");
         hideExportProgress();
         return;
     }
 
-    // Convert Float32Arrays to regular arrays for reliable worker transfer
-    console.log('[Export] Preparing chunks for worker:', {
-        chunksCount: chunksSource.length,
-        firstChunkLength: chunksSource[0]?.[0]?.length,
-        sampleRate: state.audioCtx.sampleRate
-    });
+    // Worker-based export for high-quality/looping
+    console.log('[Export] Using worker-based export for', chunksSource.length, 'chunks');
 
-    // Serialize chunks as plain arrays for worker transfer
-    const serializedChunks = chunksSource.map(chunk => [
-        Array.from(chunk[0]),
-        Array.from(chunk[1])
-    ]);
+    try {
+        initExportWorker();
 
-    console.log('[Export] Sending to worker with', serializedChunks.length, 'chunks');
+        if (!exportWorker) {
+            throw new Error('Export worker failed to initialize');
+        }
 
-    // Trigger Worker
-    exportWorker.postMessage({
-        type: 'export',
-        chunks: serializedChunks,
-        format: format,
-        loopCount: count,
-        sampleRate: state.audioCtx.sampleRate
-    });
+        updateExportProgress('Preparing', 'Processing audio data...', 5);
+
+        // Serialize chunks
+        const serializedChunks = chunksSource.map(chunk => [
+            Array.from(chunk[0]),
+            Array.from(chunk[1])
+        ]);
+
+        console.log('[Export] Sending to worker:', serializedChunks.length, 'chunks');
+
+        exportWorker.postMessage({
+            type: 'export',
+            chunks: serializedChunks,
+            format: format,
+            loopCount: count,
+            sampleRate: state.audioCtx?.sampleRate || 48000
+        });
+
+    } catch (err) {
+        console.error('[Export] Worker error:', err);
+        alert('Export failed: ' + err.message + '\n\nTry recording again or refreshing the page.');
+        hideExportProgress();
+    }
 }
 
 export function cancelExport() {
@@ -434,7 +458,7 @@ function updateExportProgress(step, detail, percent) {
     if (els.progressStep) els.progressStep.textContent = step;
     if (els.progressDetail) els.progressDetail.textContent = detail;
     if (els.progressFill) els.progressFill.style.width = percent + '%';
-    if (els.progressPercent) els.progressPercent.textContent = percent + '%';
+    if (els.progressPercent) els.progressPercent.textContent = percent + '% '; // Added space
 
     if (exportStartTime && percent > 5) {
         const elapsed = (Date.now() - exportStartTime) / 1000;
