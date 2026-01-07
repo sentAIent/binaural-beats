@@ -41,16 +41,25 @@ export function initAudio() {
 }
 
 async function setupWorklet() {
-    if (state.workletInitialized) return;
+    console.log('[Worklet] setupWorklet called - workletInitialized:', state.workletInitialized);
+    if (state.workletInitialized) {
+        console.log('[Worklet] Already initialized');
+        return;
+    }
     if (state.audioCtx && state.audioCtx.audioWorklet) {
         try {
+            console.log('[Worklet] Creating worklet module...');
             const blob = new Blob([recorderWorkletCode], { type: "application/javascript" });
             const url = URL.createObjectURL(blob);
             await state.audioCtx.audioWorklet.addModule(url);
             state.workletInitialized = true;
+            console.log('[Worklet] Successfully initialized');
         } catch (e) {
-            console.warn("Worklet setup warning:", e);
+            console.error("[Worklet] Setup FAILED:", e);
+            state.workletInitialized = false;
         }
+    } else {
+        console.warn('[Worklet] AudioContext or audioWorklet not available');
     }
 }
 
@@ -153,12 +162,19 @@ export async function startAudio() {
         state.masterCompressor.release.value = 0.1;
 
         // Worklet Node
+        console.log('[Worklet] Creating worklet node - workletInitialized:', state.workletInitialized);
         if (state.workletInitialized && !state.workletNode) {
             try {
                 state.workletNode = new AudioWorkletNode(state.audioCtx, 'recorder-processor');
+                console.log('[Worklet] Node created successfully');
                 // Ensure no direct output to destination here to avoid double audio
                 // It listens via specific routing when recording starts
-            } catch (e) { console.warn("Worklet node creation failed", e); }
+            } catch (e) {
+                console.error("[Worklet] Node creation FAILED:", e);
+                state.workletNode = null;
+            }
+        } else if (!state.workletInitialized) {
+            console.warn('[Worklet] Skipping node creation - worklet not initialized');
         }
 
         // Initialize Frequencies & Volumes with Safe Defaults
