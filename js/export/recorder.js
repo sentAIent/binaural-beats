@@ -80,3 +80,33 @@ export function stopRecording() {
         state.mediaRecorder.stop();
     }
 }
+
+// Simple export - just downloads the blob
+export function startExport() {
+    console.log('[Export] Starting download');
+
+    if (!state.currentModalBlob) {
+        alert("No recording to export!");
+        return;
+    }
+
+    const filename = `${state.currentModalName || 'recording'}.webm`;
+    const url = URL.createObjectURL(state.currentModalBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    console.log('[Export] Download triggered:', filename);
+}
+
+export function cancelExport() {
+    // No-op for simplified version
+    console.log('[Export] Cancel (no-op)');
+}
+
+export function updateExportPreview() {
+    // No-op for simplified version
+    console.log('[Export] Update preview (no-op)');
+}
