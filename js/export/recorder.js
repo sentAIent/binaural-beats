@@ -213,23 +213,27 @@ export function stopRecording() {
         state.currentRecordingDuration = totalSamples / state.audioCtx.sampleRate;
         console.log(`[Recording] Clean buffers: ${state.cleanRecordedBuffers.length}, Duration: ${state.currentRecordingDuration.toFixed(2)}s`);
 
-        // Create a separate copy for the preview that WE DO FADE
-        // This ensures the export sees the RAW UNTOUCHED audio for seamless looping
-        const previewChunks = state.cleanRecordedBuffers.map(c => [new Float32Array(c[0]), new Float32Array(c[1])]);
-        applyMicroFade(previewChunks);
-
-        // Create Blob from raw data for immediate playback (Preview)
-        // We'll just flatten it to a simple WAV for the preview player
-        const tempBlob = createWavFromRaw(previewChunks, state.audioCtx.sampleRate);
-        state.currentModalBlob = tempBlob;
-
-        els.playbackAudio.src = URL.createObjectURL(state.currentModalBlob);
+        // Show modal immediately
+        els.videoModal.classList.add('active');
         els.playbackVideo.classList.add('hidden');
         els.audioOnlyPlayer.classList.remove('hidden');
-        els.videoModal.classList.add('active');
-        els.playbackAudio.play().catch(e => console.warn("Audio auto-play blocked", e));
 
-        updateExportPreview();
+        // Defer heavy WAV encoding to not block UI
+        console.log('[Recording] Creating preview (async)...');
+        setTimeout(() => {
+            // Create preview with fade for playback
+            const previewChunks = state.cleanRecordedBuffers.map(c => [new Float32Array(c[0]), new Float32Array(c[1])]);
+            applyMicroFade(previewChunks);
+
+            const tempBlob = createWavFromRaw(previewChunks, state.audioCtx.sampleRate);
+            state.currentModalBlob = tempBlob;
+
+            els.playbackAudio.src = URL.createObjectURL(state.currentModalBlob);
+            els.playbackAudio.play().catch(e => console.warn("Audio auto-play blocked", e));
+
+            updateExportPreview();
+            console.log('[Recording] Preview ready');
+        }, 50); // Small delay to let modal render first
     }
 }
 
