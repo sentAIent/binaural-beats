@@ -66,9 +66,18 @@ export function initExportWorker() {
 
 export function startRecording() {
     console.log("startRecording called");
+
+    // Update UI state immediately at the start
+    state.isRecording = true;
+    els.recordBtn.classList.add('recording-active');
+    els.recordBtn.innerHTML = `<div class="w-6 h-6 rounded-sm bg-red-500 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.8)]"></div>`;
+
     if (!state.destStreamNode) {
         console.error("Recording blocked: destStreamNode missing. Has audio started?");
         alert("Audio not ready. Please play first.");
+        state.isRecording = false; // Revert state
+        els.recordBtn.classList.remove('recording-active');
+        els.recordBtn.innerHTML = `<div class="w-6 h-6 rounded-full bg-red-500 transition-all group-hover:scale-110 shadow-[0_0_15px_rgba(239,68,68,0.5)]"></div>`;
         return;
     }
 
@@ -163,11 +172,6 @@ export function startRecording() {
         state.currentModalIsVideo = false;
         state.currentModalName = `MindWave_Audio_${new Date().toISOString().slice(0, 10)}`;
     }
-
-    state.isRecording = true;
-    els.recordBtn.classList.add('recording-active');
-    // Switch to STOP Square
-    els.recordBtn.innerHTML = `<div class="w-6 h-6 rounded-sm bg-red-500 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.8)]"></div>`;
 }
 
 export function stopRecording() {
