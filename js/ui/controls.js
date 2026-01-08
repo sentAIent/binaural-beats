@@ -306,13 +306,15 @@ export function setupUI() {
         els.videoToggleBtn.addEventListener('click', () => {
             state.videoEnabled = !state.videoEnabled;
             if (state.videoEnabled) {
-                els.videoToggleBtn.style.color = "var(--accent)";
-                els.videoToggleBtn.style.backgroundColor = "rgba(45, 212, 191, 0.2)";
-                els.videoToggleBtn.style.boxShadow = "0 0 15px var(--accent-glow)";
+                els.videoToggleBtn.style.color = "#ef4444"; // Red color
+                els.videoToggleBtn.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
+                els.videoToggleBtn.style.boxShadow = "0 0 15px rgba(239, 68, 68, 0.5)";
+                console.log('[Controls] Video recording enabled');
             } else {
                 els.videoToggleBtn.style.color = "var(--text-muted)";
                 els.videoToggleBtn.style.backgroundColor = "";
                 els.videoToggleBtn.style.boxShadow = "";
+                console.log('[Controls] Video recording disabled');
             }
         });
     }

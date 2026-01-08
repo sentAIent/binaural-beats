@@ -46,6 +46,17 @@ const TUTORIAL_STEPS = [
         }
     },
     {
+        id: 'recording',
+        title: '🎙️ Record & Export',
+        description: 'Capture your sessions! Click the red record button to save audio. Enable the camera icon above (turns red) to record with visuals. Before audio export, set loops for seamless repetition (loops don\'t work for video).',
+        target: '#recordBtn',
+        position: 'top',
+        action: () => {
+            const right = document.getElementById('rightPanel');
+            if (right) right.classList.add('translate-x-full');
+        }
+    },
+    {
         id: 'modes',
         title: '🔊 Audio Modes',
         description: 'Switch between Binaural (headphones required), Isochronic (pulsing), or Monaural beats.',
@@ -135,9 +146,9 @@ function createOnboardingUI() {
     `;
 
     tooltip.innerHTML = `
-        <h3 id="onboardingTitle" style="color: var(--accent); font-size: 1.25rem; font-weight: bold; margin-bottom: 0.5rem;"></h3>
-        <p id="onboardingDesc" style="color: var(--text-muted); font-size: 0.875rem; line-height: 1.5; margin-bottom: 1.5rem;"></p>
-        <div style="display: flex; gap: 0.5rem; justify-content: center;">
+        <h3 id="onboardingTitle" style="color: var(--accent); font-size: 1.25rem; font-weight: bold; margin-bottom: 0.5rem; min-height: 32px;"></h3>
+        <p id="onboardingDesc" style="color: var(--text-muted); font-size: 0.875rem; line-height: 1.5; margin-bottom: 1.5rem; min-height: 84px;"></p>
+        <div style="display: flex; gap: 0.5rem; justify-content: center; min-height: 40px;">
             <button id="onboardingPrev" style="
                 padding: 0.5rem 1rem;
                 border-radius: 0.5rem;
@@ -146,6 +157,7 @@ function createOnboardingUI() {
                 font-size: 0.75rem;
                 border: none;
                 cursor: pointer;
+                min-width: 60px;
             ">Back</button>
             <button id="onboardingSkip" style="
                 padding: 0.5rem 1rem;
@@ -155,6 +167,7 @@ function createOnboardingUI() {
                 font-size: 0.75rem;
                 border: none;
                 cursor: pointer;
+                min-width: 60px;
             ">Skip</button>
             <button id="onboardingNext" style="
                 padding: 0.5rem 1.5rem;
@@ -165,6 +178,7 @@ function createOnboardingUI() {
                 font-weight: bold;
                 border: none;
                 cursor: pointer;
+                min-width: 80px;
             ">Next</button>
         </div>
         <div id="onboardingDots" style="margin-top: 1rem; display: flex; justify-content: center; gap: 0.25rem;"></div>
@@ -202,10 +216,10 @@ function showStep(index) {
     const nextBtn = document.getElementById('onboardingNext');
     nextBtn.textContent = index === TUTORIAL_STEPS.length - 1 ? 'Get Started' : 'Next';
 
-    // Show/Hide Prev Button
+    // Show/Hide Prev Button (use visibility to maintain layout)
     const prevBtn = document.getElementById('onboardingPrev');
     if (prevBtn) {
-        prevBtn.style.display = index === 0 ? 'none' : 'block';
+        prevBtn.style.visibility = index === 0 ? 'hidden' : 'visible';
     }
 
     // Update dots
