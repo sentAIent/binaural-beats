@@ -48,6 +48,12 @@ export function startRecording() {
             state.currentModalIsVideo = false;
             state.currentModalName = `MindWave_${new Date().toISOString().slice(0, 10)}`;
 
+            // Hide progress overlay that might be covering the modal
+            if (els.loopProcessing) {
+                els.loopProcessing.classList.add('hidden');
+                console.log('[Recording] Hiding progress overlay');
+            }
+
             // Show modal
             els.videoModal.classList.add('active');
             els.playbackVideo.classList.add('hidden');
@@ -90,6 +96,7 @@ export function stopRecording() {
 // Simple export - just downloads the blob instantly
 export function startExport() {
     console.log('══════════════════════════════════════════════════');
+    console.log('📥 EXPORT BUTTON WAS CLICKED!');
     console.log('📥 EXPORT STARTED - Downloading file instantly...');
     console.log('══════════════════════════════════════════════════');
 
