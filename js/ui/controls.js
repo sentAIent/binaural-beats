@@ -1912,13 +1912,21 @@ export async function applyPreset(type, btnElement, autoStart = true) {
 
     console.log("[Controls] applyPreset called:", type, "autoStart:", autoStart);
 
-    // 0. Toggle Logic (Stop if clicking same active preset)
+    // 0. Toggle Logic (Stop if clicking same active preset) - UNLESS Journey is active
     if (state.isPlaying && state.activePresetType === type) {
-        console.log('[Controls] Toggle: Stopping active preset', type);
-        handlePlayClick(); // This toggles play/pause
-        state.activePresetType = null;
-        updatePresetButtons(null);
-        return;
+        // Check if a journey session is active
+        if (typeof window.isJourneyActive === 'function' && window.isJourneyActive()) {
+            console.log('[Controls] Journey active - preventing preset toggle off, restarting instead');
+            // Don't toggle off, just restart/refresh the preset
+            // This ensures journey lessons stay running
+        } else {
+            // Normal toggle behavior when no journey
+            console.log('[Controls] Toggle: Stopping active preset', type);
+            handlePlayClick(); // This toggles play/pause
+            state.activePresetType = null;
+            updatePresetButtons(null);
+            return;
+        }
     }
 
     state.activePresetType = type;

@@ -278,6 +278,29 @@ let journeyState = {
     lastSessionAt: null
 };
 
+// Active session tracking
+let activeJourneySession = null; // { lessonId, startedAt, preset }
+
+// Export function to check if journey is active
+export function isJourneyActive() {
+    return activeJourneySession !== null;
+}
+
+// Export function to get active session info
+export function getActiveJourneySession() {
+    return activeJourneySession;
+}
+
+// Clear active session
+export function clearActiveJourneySession() {
+    console.log('[Journey] Clearing active session');
+    activeJourneySession = null;
+}
+
+// Expose globally for controls.js
+window.isJourneyActive = isJourneyActive;
+window.getActiveJourneySession = getActiveJourneySession;
+
 // Initialize journey
 export function initJourney() {
     loadProgress();
@@ -347,6 +370,18 @@ export function getProgress() {
 export function getNextLesson() {
     const lessons = getAllLessons();
     return lessons.find(l => !journeyState.completedLessons.includes(l.id)) || null;
+}
+
+// Check if lesson is available (unlocked)
+export function isLessonAvailable(lessonId) {
+    const lessons = getAllLessons();
+    const lessonIndex = lessons.findIndex(l => l.id === lessonId);
+
+    if (lessonIndex === 0) return true; // First lesson always available
+
+    // Check if previous lesson is completed
+    const previousLesson = lessons[lessonIndex - 1];
+    return previousLesson ? journeyState.completedLessons.includes(previousLesson.id) : false;
 }
 
 // Check if lesson is completed
@@ -439,22 +474,44 @@ export function renderJourneyUI(container) {
                     ${stage.lessons.map(lesson => {
             const completed = journeyState.completedLessons.includes(lesson.id);
             const isMilestone = lesson.type === 'milestone';
+            const isAvailable = isLessonAvailable(lesson.id);
+            const isActive = activeJourneySession && activeJourneySession.lessonId === lesson.id;
 
             // Determine button styling based on state
             let btnClasses = '';
+            let content = '';
+            let clickable = true;
+
             if (completed) {
                 btnClasses = 'bg-green-500/30 text-green-300 border-green-500/50';
+                clickable = true;
+            } else if (!isAvailable) {
+                // Locked lesson
+                btnClasses = 'bg-gray-700/30 text-gray-500/70 border-gray-600/30 cursor-not-allowed opacity-50';
+                content = '🔒';
+                clickable = false;
+            } else if (isActive) {
+                // Currently active session
+                btnClasses = 'bg-purple-500/30 text-purple-300 border-purple-500 ring-2 ring-purple-400 animate-pulse';
+                clickable = true;
             } else if (isMilestone) {
                 btnClasses = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+                clickable = isAvailable;
             } else {
                 btnClasses = 'bg-white/10 text-white border-white/20 hover:bg-white/20 hover:border-purple-400/50';
+                clickable = true;
+            }
+
+            // Determine button content
+            if (!content) {
+                content = isMilestone ? (lesson.badge ? BADGES[lesson.badge]?.emoji : '⭐') : lesson.day;
             }
 
             return `
-                        <button onclick="window.openLesson('${lesson.id}')"
+                        <button ${clickable ? `onclick="window.openLesson('${lesson.id}')"` : 'disabled'}
                             class="w-full aspect-square rounded-lg flex items-center justify-center text-xs font-bold transition-all border ${btnClasses}"
-                            title="Day ${lesson.day}: ${lesson.title}">
-                            ${isMilestone ? (lesson.badge ? BADGES[lesson.badge]?.emoji : '⭐') : lesson.day}
+                            title="Day ${lesson.day}: ${lesson.title}${!isAvailable ? ' (Locked - complete previous lessons)' : ''}">
+                            ${content}
                         </button>
                         `;
         }).join('')}
@@ -551,21 +608,71 @@ window.startLessonAction = async (lessonId) => {
     const lesson = getAllLessons().find(l => l.id === lessonId);
     if (!lesson?.action) return;
 
-    // Close modals
+    // Prevent starting if another journey session is active
+    if (activeJourneySession && activeJourneySession.lessonId !== lessonId) {
+        const currentLesson = getAllLessons().find(l => l.id === activeJourneySession.lessonId);
+        const confirmStart = confirm(
+            `You have an active journey session: "${currentLesson?.title || 'Unknown'}".\n\nDo you want to stop it and start this lesson instead?`
+        );
+
+        if (!confirmStart) {
+            console.log('[Journey] User cancelled - keeping current session');
+            return;
+        }
+
+        // Stop current session
+        console.log('[Journey] Stopping current session to start new one');
+        clearActiveJourneySession();
+    }
+
+    // Close modals immediately for seamless experience
     document.getElementById('lessonModal')?.remove();
     document.getElementById('journeyModal')?.classList.add('hidden');
 
     // Get duration from lesson action (default 5 minutes if not specified)
     const durationMinutes = lesson.action.duration || 5;
 
+    // Set active session BEFORE starting audio
+    activeJourneySession = {
+        lessonId: lessonId,
+        startedAt: new Date().toISOString(),
+        preset: lesson.action.preset || lesson.action.journey,
+        duration: durationMinutes
+    };
+    console.log('[Journey] Active session set:', activeJourneySession);
+
     // Apply preset or start journey sweep
     if (lesson.action.preset) {
-        if (window.applyPreset) {
-            window.applyPreset(lesson.action.preset);
+        console.log('[Journey] Attempting to apply preset:', lesson.action.preset);
+        if (typeof window.applyPreset === 'function') {
+            try {
+                window.applyPreset(lesson.action.preset);
+                console.log('[Journey] Preset applied successfully');
+            } catch (e) {
+                console.error('[Journey] Failed to apply preset:', e);
+                alert(`Error starting preset: ${e.message}`);
+                return;
+            }
+        } else {
+            console.error('[Journey] window.applyPreset is not defined!');
+            alert('Error: Preset function not available. Please refresh the page.');
+            return;
         }
     } else if (lesson.action.journey) {
-        if (window.startSweepPreset) {
-            window.startSweepPreset(lesson.action.journey);
+        console.log('[Journey] Attempting to start sweep:', lesson.action.journey);
+        if (typeof window.startSweepPreset === 'function') {
+            try {
+                window.startSweepPreset(lesson.action.journey);
+                console.log('[Journey] Sweep started successfully');
+            } catch (e) {
+                console.error('[Journey] Failed to start sweep:', e);
+                alert(`Error starting journey: ${e.message}`);
+                return;
+            }
+        } else {
+            console.error('[Journey] window.startSweepPreset is not defined!');
+            alert('Error: Journey function not available. Please refresh the page.');
+            return;
         }
     }
 
@@ -619,6 +726,9 @@ window.startLessonAction = async (lessonId) => {
                     const wasCompleted = completeLesson(lessonId);
                     console.log('[Journey] Lesson completion result:', wasCompleted);
                     pendingLessonId = null;
+
+                    // Clear active session
+                    clearActiveJourneySession();
 
                     // Show completion notification
                     showLessonCompleteNotification(lesson);
@@ -675,6 +785,9 @@ window.startLessonAction = async (lessonId) => {
         console.log(`[Journey] Started ${durationMinutes} min session for lesson: ${lessonId}`);
     } catch (e) {
         console.error('[Journey] Failed to start session:', e);
+        // Clear session on error
+        clearActiveJourneySession();
+        alert('Failed to start lesson session. Please try again.');
     }
 };
 
