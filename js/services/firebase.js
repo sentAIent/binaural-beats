@@ -38,13 +38,19 @@ export async function initFirebase() {
         if (firebaseConfig.apiKey === "dummy-api-key") {
             console.warn("Using Dummy Firebase Config - ACTIVATING MOCK MODE");
             isMock = true;
-            // ... (Mock logic same as before)
+            // ✅ FIX Issue #7: Wrap JSON.parse in try/catch
             const storedUser = localStorage.getItem('mindwave_mock_user');
             if (storedUser) {
-                const user = JSON.parse(storedUser);
-                state.currentUser = user;
-                console.log("[Mock] Auto-login:", user.displayName);
-                authCallbacks.forEach(cb => cb(user));
+                try {
+                    const user = JSON.parse(storedUser);
+                    state.currentUser = user;
+                    console.log("[Mock] Auto-login:", user.displayName);
+                    authCallbacks.forEach(cb => cb(user));
+                } catch (e) {
+                    console.warn('[Mock] Failed to parse stored user, clearing corrupted data:', e);
+                    localStorage.removeItem('mindwave_mock_user');
+                    authCallbacks.forEach(cb => cb(null));
+                }
             } else {
                 authCallbacks.forEach(cb => cb(null));
             }
@@ -110,14 +116,21 @@ export async function initFirebase() {
         onAuthStateChanged(auth, (user) => {
             state.currentUser = user;
             console.log("Auth State Changed:", user ? user.uid : "No User");
-            authCallbacks.forEach(cb => cb(user));
 
+            // ✅ FIX Issue #2: Update tier based on subscription status
             if (user) {
                 if (!user.displayName && user.email) user.displayName = user.email.split('@')[0];
+                // Check if user has premium subscription
+                const isPremium = localStorage.getItem('mindwave_premium') === 'true';
+                state.userTier = isPremium ? 'pro' : 'free';
+                console.log('[Auth] User tier:', state.userTier);
             } else {
+                state.userTier = 'free';
                 if (unsubscribeLibrary) { unsubscribeLibrary(); unsubscribeLibrary = null; }
                 if (unsubscribeAudioLibrary) { unsubscribeAudioLibrary(); unsubscribeAudioLibrary = null; }
             }
+
+            authCallbacks.forEach(cb => cb(user));
         });
 
         // Auto-login

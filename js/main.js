@@ -8,6 +8,10 @@ import { initShareFeature, copyShareLink } from './services/share.js';
 import { recordVisit } from './services/analytics.js';
 import { setupSwipeGestures } from './ui/layout.js';
 import { initResizablePanels } from './ui/resize-panels.js';
+import './ui/pricing.js';  // Pricing modal
+import { handlePaymentSuccess } from './services/stripe-simple.js';  // Payment handler
+import { initPaywall } from './utils/paywall.js';  // Paywall system
+
 
 // Content Modules - Loaded dynamically after UI is ready
 // import { initStoryPlayer, renderStoryCards, playStory, stopStory, setStoryVolume } from './content/stories.js';
@@ -23,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         initFirebase();
         initAuthUI();
+        initPaywall();  // Initialize paywall system
     } catch (e) {
         console.warn("[Main] Firebase/Auth Init Failed:", e);
     }
@@ -57,6 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Defer content module loading to after paint (non-blocking)
     requestIdleCallback ? requestIdleCallback(loadContentModules) : setTimeout(loadContentModules, 100);
+
+    // Handle payment return (if redirected from Stripe)
+    handlePaymentSuccess();
 
     // Expose share function globally for UI buttons
     window.shareCurrentPreset = async () => {

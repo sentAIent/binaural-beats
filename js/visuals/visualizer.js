@@ -17,14 +17,26 @@ export class Visualizer3D {
             this.sphereGroup = new THREE.Group();
             this.particleGroup = new THREE.Group();
             this.lavaGroup = new THREE.Group();
+            this.fireplaceGroup = new THREE.Group();
+            this.rainforestGroup = new THREE.Group();
+            this.zenGardenGroup = new THREE.Group();
+            this.oceanGroup = new THREE.Group();
             this.scene.add(this.sphereGroup);
             this.scene.add(this.particleGroup);
             this.scene.add(this.lavaGroup);
+            this.scene.add(this.fireplaceGroup);
+            this.scene.add(this.rainforestGroup);
+            this.scene.add(this.zenGardenGroup);
+            this.scene.add(this.oceanGroup);
 
             this.initSphere();
             this.initParticles();
             this.initWaves();
             this.initLava();
+            this.initFireplace();
+            this.initRainforest();
+            this.initZenGarden();
+            this.initOcean();
             this.camera.position.z = 5;
             window.addEventListener('resize', () => this.resize());
             this.resize();
@@ -212,14 +224,213 @@ export class Visualizer3D {
         console.log('[Visualizer] Physics-Enabled Lava Lamp v7 initialized');
     }
 
+    initFireplace() {
+        // Fireplace: Animated flames with particle embers
+        this.flameParticles = [];
+        const flameCount = 400;
+
+        const geometry = new THREE.BufferGeometry();
+        const positions = [];
+        const velocities = [];
+        const lifetimes = [];
+
+        for (let i = 0; i < flameCount; i++) {
+            // Start at bottom
+            positions.push((Math.random() - 0.5) * 4);
+            positions.push(-4 + Math.random() * 0.5);
+            positions.push((Math.random() - 0.5) * 2);
+
+            velocities.push((Math.random() - 0.5) * 0.02);
+            velocities.push(0.03 + Math.random() * 0.05);
+            velocities.push((Math.random() - 0.5) * 0.01);
+
+            lifetimes.push(Math.random());
+        }
+
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        this.flameVelocities = new Float32Array(velocities);
+        this.flameLifetimes = new Float32Array(lifetimes);
+
+        const material = new THREE.PointsMaterial({
+            color: 0xff6600,
+            size: 0.3,
+            map: this.createCircleTexture(),
+            transparent: true,
+            opacity: 0.7,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        this.flames = new THREE.Points(geometry, material);
+        this.fireplaceGroup.add(this.flames);
+
+        // Glowing base
+        const baseGeo = new THREE.PlaneGeometry(6, 2);
+        const baseMat = new THREE.MeshBasicMaterial({
+            color: 0xff4400,
+            transparent: true,
+            opacity: 0.15,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide
+        });
+        this.fireBase = new THREE.Mesh(baseGeo, baseMat);
+        this.fireBase.position.y = -4;
+        this.fireplaceGroup.add(this.fireBase);
+
+        this.fireplaceGroup.visible = false;
+        console.log('[Visualizer] Fireplace initialized');
+    }
+
+    initRainforest() {
+        // Rainforest: Falling raindrops
+        const dropCount = 800;
+        const geometry = new THREE.BufferGeometry();
+        const positions = [];
+        const velocities = [];
+
+        for (let i = 0; i < dropCount; i++) {
+            positions.push((Math.random() - 0.5) * 20);
+            positions.push(-5 + Math.random() * 15);
+            positions.push((Math.random() - 0.5) * 15);
+
+            velocities.push(0.08 + Math.random() * 0.12);
+        }
+
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        this.rainVelocities = new Float32Array(velocities);
+
+        const material = new THREE.PointsMaterial({
+            color: 0x88ccff,
+            size: 0.08,
+            transparent: true,
+            opacity: 0.6,
+            depthWrite: false
+        });
+
+        this.raindrops = new THREE.Points(geometry, material);
+        this.rainforestGroup.add(this.raindrops);
+
+        // Green foliage backdrop
+        const foliageGeo = new THREE.PlaneGeometry(40, 30);
+        const foliageMat = new THREE.MeshBasicMaterial({
+            color: 0x1a7a3a,
+            transparent: true,
+            opacity: 0.08,
+            side: THREE.DoubleSide
+        });
+        this.foliage = new THREE.Mesh(foliageGeo, foliageMat);
+        this.foliage.position.z = -10;
+        this.rainforestGroup.add(this.foliage);
+
+        this.rainforestGroup.visible = false;
+        console.log('[Visualizer] Rainforest initialized');
+    }
+
+    initZenGarden() {
+        // Zen Garden: Floating cherry blossom petals and ripples
+        const petalCount = 200;
+        const geometry = new THREE.BufferGeometry();
+        const positions = [];
+        const drifts = [];
+
+        for (let i = 0; i < petalCount; i++) {
+            positions.push((Math.random() - 0.5) * 15);
+            positions.push(-5 + Math.random() * 12);
+            positions.push((Math.random() - 0.5) * 10);
+
+            drifts.push(Math.random() * Math.PI * 2);
+        }
+
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        this.petalDrifts = new Float32Array(drifts);
+
+        const material = new THREE.PointsMaterial({
+            color: 0xffb3d9,
+            size: 0.2,
+            map: this.createCircleTexture(),
+            transparent: true,
+            opacity: 0.7,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        this.petals = new THREE.Points(geometry, material);
+        this.zenGardenGroup.add(this.petals);
+
+        // Calm water surface with ripples
+        const waterGeo = new THREE.PlaneGeometry(30, 30, 32, 32);
+        const waterMat = new THREE.MeshBasicMaterial({
+            color: 0x4488aa,
+            transparent: true,
+            opacity: 0.12,
+            wireframe: true,
+            side: THREE.DoubleSide
+        });
+        this.zenWater = new THREE.Mesh(waterGeo, waterMat);
+        this.zenWater.rotation.x = -Math.PI / 2;
+        this.zenWater.position.y = -5;
+        this.zenGardenGroup.add(this.zenWater);
+
+        this.zenGardenGroup.visible = false;
+        console.log('[Visualizer] Zen Garden initialized');
+    }
+
+    initOcean() {
+        // Ocean: Wave geometry + foam particles
+        const waveGeo = new THREE.PlaneGeometry(40, 40, 64, 64);
+        const waveMat = new THREE.MeshBasicMaterial({
+            color: 0x00aaff,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.4,
+            side: THREE.DoubleSide
+        });
+        this.oceanWave = new THREE.Mesh(waveGeo, waveMat);
+        this.oceanWave.rotation.x = -Math.PI / 3;
+        this.oceanWave.position.y = -2;
+        this.oceanGroup.add(this.oceanWave);
+
+        // Foam particles
+        const foamCount = 300;
+        const foamGeo = new THREE.BufferGeometry();
+        const foamPositions = [];
+
+        for (let i = 0; i < foamCount; i++) {
+            foamPositions.push((Math.random() - 0.5) * 30);
+            foamPositions.push(-3 + Math.random() * 2);
+            foamPositions.push((Math.random() - 0.5) * 20);
+        }
+
+        foamGeo.setAttribute('position', new THREE.Float32BufferAttribute(foamPositions, 3));
+
+        const foamMat = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 0.15,
+            map: this.createCircleTexture(),
+            transparent: true,
+            opacity: 0.5,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        this.oceanFoam = new THREE.Points(foamGeo, foamMat);
+        this.oceanGroup.add(this.oceanFoam);
+
+        this.oceanGroup.visible = false;
+        console.log('[Visualizer] Ocean initialized');
+    }
+
 
     setMode(mode) {
-        // ... (unchanged)
         this.mode = mode;
         this.sphereGroup.visible = (mode === 'sphere');
         this.particleGroup.visible = (mode === 'particles');
         if (this.wavesGroup) this.wavesGroup.visible = (mode === 'waves');
         if (this.lavaGroup) this.lavaGroup.visible = (mode === 'lava');
+        if (this.fireplaceGroup) this.fireplaceGroup.visible = (mode === 'fireplace');
+        if (this.rainforestGroup) this.rainforestGroup.visible = (mode === 'rainforest');
+        if (this.zenGardenGroup) this.zenGardenGroup.visible = (mode === 'zengarden');
+        if (this.oceanGroup) this.oceanGroup.visible = (mode === 'ocean');
 
         const label = document.getElementById('visualLabel');
         if (label) {
@@ -227,6 +438,10 @@ export class Visualizer3D {
             else if (mode === 'particles') label.textContent = "NEURAL FLOW";
             else if (mode === 'waves') label.textContent = "FREQUENCY WAVES";
             else if (mode === 'lava') label.textContent = "LAVA LAMP";
+            else if (mode === 'fireplace') label.textContent = "FIREPLACE";
+            else if (mode === 'rainforest') label.textContent = "RAINFOREST";
+            else if (mode === 'zengarden') label.textContent = "ZEN GARDEN";
+            else if (mode === 'ocean') label.textContent = "OCEAN WAVES";
         }
     }
 
@@ -254,7 +469,6 @@ export class Visualizer3D {
     }
 
     setColor(hex) {
-        // ... (unchanged)
         this.customColor = new THREE.Color(hex);
 
         if (this.particles && this.particles.material) {
@@ -277,6 +491,32 @@ export class Visualizer3D {
         }
         if (this.lavaBaseGlow && this.lavaBaseGlow.material) {
             this.lavaBaseGlow.material.color.set(hex);
+        }
+
+        // New visual modes color support
+        if (this.flames && this.flames.material) {
+            this.flames.material.color.set(hex);
+        }
+        if (this.fireBase && this.fireBase.material) {
+            this.fireBase.material.color.set(hex);
+        }
+        if (this.raindrops && this.raindrops.material) {
+            this.raindrops.material.color.set(hex);
+        }
+        if (this.foliage && this.foliage.material) {
+            this.foliage.material.color.set(hex);
+        }
+        if (this.petals && this.petals.material) {
+            this.petals.material.color.set(hex);
+        }
+        if (this.zenWater && this.zenWater.material) {
+            this.zenWater.material.color.set(hex);
+        }
+        if (this.oceanWave && this.oceanWave.material) {
+            this.oceanWave.material.color.set(hex);
+        }
+        if (this.oceanFoam && this.oceanFoam.material) {
+            this.oceanFoam.material.color.set(hex);
         }
 
         // Render a single frame to show the color change even when paused
@@ -499,6 +739,113 @@ export class Visualizer3D {
             }
             this.wavesMesh.geometry.attributes.position.needsUpdate = true;
             this.wavesMesh.rotation.z += 0.001 * multiplier;
+
+        } else if (this.mode === 'fireplace' && this.flames) {
+            // Fireplace animation: Rising flames
+            const positions = this.flames.geometry.attributes.position.array;
+            const speedFactor = this.speedMultiplier * 0.5;
+
+            for (let i = 0; i < positions.length; i += 3) {
+                // Rise
+                positions[i] += this.flameVelocities[i] * speedFactor;
+                positions[i + 1] += this.flameVelocities[i + 1] * speedFactor;
+                positions[i + 2] += this.flameVelocities[i + 2] * speedFactor;
+
+                // Fade out and reset
+                this.flameLifetimes[i / 3] -= 0.01 * speedFactor;
+                if (this.flameLifetimes[i / 3] <= 0 || positions[i + 1] > 2) {
+                    positions[i] = (Math.random() - 0.5) * 4;
+                    positions[i + 1] = -4;
+                    positions[i + 2] = (Math.random() - 0.5) * 2;
+                    this.flameLifetimes[i / 3] = 1.0;
+                }
+            }
+            this.flames.geometry.attributes.position.needsUpdate = true;
+
+            // Flicker effect
+            this.flames.material.opacity = 0.6 + (Math.random() * 0.2) + (normBass * 0.2);
+            this.fireBase.material.opacity = 0.12 + (normBass * 0.08);
+
+        } else if (this.mode === 'rainforest' && this.raindrops) {
+            // Rainforest animation: Falling rain
+            const positions = this.raindrops.geometry.attributes.position.array;
+            const speedFactor = this.speedMultiplier * 0.8;
+
+            for (let i = 0; i < positions.length; i += 3) {
+                positions[i + 1] -= this.rainVelocities[i / 3] * speedFactor;
+
+                // Loop back to top
+                if (positions[i + 1] < -10) {
+                    positions[i + 1] = 10;
+                    positions[i] = (Math.random() - 0.5) * 20;
+                    positions[i + 2] = (Math.random() - 0.5) * 15;
+                }
+            }
+            this.raindrops.geometry.attributes.position.needsUpdate = true;
+            this.raindrops.material.opacity = 0.5 + (normMids * 0.2);
+
+        } else if (this.mode === 'zengarden' && this.petals) {
+            // Zen Garden animation: Floating petals
+            const positions = this.petals.geometry.attributes.position.array;
+            const speedFactor = this.speedMultiplier * 0.3;
+
+            for (let i = 0; i < positions.length; i += 3) {
+                // Gentle drift
+                this.petalDrifts[i / 3] += 0.01 * speedFactor;
+                positions[i] += Math.sin(this.petalDrifts[i / 3]) * 0.02 * speedFactor;
+                positions[i + 1] -= 0.02 * speedFactor;
+                positions[i + 2] += Math.cos(this.petalDrifts[i / 3] * 0.7) * 0.015 * speedFactor;
+
+                // Loop
+                if (positions[i + 1] < -6) {
+                    positions[i + 1] = 6;
+                    positions[i] = (Math.random() - 0.5) * 15;
+                }
+            }
+            this.petals.geometry.attributes.position.needsUpdate = true;
+
+            // Animated ripples
+            if (this.zenWater) {
+                const waterPositions = this.zenWater.geometry.attributes.position.array;
+                for (let i = 0; i < waterPositions.length; i += 3) {
+                    const x = waterPositions[i];
+                    const y = waterPositions[i + 1];
+                    waterPositions[i + 2] = Math.sin(x * 0.3 + now * multiplier * 0.5) * Math.cos(y * 0.3 + now * multiplier * 0.5) * 0.3;
+                }
+                this.zenWater.geometry.attributes.position.needsUpdate = true;
+            }
+
+        } else if (this.mode === 'ocean' && this.oceanWave) {
+            // Ocean animation: Waves
+            const wavePositions = this.oceanWave.geometry.attributes.position.array;
+            const speedFactor = this.speedMultiplier;
+
+            for (let i = 0; i < wavePositions.length; i += 3) {
+                const x = wavePositions[i];
+                const y = wavePositions[i + 1];
+                const distFromCenter = Math.sqrt(x * x + y * y);
+                const amp = 1.5 + (normBass * 3);
+                wavePositions[i + 2] = Math.sin(distFromCenter * 0.2 - now * speedFactor * 0.8) * amp +
+                    Math.cos(x * 0.15 + now * speedFactor * 0.6) * (amp * 0.5);
+            }
+            this.oceanWave.geometry.attributes.position.needsUpdate = true;
+
+            // Foam movement
+            if (this.oceanFoam) {
+                const foamPositions = this.oceanFoam.geometry.attributes.position.array;
+                for (let i = 0; i < foamPositions.length; i += 3) {
+                    foamPositions[i] += Math.sin(now * 2 + i) * 0.02 * speedFactor;
+                    foamPositions[i + 2] += Math.cos(now * 1.5 + i) * 0.02 * speedFactor;
+
+                    // Wrap foam
+                    if (foamPositions[i] > 15) foamPositions[i] = -15;
+                    if (foamPositions[i] < -15) foamPositions[i] = 15;
+                    if (foamPositions[i + 2] > 10) foamPositions[i + 2] = -10;
+                    if (foamPositions[i + 2] < -10) foamPositions[i + 2] = 10;
+                }
+                this.oceanFoam.geometry.attributes.position.needsUpdate = true;
+                this.oceanFoam.material.opacity = 0.4 + (normMids * 0.3);
+            }
         }
 
         this.renderer.clear();
@@ -513,10 +860,8 @@ let viz3D;
 export function initVisualizer() {
     if (!viz3D && els.canvas) {
         viz3D = new Visualizer3D(els.canvas);
-        // Render initial frame so Flow particles are visible on load
-        viz3D.renderSingleFrame();
-        // Don't auto-start render loop - visuals start paused
-        // resumeVisuals() will start the render loop when user clicks play
+        // Auto-start visuals on load for immediate feedback
+        resumeVisuals();
     }
 }
 
@@ -535,7 +880,13 @@ export function pauseVisuals() {
     if (viz3D && state.animationId) {
         cancelAnimationFrame(state.animationId);
         state.animationId = null;
-        console.log('[Visualizer] Visuals paused');
+
+        // Render one final frame WITHOUT clearing to freeze the current state
+        if (viz3D.renderer && viz3D.scene && viz3D.camera) {
+            viz3D.renderer.render(viz3D.scene, viz3D.camera);
+        }
+
+        console.log('[Visualizer] Visuals paused (frozen on last frame)');
     }
 }
 

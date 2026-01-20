@@ -542,9 +542,19 @@ export function renderJourneyUI(container) {
 }
 
 // Global function for lesson click
-window.openLesson = (lessonId) => {
+window.openLesson = async (lessonId) => {
     const lesson = getAllLessons().find(l => l.id === lessonId);
     if (!lesson) return;
+
+    // Check paywall access
+    const lessonNumber = lesson.day;
+    if (window.canAccessFeature) {
+        const access = await window.canAccessFeature('journey_lesson', lessonNumber);
+        if (!access.allowed) {
+            window.showUpgradePrompt(access.reason);
+            return;
+        }
+    }
 
     // Show lesson modal
     showLessonModal(lesson);

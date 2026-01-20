@@ -30,6 +30,7 @@ export const SOUNDSCAPES = [
     { id: 'brown', label: 'Brown Noise', type: 'nature', bpm: null },
     { id: 'rain', label: 'Heavy Rain', type: 'nature', bpm: null },
     { id: 'wind', label: 'Mountain Wind', type: 'nature', bpm: null },
+    { id: 'fireplace', label: 'Fireplace', type: 'nature', bpm: null },
     { id: 'ocean', label: 'Ocean Waves', type: 'nature', bpm: null },
     { id: 'strings', label: 'Orchestral Strings', type: 'drone', bpm: null },
     { id: 'brass', label: 'Brass Swell', type: 'drone', bpm: null },
@@ -87,7 +88,7 @@ export const PRESET_COMBOS = [
         label: 'Storm Focus',
         description: 'Intense productivity',
         icon: '⛈️',
-        preset: 'beta',
+        preset: 'gamma',
         soundscapes: ['rain', 'wind'],
         atmosVolume: 0.5,
         color: '#4b5563'
@@ -97,10 +98,50 @@ export const PRESET_COMBOS = [
         label: 'Temple Zen',
         description: 'Spiritual tranquility',
         icon: '🔔',
-        preset: 'theta',
+        preset: 'mu',
         soundscapes: ['bells'],
         atmosVolume: 0.4,
         color: '#a855f7'
+    },
+    {
+        id: 'cozy-fireplace',
+        label: 'Cozy Fireplace',
+        description: 'Warm crackling comfort',
+        icon: '🔥',
+        preset: 'alpha',
+        soundscapes: ['fireplace'],
+        atmosVolume: 0.6,
+        color: '#f97316'
+    },
+    {
+        id: 'forest-retreat',
+        label: 'Forest Retreat',
+        description: 'Deep nature immersion',
+        icon: '🌲',
+        preset: 'theta',
+        soundscapes: ['winds', 'brown'],
+        atmosVolume: 0.5,
+        color: '#10b981'
+    },
+    {
+        id: 'cosmic-journey',
+        label: 'Cosmic Journey',
+        description: 'Creative exploration',
+        icon: '🌌',
+        preset: 'gamma',
+        soundscapes: ['strings', 'white'],
+        atmosVolume: 0.45,
+        color: '#8b5cf6'
+    },
+    {
+        id: 'morning-clarity',
+        label: 'Morning Clarity',
+        description: 'Gentle awakening',
+        icon: '☀️',
+        preset: 'beta',
+        soundscapes: ['pink', 'wood'],
+        atmosVolume: 0.5,
+        color: '#fbbf24'
     }
 ];
 
@@ -114,7 +155,7 @@ export const STATE_INSIGHTS = {
 
 export const SOUND_INSIGHTS = {
     pink: "Noise masking distractions.", white: "Pure static clearing the mind.", brown: "Deep rumble grounding awareness.",
-    rain: "Rainfall washing away stress.", wind: "Wind carrying thoughts away.", ocean: "Ocean waves calming the mind.",
+    rain: "Rainfall washing away stress.", wind: "Wind carrying thoughts away.", fireplace: "Crackling warmth embracing comfort.", ocean: "Ocean waves calming the mind.",
     strings: "Harmonies evoking emotion.", brass: "Warmth expanding the mind.", winds: "Breath guiding the flow.",
     bells: "Chimes marking the present moment.", wood: "Rhythm grounding the body.", timpani: "Deep resonance strengthening will.",
     orch_perc: "Dynamic textures stimulating alertness."
@@ -125,7 +166,7 @@ export const state = {
     oscLeft: null, oscRight: null, panLeft: null, panRight: null,
     beatsGain: null, masterAtmosGain: null, masterGain: null, masterPanner: null,
     masterCompressor: null, analyserLeft: null, analyserRight: null,
-    isPlaying: false, isRecording: false, isStopping: false, videoEnabled: false,
+    isPlaying: false, isRecording: false, isStopping: false, isAudioStopping: false, videoEnabled: false,
     animationId: null, visualMode: 'sphere',
     mediaRecorder: null, recordedChunks: [], destStreamNode: null,
     activeSoundscapes: {},
@@ -143,8 +184,12 @@ export const state = {
     cleanRecordedBuffers: [],
     currentRecordingDuration: 0,
     currentUser: null,
-    userTier: 'pro', // Unlocked for everyone
+    userTier: 'free', // ✅ FIX: Default to free tier, check actual subscription
     visualSpeedAuto: true, // Default to Hz sync
+
+    // Preset tracking
+    activePresetType: null, // Tracks active healing frequency preset (alpha, theta, etc.)
+    activeComboPreset: null, // Tracks active combo preset (epic-focus, ocean-drift, etc.)
 
     // Session Timer State
     sessionActive: false,

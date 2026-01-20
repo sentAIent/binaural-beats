@@ -1,5 +1,5 @@
 import { state, els, THEMES, SOUNDSCAPES, PRESET_COMBOS } from '../state.js';
-import { startAudio, stopAudio, updateFrequencies, updateBeatsVolume, updateMasterVolume, updateMasterBalance, updateAtmosMaster, updateSoundscape, registerUICallback, fadeIn, fadeOut, cancelFadeOut, isVolumeHigh, playCompletionChime, setAudioMode, getAudioMode, startSweep, stopSweep, startSweepPreset, isSweepActive, isAudioPlaying, SWEEP_PRESETS } from '../audio/engine.js';
+import { startAudio, stopAudio, updateFrequencies, updateBeatsVolume, updateMasterVolume, updateMasterBalance, updateAtmosMaster, updateSoundscape, registerUICallback, fadeIn, fadeOut, cancelFadeOut, cancelStopAudio, resetAllSoundscapes, isVolumeHigh, playCompletionChime, setAudioMode, getAudioMode, startSweep, stopSweep, startSweepPreset, isSweepActive, isAudioPlaying, SWEEP_PRESETS } from '../audio/engine.js';
 import { initVisualizer, getVisualizer, pauseVisuals, resumeVisuals, isVisualsPaused } from '../visuals/visualizer.js';
 import { startRecording, stopRecording, startExport, cancelExport, updateExportPreview } from '../export/recorder.js';
 import { openAuthModal, renderLibraryList } from './auth-controller.js';
@@ -666,8 +666,7 @@ export function setupUI() {
     // Expose Global Window Functions
     window.setTheme = setTheme;
     window.setVisualMode = setVisualMode;
-    window.applyPreset = applyPreset;
-    window.applyComboPreset = applyComboPreset;
+    // applyPreset and applyComboPreset are exposed at module level
     window.openProfile = openProfile;
     window.startSweepPreset = startSweepPresetUI; // NEW
     window.stopSweep = stopSweepUI; // NEW
@@ -727,16 +726,16 @@ async function handlePlayClick() {
         // 1. Mark as stopping so UI knows we are "paused" even if audio is fading
         state.isStopping = true;
 
-        // 2. Force UI update immediately to show Play icon (Pause state)
+        // 2. Pause visuals when stopping audio
+        pauseVisuals();
+
+        // 3. Force UI update immediately to show Play icon (Pause state)
         syncAllButtons();
 
-        // 3. Perform the actual stop logic (with fade)
+        // 4. Perform the actual stop logic (with fade)
         stopSession();
         if (isClassicalPlaying()) stopClassical();
         endSessionTracking(false);
-
-        // 4. Pause visuals when stopping via main button
-        pauseVisuals();
 
         fadeOut(1.5, () => {
             stopAudio();
@@ -748,13 +747,17 @@ async function handlePlayClick() {
     } else {
         // STARTING
         try {
+            // 1. Resume visuals FIRST so they're ready when audio starts
+            resumeVisuals();
+
+            // 2. Start audio and fade in
             await startAudio();
             fadeIn(1.5);
 
-            // Auto-start visuals when audio starts via main button
-            resumeVisuals();
+            // 3. Sync buttons IMMEDIATELY to show pause state
+            syncAllButtons();
 
-            // Start analytics tracking
+            // 4. Start analytics tracking
             const beatFreq = parseFloat(els.beatSlider?.value || 10);
             let presetName = 'Custom';
             if (beatFreq < 4) presetName = 'Delta';
@@ -765,6 +768,7 @@ async function handlePlayClick() {
             else presetName = 'Hyper-Gamma';
             startSessionTracking(presetName);
 
+            // 5. Start session timer if duration is set
             const duration = parseInt(els.sessionDuration?.value || 0);
             if (duration > 0) {
                 startSession(duration, {
@@ -773,8 +777,6 @@ async function handlePlayClick() {
                 });
                 showTimerUI();
             }
-
-            syncAllButtons(); // Sync after audio started
         } catch (e) {
             console.error("Start Audio Failed", e);
         }
@@ -793,15 +795,23 @@ async function handleAudioToggle() {
     if (audioPlaying) {
         // Stop audio only
         console.log('[Controls] Audio Toggle -> Stopping audio...');
+
+        // 1. Mark as stopping so UI shows stopped state immediately
+        state.isAudioStopping = true;
+
+        // 2. Force UI update immediately to show Play icon
+        syncAllButtons();
+
+        // 3. Perform the actual stop logic (with fade)
         stopSession();
         if (isClassicalPlaying()) stopClassical();
         endSessionTracking(false);
         fadeOut(1.5, () => {
             stopAudio();
+            state.isAudioStopping = false; // Reset flag when actually stopped
             syncAllButtons(); // Sync after audio fully stops
         });
         hideTimerUI();
-        syncAllButtons(); // Immediate sync
     } else {
         // Start audio only
         try {
@@ -901,7 +911,7 @@ function syncMainButton(isPlaying) {
 // Single source of truth: queries actual state and syncs all three buttons
 export function syncAllButtons() {
     // Query actual states - these are the single sources of truth
-    const audioPlaying = (isAudioPlaying() || isClassicalPlaying()) && !state.isStopping;
+    const audioPlaying = (isAudioPlaying() || isClassicalPlaying()) && !state.isStopping && !state.isAudioStopping;
     const visualsPlaying = !isVisualsPaused();
 
     // Main button shows pause if EITHER audio OR visuals are active
@@ -1620,15 +1630,44 @@ export function initMixer() {
         // Vol slider with value update
         const volInput = item.querySelector('input[data-type="vol"]');
         const volVal = item.querySelector('[data-val="vol"]');
-        volInput.addEventListener('input', (e) => {
+        volInput.addEventListener('input', async (e) => {
             const v = parseFloat(e.target.value);
             volVal.textContent = Math.round(v * 200) + '%';
+
+            // Update state FIRST before calling updateSoundscape
+            state.soundscapeSettings[s.id].vol = v;
             updateSoundscape(s.id, 'vol', v);
             saveStateToLocal();
 
-            // Auto-start visuals when atmosphere volume is increased
-            if (v > 0 && isVisualsPaused()) {
-                resumeVisuals();
+            // When ambience volume is increased, just ensure visuals are running and sync button states
+            if (v > 0) {
+                // Resume visuals if paused
+                if (isVisualsPaused()) {
+                    resumeVisuals();
+                }
+                // Sync button states to reflect playing state (ambience will play via updateSoundscape)
+                syncAllButtons();
+            } else {
+                // Volume reduced to 0 - use setTimeout to ensure all state is updated
+                setTimeout(() => {
+                    // Check if ALL soundscapes are now at 0 using state
+                    const allSoundscapesOff = Object.values(state.soundscapeSettings).every(s => s.vol === 0);
+
+                    console.log('[Controls] Ambience slider to 0, all soundscapes off?', allSoundscapesOff, state.soundscapeSettings);
+
+                    if (allSoundscapesOff) {
+                        console.log('[Controls] All ambience off - pausing visuals');
+                        // Pause visuals
+                        if (!isVisualsPaused()) {
+                            pauseVisuals();
+                        }
+                        // Stop all audio and sync buttons
+                        fadeOut(1.5, () => {
+                            stopAudio();
+                            syncAllButtons();
+                        });
+                    }
+                }, 50); // Small delay to ensure state is fully updated
             }
         });
 
@@ -1782,8 +1821,8 @@ export function loadSettings(payload) {
             const id = s.id;
             const saved = settings.soundscapes[id];
 
-            // Force Volume to 0 on reload per user request (was: saved.vol)
-            const newVol = 0;
+            // Restore saved volumes (fixed: was forcing to 0)
+            const newVol = saved ? (saved.vol || 0) : 0;
             const newTone = saved ? (saved.tone || 0.5) : 0.5;
             const newSpeed = saved ? (saved.speed || 0.5) : 0.5;
             state.soundscapeSettings[id] = { vol: newVol, tone: newTone, speed: newSpeed };
@@ -1823,14 +1862,27 @@ export function openProfile() {
 // --- Auth Logic (Profile Button) ---
 if (els.profileBtn) {
     els.profileBtn.addEventListener('click', () => {
-        // Check if already logged in? maybe show different menu?
-        // For now, open Auth Modal which handles state (or could show profile details)
-        // If logged in, maybe show logout option?
-        // auth-controller.js usually handles the view logic.
-        // We'll just open it for now.
-        openAuthModal();
+        // Check auth state
+        import('../services/firebase.js').then(({ getAuth }) => {
+            const auth = getAuth();
+            if (auth && auth.currentUser) {
+                // User is logged in -> Show pricing modal
+                if (window.showPricingModal) {
+                    window.showPricingModal();
+                } else {
+                    console.warn('[Controls] Pricing modal not available');
+                }
+            } else {
+                // User not logged in -> Show auth modal
+                openAuthModal();
+            }
+        }).catch(err => {
+            console.warn('[Controls] Auth check failed, opening auth modal:', err);
+            openAuthModal();
+        });
     });
 }
+
 
 // --- Journey Logic (Phase 2B) ---
 
@@ -1903,7 +1955,26 @@ async function confirmSave() {
 }
 // Remove old setupLibraryListener and renderLibrary as they are handled by auth-controller now.
 
-export async function applyPreset(type, btnElement, autoStart = true) {
+export async function applyPreset(type, btnElement, autoStart = true, skipPaywall = false) {
+    // Check paywall for presets (skip if called from combo preset)
+    if (!skipPaywall) {
+        const presetOrder = ['alpha', 'theta', 'beta', 'delta', 'gamma', 'focus', 'sleep', 'meditation', 'creativity', 'relax'];
+        const presetIndex = presetOrder.indexOf(type);
+
+        if (presetIndex >= 0 && window.canAccessFeature) {
+            const access = await window.canAccessFeature('preset', presetIndex);
+            if (!access.allowed) {
+                // Pass a callback to retry this action after signin
+                const retryCallback = () => {
+                    console.log('[Controls] Retrying applyPreset after signin:', type);
+                    applyPreset(type, btnElement, autoStart, skipPaywall);
+                };
+                window.showUpgradePrompt(access.reason, retryCallback);
+                return;
+            }
+        }
+    }
+
     // BLOCKER: If a story is playing, do NOT apply presets that would override story frequency
     if (storyState && (storyState.isPlaying || storyState.isTransitioning)) {
         console.log('[Controls] Blocked applyPreset because Story is Playing/Transitioning');
@@ -2022,6 +2093,9 @@ export async function applyPreset(type, btnElement, autoStart = true) {
     saveStateToLocal();
 }
 
+// Expose to global scope for HTML onclick handlers
+window.applyPreset = applyPreset;
+
 // --- COMBO PRESET LOGIC (Ambient Presets) ---
 // Combines binaural frequency presets with atmospheric soundscapes
 export async function applyComboPreset(comboId, btnElement) {
@@ -2033,30 +2107,128 @@ export async function applyComboPreset(comboId, btnElement) {
 
     console.log('[Controls] Applying combo preset:', comboId, combo);
 
-    // 1. Apply the base preset (alpha, theta, beta, delta, gamma)
-    await applyPreset(combo.preset, null, true);
+    // NEW: Toggle Logic - Stop if clicking same active combo preset
+    if (state.isPlaying && state.activeComboPreset === comboId) {
+        console.log('[Controls] Toggle: Stopping active combo preset', comboId);
 
-    // 2. Reset all soundscape volumes to 0 first
+        // 1. Reset all soundscape volumes to 0 IMMEDIATELY
+        const soundscapeContainer = document.getElementById('soundscapeContainer');
+        if (soundscapeContainer) {
+            const allVolInputs = soundscapeContainer.querySelectorAll('input[data-type="vol"]');
+            allVolInputs.forEach(input => {
+                input.value = 0;
+                const soundscapeId = input.getAttribute('data-id');
+                // Update state first
+                if (state.soundscapeSettings[soundscapeId]) {
+                    state.soundscapeSettings[soundscapeId].vol = 0;
+                }
+                updateSoundscape(soundscapeId, 'vol', 0);
+                // Update display
+                const valSpan = input.closest('div')?.querySelector('[data-val="vol"]');
+                if (valSpan) valSpan.textContent = '0%';
+            });
+        }
+
+        // 2. Stop the main audio session using standard logic
+        handlePlayClick();
+
+        // 3. Pause visuals when combo preset is toggled off
+        setTimeout(() => {
+            if (!isVisualsPaused()) {
+                pauseVisuals();
+            }
+            syncAllButtons();
+        }, 100);
+
+        state.activeComboPreset = null;
+        updatePresetButtons(null);
+        return;
+    }
+
+
+    // Track active combo preset
+    state.activeComboPreset = comboId;
+
+    // Turn off audio first if playing (visuals continue independently)
+    const wasPlaying = isAudioPlaying(); // Use helper to catch fade states
+
+    if (wasPlaying) {
+        console.log('[Controls] Stopping audio before applying combo preset');
+        // Do NOT use handlePlayClick() here, as it has "resume if stopping" logic
+        state.isStopping = true;
+        // Kill currently playing audio immediately to prevent overlap
+        // using immediate=true to forcefully clear nodes
+        stopAudio(true);
+        // Force clear any pending resume/start timers
+        cancelStopAudio();
+        cancelFadeOut();
+        state.isStopping = false;
+
+        // Wait a moment for audio to fade out
+        await new Promise(resolve => setTimeout(resolve, 50));
+    }
+
+    // 1. Update frequencies immediately (bypass Firebase dependency)
+    const presetFrequencies = {
+        'delta': { base: 100, beat: 2.5, color: '#6366f1' },
+        'theta': { base: 144, beat: 5.5, color: '#a855f7' },
+        'alpha': { base: 120, beat: 10, color: '#60a5fa' },
+        'beta': { base: 200, beat: 20, color: '#facc15' },
+        'gamma': { base: 200, beat: 40, color: '#f472b6' },
+        'mu': { base: 150, beat: 9, color: '#10b981' }
+    };
+
+    const freq = presetFrequencies[combo.preset];
+    if (freq && els.baseSlider && els.beatSlider) {
+        els.baseSlider.value = freq.base;
+        els.beatSlider.value = freq.beat;
+        if (els.baseValue) els.baseValue.textContent = freq.base + ' Hz';
+        if (els.beatValue) els.beatValue.textContent = freq.beat + ' Hz';
+
+        // Update audio frequencies
+        try {
+            updateFrequencies();
+        } catch (e) {
+            console.warn('[Controls] updateFrequencies warning:', e);
+        }
+    }
+
+    // 2. Apply the full base preset WITHOUT auto-starting
+    // We'll manually start audio  after everything is set up
+    await applyPreset(combo.preset, null, false, true).catch(err => {
+        console.warn('[Controls] Preset application failed, continuing with soundscape updates:', err);
+    });
+
+    // 3. Reset all soundscape volumes to 0 first
+    // 3. Reset all active soundscapes (Nuclear Option)
+    resetAllSoundscapes();
+
+    // Also clear UI values to match
     const soundscapeContainer = document.getElementById('soundscapeContainer');
     if (soundscapeContainer) {
         const allVolInputs = soundscapeContainer.querySelectorAll('input[data-type="vol"]');
         allVolInputs.forEach(input => {
             input.value = 0;
-            const soundscapeId = input.getAttribute('data-id');
-            updateSoundscape(soundscapeId, 'vol', 0);
-            // Update display
-            const valSpan = input.closest('div').querySelector('[data-val="vol"]');
+            const valSpan = input.closest('div')?.querySelector('[data-val="vol"]');
             if (valSpan) valSpan.textContent = '0%';
         });
     }
 
-    // 3. Activate the specified soundscapes with default volume (0.25)
+    // Reset state values in memory too
+    Object.keys(state.soundscapeSettings).forEach(id => {
+        state.soundscapeSettings[id].vol = 0;
+    });
+
+    // 4. Activate the specified soundscapes with default volume (0.25)
     if (soundscapeContainer && combo.soundscapes) {
         combo.soundscapes.forEach(soundscapeId => {
             const volInput = soundscapeContainer.querySelector(`input[data-id="${soundscapeId}"][data-type="vol"]`);
             if (volInput) {
                 const vol = 0.25; // 50% when displayed (0.25 * 200)
                 volInput.value = vol;
+                if (state.soundscapeSettings[soundscapeId]) {
+                    state.soundscapeSettings[soundscapeId].vol = vol;
+                }
                 updateSoundscape(soundscapeId, 'vol', vol);
                 // Update display
                 const valSpan = volInput.closest('div').querySelector('[data-val="vol"]');
@@ -2094,20 +2266,36 @@ export async function applyComboPreset(comboId, btnElement) {
         btnElement.classList.add('bg-white/10', 'border-white/20');
     }
 
-    // 7. Show toast
-    showToast(`🎧 ${combo.label}: ${combo.description}`, 'success');
-
-    // 8. Save state
+    // 7. Save state
     saveStateToLocal();
 
-    // 9. Auto-start visuals when combo preset is applied
-    if (isVisualsPaused()) {
-        resumeVisuals();
-    }
+    console.log('[Controls] Combo preset configured:', comboId);
 
-    // 10. Ensure buttons synced after combo preset
-    syncAllButtons();
+    // 8. Start both binaural beats AND ambience together
+    // Use a small delay to ensure all state is updated
+    setTimeout(async () => {
+        try {
+            // Always start audio - don't check if already playing
+            // This ensures combos work even if clicked during fade-out
+            await startAudio();
+            fadeIn(1.5);
+            resumeVisuals();
+            syncAllButtons();
+
+            // Show toast
+            showToast(`🎧 ${combo.label}: ${combo.description}`, 'success');
+
+            console.log('[Controls] Combo preset fully active - beats + ambience');
+        } catch (err) {
+            console.error('[Controls] Failed to start combo preset:', err);
+        }
+    }, 100);
+
+    return true;
 }
+
+// Expose to global scope for HTML onclick handlers
+window.applyComboPreset = applyComboPreset;
 
 // --- THEME MODAL LOGIC ---
 

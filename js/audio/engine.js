@@ -64,6 +64,10 @@ async function setupWorklet() {
 }
 
 export async function startAudio() {
+    // Cancel any pending stop/fade sequences to prevent "intermittent" cutoffs
+    cancelStopAudio();
+    cancelFadeOut();
+
     if (state.isStarting) return;
     state.isStarting = true;
     console.log("[Audio] Starting engine...");
@@ -303,7 +307,7 @@ function clearMediaSession() {
     }
 }
 
-export function stopAudio() {
+export function stopAudio(immediate = false) {
     if (!state.oscLeft) return;
     if (state.isRecording) stopRecording();
 
@@ -330,23 +334,46 @@ export function stopAudio() {
 
     const now = state.audioCtx.currentTime;
 
-    state.masterGain.gain.cancelScheduledValues(now);
-    state.masterGain.gain.setValueAtTime(state.masterGain.gain.value, now);
-    state.masterGain.gain.linearRampToValueAtTime(0, now + 0.3);
+    if (immediate) {
+        // IMMEDIATE STOP: No fade-out, kill audio instantly
+        state.masterGain.gain.cancelScheduledValues(now);
+        state.masterGain.gain.setValueAtTime(0, now);
 
-    // Delay oscillator cleanup to allow for volume fade
-    setTimeout(() => {
+        // Stop oscillators immediately (no timeout)
         if (state.oscLeft) { state.oscLeft.stop(); state.oscLeft.disconnect(); }
         if (state.oscRight) { state.oscRight.stop(); state.oscRight.disconnect(); }
-        state.oscLeft = null; state.oscRight = null;
+        state.oscLeft = null;
+        state.oscRight = null;
         Object.keys(state.activeSoundscapes).forEach(id => stopSingleSoundscape(id));
-        // canvas clear if needed
-    }, 350);
+    } else {
+        // NORMAL STOP: Fade out gracefully
+        state.masterGain.gain.cancelScheduledValues(now);
+        state.masterGain.gain.setValueAtTime(state.masterGain.gain.value, now);
+        state.masterGain.gain.linearRampToValueAtTime(0, now + 0.3);
+
+        // Delay oscillator cleanup to allow for volume fade
+        if (state.stopTimeout) clearTimeout(state.stopTimeout);
+
+        state.stopTimeout = setTimeout(() => {
+            if (state.oscLeft) { state.oscLeft.stop(); state.oscLeft.disconnect(); }
+            if (state.oscRight) { state.oscRight.stop(); state.oscRight.disconnect(); }
+            state.oscLeft = null; state.oscRight = null;
+            Object.keys(state.activeSoundscapes).forEach(id => stopSingleSoundscape(id));
+            state.stopTimeout = null;
+        }, 350);
+    }
 
     // Clear lock screen controls
     clearMediaSession();
 
     // Note: UI callback removed - caller manages UI state to prevent race conditions
+}
+
+export function cancelStopAudio() {
+    if (state.stopTimeout) {
+        clearTimeout(state.stopTimeout);
+        state.stopTimeout = null;
+    }
 }
 
 // --- AUDIO MODE SWITCHING ---
@@ -709,18 +736,17 @@ export function fadeOut(duration = 2, onComplete = null) {
 }
 
 /**
- * Cancel any active fade out and restore volume target
+ * Cancel any pending fade out callback
  */
 export function cancelFadeOut() {
     if (state.fadeTimeout) {
-        console.log('[Audio] Cancelling fade out - RESUMING');
+        console.log('[Audio] Cancelling pending fade out');
         clearTimeout(state.fadeTimeout);
         state.fadeTimeout = null;
-
-        // Restore volume
-        fadeIn(0.5); // Quick fade back in
     }
 }
+
+
 
 /**
  * Check if volume is above safe threshold and return warning
@@ -859,17 +885,41 @@ export function updateAtmosMaster() {
 }
 
 export function updateSoundscape(id, type, val) {
+    // Always save settings to state
     state.soundscapeSettings[id][type] = val;
+
     if (type === 'vol') {
         updateAIContext();
-        if (!state.isPlaying) return;
-        if (val > 0 && !state.activeSoundscapes[id]) startSingleSoundscape(id, val, state.soundscapeSettings[id].tone, state.soundscapeSettings[id].speed);
-        else if (val > 0 && state.activeSoundscapes[id]) state.activeSoundscapes[id].gainNode.gain.setTargetAtTime(val, state.audioCtx.currentTime, 0.1);
-        else if (val === 0 && state.activeSoundscapes[id]) stopSingleSoundscape(id);
+
+        // Start/stop/modify soundscapes regardless of whether healing frequencies are playing
+        if (val > 0 && !state.activeSoundscapes[id]) {
+            startSingleSoundscape(id, val, state.soundscapeSettings[id].tone, state.soundscapeSettings[id].speed);
+        } else if (val > 0 && state.activeSoundscapes[id]) {
+            // RESURRECTION: Cancel any pending stop timer if we are fading back in
+            const sc = state.activeSoundscapes[id];
+            if (sc.stopTimer) {
+                clearTimeout(sc.stopTimer);
+                sc.stopTimer = null;
+            }
+            // If gainNode was disconnected/partially stopped, ensure it's valid? 
+            // Usually we catch it before disconnect.
+            try {
+                sc.gainNode.gain.cancelScheduledValues(state.audioCtx.currentTime);
+                sc.gainNode.gain.setTargetAtTime(val, state.audioCtx.currentTime, 0.1);
+            } catch (e) { }
+        } else if (val === 0 && state.activeSoundscapes[id]) {
+            stopSingleSoundscape(id);
+        }
     } else {
-        if (!state.isPlaying) return;
-        if (type === 'tone' && state.activeSoundscapes[id]) updateSoundscapeTone(id, val);
-        else if (type === 'speed' && state.activeSoundscapes[id]) updateSoundscapeSpeed(id, val);
+        // Only update tone/speed if soundscape is currently active
+        // ... (unchanged)
+        if (state.activeSoundscapes[id]) {
+            if (type === 'tone') {
+                updateSoundscapeTone(id, val);
+            } else if (type === 'speed') {
+                updateSoundscapeSpeed(id, val);
+            }
+        }
     }
 }
 
@@ -915,7 +965,33 @@ function updateSoundscapeSpeed(id, speedVal) {
 }
 
 function startSingleSoundscape(id, vol, tone, speed) {
-    if (!state.masterAtmosGain) return;
+    // Ensure audio context exists and is resumed
+    initAudio();
+
+    if (!state.audioCtx) {
+        console.warn('[Soundscape] AudioContext not available');
+        return;
+    }
+
+    // Lazy initialization of atmos nodes if not already created
+    if (!state.masterAtmosGain) {
+        console.log('[Soundscape] Initializing atmos audio nodes');
+        state.masterAtmosGain = state.audioCtx.createGain();
+
+        // Check if master gain exists, create if not
+        if (!state.masterGain) {
+            state.masterGain = state.audioCtx.createGain();
+            state.masterGain.connect(state.audioCtx.destination);
+        }
+
+        // Connect atmos chain
+        state.masterAtmosGain.connect(state.masterGain);
+
+        // Set initial volume from slider (or default)
+        const atmosVal = parseFloat(els.atmosMasterSlider?.value || 0.8);
+        state.masterAtmosGain.gain.value = atmosVal;
+    }
+
     const channelGain = state.audioCtx.createGain();
     channelGain.gain.setValueAtTime(vol, state.audioCtx.currentTime);
     channelGain.connect(state.masterAtmosGain);
@@ -963,6 +1039,65 @@ function startSingleSoundscape(id, vol, tone, speed) {
     }
     else if (id === 'rain') { const n = state.audioCtx.createBufferSource(); n.buffer = createPinkNoiseBuffer(); n.loop = true; n.playbackRate.value = rate; const f = state.audioCtx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 200 + (tone * 1800); n.connect(f); f.connect(channelGain); n.start(); nodes.push(n, f); }
     else if (id === 'wind') { const n = state.audioCtx.createBufferSource(); n.buffer = createPinkNoiseBuffer(); n.loop = true; n.playbackRate.value = rate; const f = state.audioCtx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 200 + (tone * 800); f.Q.value = 1; const lfo = state.audioCtx.createOscillator(); lfo.frequency.value = 0.1 * rate; const lfoG = state.audioCtx.createGain(); lfoG.gain.value = 200; lfo.connect(lfoG); lfoG.connect(f.frequency); n.connect(f); f.connect(channelGain); n.start(); lfo.start(); nodes.push(n, f, lfo, lfoG); }
+    else if (id === 'fireplace') {
+        // Fireplace: brown noise base + random crackle simulation
+        const baseNoise = state.audioCtx.createBufferSource();
+        baseNoise.buffer = createBrownNoiseBuffer();
+        baseNoise.loop = true;
+        baseNoise.playbackRate.value = rate * 0.7; // Slower for deeper rumble
+
+        // Low-pass filter for warm rumble
+        const rumbleFilter = state.audioCtx.createBiquadFilter();
+        rumbleFilter.type = 'lowpass';
+        rumbleFilter.frequency.value = 150 + (tone * 400);
+        rumbleFilter.Q.value = 0.5;
+
+        // Amplitude modulation for flickering effect
+        const flickerLFO = state.audioCtx.createOscillator();
+        flickerLFO.type = 'sine';
+        flickerLFO.frequency.value = 12 + (Math.random() * 8); // 12-20 Hz flicker
+        const flickerGain = state.audioCtx.createGain();
+        flickerGain.gain.value = 0.1; // Subtle flicker
+        const baseGain = state.audioCtx.createGain();
+        baseGain.gain.value = 0.5;
+        flickerLFO.connect(flickerGain);
+        flickerGain.connect(baseGain.gain);
+
+        // Create random crackles with scheduled oscillators
+        const crackleGain = state.audioCtx.createGain();
+        crackleGain.gain.value = 0;
+
+        // Schedule random crackles
+        const scheduleCrackle = () => {
+            if (!state.activeSoundscapes[id]) return; // Stop if soundscape removed
+            const crackle = state.audioCtx.createOscillator();
+            crackle.type = 'square';
+            crackle.frequency.value = 200 + (Math.random() * 800);
+            const crackleEnv = state.audioCtx.createGain();
+            const now = state.audioCtx.currentTime;
+            crackleEnv.gain.setValueAtTime(0, now);
+            crackleEnv.gain.linearRampToValueAtTime(0.15, now + 0.01);
+            crackleEnv.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            crackle.connect(crackleEnv);
+            crackleEnv.connect(crackleGain);
+            crackle.start(now);
+            crackle.stop(now + 0.12);
+            // Schedule next crackle
+            const nextCrackle = 100 + (Math.random() * 400); // 100-500ms between crackles
+            setTimeout(scheduleCrackle, nextCrackle / rate);
+        };
+        scheduleCrackle();
+
+        // Connect everything
+        baseNoise.connect(rumbleFilter);
+        rumbleFilter.connect(baseGain);
+        baseGain.connect(channelGain);
+        crackleGain.connect(channelGain);
+
+        baseNoise.start();
+        flickerLFO.start();
+        nodes.push(baseNoise, rumbleFilter, baseGain, flickerLFO, flickerGain, crackleGain);
+    }
     else if (id === 'ocean') {
         // Ocean waves: noise with slow amplitude modulation for wave rhythm
         const n = state.audioCtx.createBufferSource();
@@ -1019,10 +1154,21 @@ function startSingleSoundscape(id, vol, tone, speed) {
             const sSettings = state.soundscapeSettings[id];
             const currentTone = sSettings ? sSettings.tone : 0.5;
             playOneShot(id, channelGain, currentTone);
-            const baseInterval = id === 'bells' ? 4000 : id === 'wood' ? 1500 : 3000;
+
+            // Use BPM from SOUNDSCAPES definition
+            const soundscapeData = SOUNDSCAPES.find(s => s.id === id);
+            const bpm = soundscapeData && soundscapeData.bpm ? soundscapeData.bpm : 60;
+
+            // Convert BPM to milliseconds per beat (60000ms per minute / BPM)
+            const msPerBeat = 60000 / bpm;
+
+            // Apply speed rate (0.2 to 4.0)
             const currentSpeed = state.soundscapeSettings[id].speed;
             const currentRate = 0.2 + (currentSpeed * 3.8);
-            setTimeout(loop, (baseInterval / currentRate) + (Math.random() * (500 / currentRate)));
+
+            // Calculate interval: base interval scaled by speed, with slight randomness
+            const interval = (msPerBeat / currentRate) + (Math.random() * (200 / currentRate));
+            setTimeout(loop, interval);
         };
         loop(); cleanupFn = () => { active = false; };
     }
@@ -1060,13 +1206,117 @@ function playOneShot(type, dest, tone) {
     else if (type === 'orch_perc') { const r = Math.random(); if (r < 0.33) { const osc = state.audioCtx.createOscillator(), gain = state.audioCtx.createGain(); osc.frequency.setValueAtTime(80 * pitchMult, t); osc.frequency.exponentialRampToValueAtTime(10, t + 0.5); gain.gain.setValueAtTime(0.7, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6); osc.connect(gain); gain.connect(dest); osc.start(t); osc.stop(t + 0.7); } else if (r < 0.66) { const noise = state.audioCtx.createBufferSource(); noise.buffer = createPinkNoiseBuffer(); const filter = state.audioCtx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = 2000 * pitchMult; const gain = state.audioCtx.createGain(); gain.gain.setValueAtTime(0.4, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2); noise.connect(filter); filter.connect(gain); gain.connect(dest); noise.start(t); noise.stop(t + 0.3); } else { const noise = state.audioCtx.createBufferSource(); noise.buffer = createPinkNoiseBuffer(); const filter = state.audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 5000 * pitchMult; const gain = state.audioCtx.createGain(); gain.gain.setValueAtTime(0.05, t); gain.gain.linearRampToValueAtTime(0.15, t + 0.2); gain.gain.exponentialRampToValueAtTime(0.001, t + 3.5); noise.connect(filter); filter.connect(gain); gain.connect(dest); noise.start(t); noise.stop(t + 4.0); } }
 }
 
-function stopSingleSoundscape(id) {
-    const sc = state.activeSoundscapes[id]; if (!sc) return;
-    sc.gainNode.gain.setTargetAtTime(0, state.audioCtx.currentTime, 0.5);
-    setTimeout(() => {
+export function stopSingleSoundscape(id, immediate = false) {
+    const sc = state.activeSoundscapes[id];
+    if (!sc) return;
+
+    // Helper to safely stop nodes
+    const cleanupNodes = () => {
         if (sc.cleanup) sc.cleanup();
-        sc.nodes.forEach(n => { try { n.stop(); n.disconnect(); } catch (e) { } });
-        sc.gainNode.disconnect();
-        delete state.activeSoundscapes[id];
-    }, 600);
+        if (sc.nodes) {
+            sc.nodes.forEach(n => {
+                try {
+                    if (n.stop) {
+                        try { n.stop(); } catch (e) { }
+                    }
+                    if (n.loop) n.loop = false; // Disable looping
+                    if (n.buffer) n.buffer = null; // Detach buffer
+                    n.disconnect();
+                    n.onended = null;
+                } catch (e) {
+                    console.warn(`[Audio] Error stopping node for ${id}:`, e);
+                }
+            });
+            sc.nodes = []; // Clear references
+        }
+        if (sc.gainNode) {
+            try {
+                sc.gainNode.disconnect();
+                sc.gainNode = null;
+            } catch (e) { }
+        }
+    };
+
+    if (immediate) {
+        // IMMEDIATE STOP: Kill instantly
+        try {
+            sc.gainNode.gain.cancelScheduledValues(state.audioCtx.currentTime);
+            sc.gainNode.gain.setValueAtTime(0, state.audioCtx.currentTime);
+        } catch (e) { }
+
+        cleanupNodes();
+
+        // Critical: Only delete if it's still the active one (prevent race condition ghosting)
+        if (state.activeSoundscapes[id] === sc) {
+            delete state.activeSoundscapes[id];
+        } else {
+            console.warn(`[Audio] Race detected: stopSingleSoundscape for ${id} tried to delete checking new instance.`);
+        }
+    } else {
+        // NORMAL STOP: Fade out gracefully
+        try {
+            sc.gainNode.gain.cancelScheduledValues(state.audioCtx.currentTime);
+            sc.gainNode.gain.setTargetAtTime(0, state.audioCtx.currentTime, 0.5);
+        } catch (e) { }
+
+        // Store timeout ID on the soundscape object itself to allow cancellation if needed
+        sc.stopTimer = setTimeout(() => {
+            cleanupNodes();
+            // Critical identity check logic
+            if (state.activeSoundscapes[id] === sc) {
+                delete state.activeSoundscapes[id];
+            }
+        }, 600);
+    }
+}
+
+/**
+ * NUCLEAR OPTION: Force disconnect all soundscapes by cutting the mix bus.
+ * Use this when switching presets to guarantee silence.
+ */
+export function resetAllSoundscapes() {
+    console.log('[Audio] Nuclear Reset: Disconnecting Master Atmos Gain');
+
+    // 1. Disconnect the entire bus
+    if (state.masterAtmosGain) {
+        try {
+            state.masterAtmosGain.disconnect();
+        } catch (e) { }
+        state.masterAtmosGain = null;
+    }
+
+    // 2. Aggressively clear state
+    Object.keys(state.activeSoundscapes).forEach(id => {
+        const sc = state.activeSoundscapes[id];
+        if (sc) {
+            if (sc.stopTimer) clearTimeout(sc.stopTimer);
+            try {
+                if (sc.gainNode) sc.gainNode.disconnect();
+                if (sc.nodes) sc.nodes.forEach(n => {
+                    try {
+                        if (n.stop) { try { n.stop(); } catch (e) { } }
+                        n.disconnect();
+                    } catch (e) { }
+                });
+            } catch (e) { }
+        }
+    });
+    state.activeSoundscapes = {};
+
+    // 3. Re-initialize bus for future use
+    if (state.audioCtx) {
+        state.masterAtmosGain = state.audioCtx.createGain();
+        if (state.masterGain) {
+            state.masterAtmosGain.connect(state.masterGain);
+        } else {
+            try {
+                state.masterGain = state.audioCtx.createGain();
+                state.masterGain.connect(state.audioCtx.destination);
+                state.masterAtmosGain.connect(state.masterGain);
+            } catch (e) { }
+        }
+        // Restore volume
+        const atmosVal = parseFloat(els.atmosMasterSlider?.value || 0.8);
+        state.masterAtmosGain.gain.value = atmosVal;
+    }
 }

@@ -15,43 +15,43 @@ import { showToast, applyMixState } from '../utils/helpers.js';
 let isLoginMode = true;
 
 export function initAuthUI() {
-    // 1. Setup Toggle (Login vs Register)
+    // Get elements
     const toggleBtn = document.getElementById('toggleAuthModeBtn');
     const authTitle = document.getElementById('authTitle');
+    const authSubtitle = document.getElementById('authSubtitle');
     const authSubmitBtn = document.getElementById('authSubmitBtn');
     const authForm = document.getElementById('authForm');
     const authError = document.getElementById('authError');
     const resetBtn = document.getElementById('resetPasswordBtn');
-
-    // Add "Name" field for register mode (dynamically)
-    const nameFieldDiv = document.createElement('div');
-    nameFieldDiv.className = 'flex flex-col gap-1 hidden'; // hidden by default
-    nameFieldDiv.id = 'authNameField';
-    nameFieldDiv.innerHTML = `
-        <label class="text-[10px] font-bold uppercase opacity-70">Display Name</label>
-        <input type="text" id="authDisplayName"
-            class="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm focus:border-[var(--accent)] outline-none"
-            placeholder="Your Name">
-    `;
-    // Insert name field at top of form
-    authForm.insertBefore(nameFieldDiv, authForm.children[1]);
+    const nameFieldDiv = document.getElementById('authNameField'); // Already in HTML
 
     toggleBtn.onclick = () => {
         isLoginMode = !isLoginMode;
+        const firstNameInput = document.getElementById('authFirstName');
+        const lastNameInput = document.getElementById('authLastName');
+
         if (isLoginMode) {
-            authTitle.textContent = "Sign In";
+            authTitle.textContent = "Welcome Back";
+            if (authSubtitle) authSubtitle.textContent = "Sign in to continue your journey";
             authSubmitBtn.textContent = "Sign In";
-            toggleBtn.textContent = "Don't have an account? Sign Up";
-            resetBtn.classList.remove('hidden');
-            nameFieldDiv.classList.add('hidden');
+            toggleBtn.innerHTML = 'Don\'t have an account? <span style="color: rgb(96, 169, 255); font-weight: 600;">Sign Up</span>';
+            if (resetBtn) resetBtn.style.display = '';
+            if (nameFieldDiv) nameFieldDiv.style.display = 'none';
+            // Remove required from name fields when in Sign In mode
+            if (firstNameInput) firstNameInput.removeAttribute('required');
+            if (lastNameInput) lastNameInput.removeAttribute('required');
         } else {
             authTitle.textContent = "Create Account";
+            if (authSubtitle) authSubtitle.textContent = "Start your meditation journey today";
             authSubmitBtn.textContent = "Sign Up";
-            toggleBtn.textContent = "Already have an account? Sign In";
-            resetBtn.classList.add('hidden');
-            nameFieldDiv.classList.remove('hidden');
+            toggleBtn.innerHTML = 'Already have an account? <span style="color: rgb(96, 169, 255); font-weight: 600;">Sign In</span>';
+            if (resetBtn) resetBtn.style.display = 'none';
+            if (nameFieldDiv) nameFieldDiv.style.display = 'flex';
+            // Add required to name fields when in Sign Up mode
+            if (firstNameInput) firstNameInput.setAttribute('required', '');
+            if (lastNameInput) lastNameInput.setAttribute('required', '');
         }
-        authError.classList.add('hidden');
+        if (authError) authError.classList.add('hidden');
     };
 
     // 2. Form Submit
@@ -59,7 +59,9 @@ export function initAuthUI() {
         e.preventDefault();
         const email = document.getElementById('authEmail').value;
         const password = document.getElementById('authPassword').value;
-        const name = document.getElementById('authDisplayName').value;
+        const firstName = document.getElementById('authFirstName')?.value || '';
+        const lastName = document.getElementById('authLastName')?.value || '';
+        const name = firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName;
 
         authSubmitBtn.disabled = true;
         authSubmitBtn.textContent = "Processing...";
@@ -103,7 +105,13 @@ export function initAuthUI() {
     };
 
     // 4. Close Button
-    document.getElementById('closeAuthBtn').onclick = closeAuthModal;
+    const closeAuthBtn = document.getElementById('closeAuthBtn');
+    if (closeAuthBtn) {
+        closeAuthBtn.onclick = (e) => {
+            e.stopPropagation();
+            closeAuthModal();
+        };
+    }
 
     // 5. Auth State Observer Actions
     registerAuthCallback((user) => {
@@ -156,6 +164,48 @@ function updateProfileUI(user) {
             }
         }
 
+        // ✅ REVENUE FEATURE: Show upgrade/manage buttons based on tier
+        let upgradeBtn = document.getElementById('profileUpgradeBtn');
+        if (!upgradeBtn) {
+            // Create upgrade button if it doesn't exist
+            upgradeBtn = document.createElement('button');
+            upgradeBtn.id = 'profileUpgradeBtn';
+            upgradeBtn.className = 'w-full py-3 px-4 rounded-xl font-bold text-sm transition-all';
+
+            // Insert after tier badge
+            const profileHeader = tierEl?.parentElement;
+            if (profileHeader) {
+                profileHeader.appendChild(upgradeBtn);
+            }
+        }
+
+        if (isPremium) {
+            // Premium user - show "Manage Subscription" button
+            upgradeBtn.textContent = '⚙️ Manage Subscription';
+            upgradeBtn.className = 'w-full mt-4 py-3 px-4 rounded-xl font-bold text-sm bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all';
+            upgradeBtn.onclick = () => {
+                // Open Stripe Customer Portal
+                if (window.showPricingModal) {
+                    window.showPricingModal();
+                }
+            };
+        } else {
+            // Free user - show prominent "Upgrade to Pro" button
+            upgradeBtn.textContent = '⚡ Upgrade to Pro';
+            upgradeBtn.className = 'w-full mt-4 py-3 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 transition-all shadow-lg';
+            upgradeBtn.onclick = () => {
+                // Close profile modal and show pricing
+                const profileModal = document.getElementById('profileModal');
+                if (profileModal) {
+                    profileModal.classList.add('hidden');
+                    profileModal.classList.remove('active');
+                }
+                if (window.showPricingModal) {
+                    window.showPricingModal();
+                }
+            };
+        }
+
         if (logoutBtn) logoutBtn.classList.remove('hidden');
     } else {
         // Guest
@@ -168,6 +218,10 @@ function updateProfileUI(user) {
         }
         if (nameInput) nameInput.value = '';
         if (logoutBtn) logoutBtn.classList.add('hidden');
+
+        // Hide upgrade button for guests
+        const upgradeBtn = document.getElementById('profileUpgradeBtn');
+        if (upgradeBtn) upgradeBtn.style.display = 'none';
     }
 
     // Populate stats from analytics
@@ -253,6 +307,8 @@ export function setupProfileHandlers() {
                 const { updateProfile } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
                 if (auth.currentUser) {
                     await updateProfile(auth.currentUser, { displayName: newName });
+                    // ✅ FIX Issue #8: Reload user to get fresh data
+                    await auth.currentUser.reload();
                     updateProfileUI(auth.currentUser);
                     showToast('Profile updated!', 'success');
                 }
@@ -265,6 +321,28 @@ export function setupProfileHandlers() {
 }
 
 export function openAuthModal() {
+    // ✅ PROFESSIONAL FIX: If user is already logged in, show account management instead
+    if (state.currentUser) {
+        console.log('[Auth] User already logged in, showing account management');
+
+        // Show profile/account modal instead
+        const profileModal = document.getElementById('profileModal');
+        if (profileModal) {
+            profileModal.classList.remove('hidden');
+            profileModal.classList.add('active');
+
+            // Update profile UI with current user data
+            updateProfileUI(state.currentUser);
+
+            // Populate stats
+            populateProfileStats();
+        } else {
+            // Fallback if profile modal doesn't exist
+            showToast("Account menu coming soon. Use the profile button to sign out.", "info");
+        }
+        return;
+    }
+
     const m = document.getElementById('authModal');
     m.classList.remove('hidden');
     m.classList.add('active');
@@ -274,19 +352,49 @@ export function openAuthModal() {
     document.getElementById('toggleAuthModeBtn').textContent = "Don't have an account? Sign Up";
     document.getElementById('authNameField').classList.add('hidden');
     document.getElementById('authError').classList.add('hidden');
+
+    // Remove required from name fields when opening in Sign In mode
+    const firstNameInput = document.getElementById('authFirstName');
+    const lastNameInput = document.getElementById('authLastName');
+    if (firstNameInput) firstNameInput.removeAttribute('required');
+    if (lastNameInput) lastNameInput.removeAttribute('required');
 }
 
 function closeAuthModal() {
-    const m = document.getElementById('authModal');
-    m.classList.add('hidden');
-    m.classList.remove('active');
+    try {
+        const m = document.getElementById('authModal');
+        if (!m) {
+            console.error('[Auth] Auth modal element not found');
+            return;
+        }
+
+        m.classList.add('hidden');
+        m.classList.remove('active');
+
+        // Check for pending action from paywall and execute it
+        if (window.getPendingAction) {
+            const pendingAction = window.getPendingAction();
+            if (pendingAction) {
+                console.log('[Auth] Executing pending action after auth modal close');
+                setTimeout(() => {
+                    pendingAction();
+                }, 300); // Small delay to let modal close animation complete
+            }
+        }
+    } catch (error) {
+        console.error('[Auth] Error closing auth modal:', error);
+    }
 }
 
 // --- LIBRARY LOGIC ---
 
 export function renderLibraryList(mixes) {
     const list = document.getElementById('libraryList');
-    if (!list) return;
+    // ✅ FIX Issue #6: Add null check for timing issues
+    if (!list) {
+        console.warn('[Library] libraryList element not found, deferring render');
+        return;
+    }
 
     if (mixes.length === 0) {
         list.innerHTML = `
