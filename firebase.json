@@ -6,6 +6,7 @@
             ".git",
             ".gitignore",
             "node_modules",
+            "**/node_modules/**",
             ".env",
             "config.js",
             "README.md",
@@ -61,8 +62,5 @@
             }
         ],
         "cleanUrls": true
-    },
-    "functions": {
-        "source": "functions"
     }
 }
