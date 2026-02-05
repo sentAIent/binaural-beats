@@ -1,0 +1,1 @@
+var o=(o=>(o.Clock="clock",o.Countdown="countdown",o.Metric="metric",o))(o||{});export{o as B};

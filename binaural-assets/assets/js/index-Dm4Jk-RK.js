@@ -1,0 +1,1 @@
+import{_ as a}from"./style-D-IRYiWS.js";async function r(r,t=!0){const{HeartDrawer:e}=await a((async()=>{const{HeartDrawer:a}=await import("./HeartDrawer-B53xUYFT.js");return{HeartDrawer:a}}),[]);await r.addShape("heart",new e,t)}export{r as loadHeartShape};

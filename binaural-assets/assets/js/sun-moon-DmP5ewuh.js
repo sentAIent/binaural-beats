@@ -1,0 +1,1 @@
+const s="/assets/svg/sun-moon-D2MqZTQt.svg";export{s as default};

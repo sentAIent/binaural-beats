@@ -1,0 +1,50 @@
+<div class="view" title="{{title}}">
+	<div class="mantra">
+		<span class="mantra-body u--selectable" data-test="mantra-body">{{body}}</span>
+	</div>
+
+	<span class="controls"><!--
+		--><span class="control control-svg control-activate u--clickable" title="{{labelActivate}}" data-test="mantra-activate-button">
+			<i class="icon-check" data-test="mantra-activate-icon"></i>
+		</span><!--
+		--><span class="control control-svg control-pin u--clickable" title="{{labelPin}}" data-test="mantra-pin-button">
+			<svg class="icon icon-pin" data-test="mantra-pin-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 481.71 481.72"><path d="M106.12,10.76,10.77,106.13a36.72,36.72,0,0,0,45.92,56.8l109.6,127.41a100.11,100.11,0,0,0,20,113.32,35.27,35.27,0,0,0,49.86,0l57.33-57.31L481.71,481.72,346.35,293.52l57.31-57.31a35.3,35.3,0,0,0,0-49.88,100.16,100.16,0,0,0-113.29-20L162.93,56.67a36.72,36.72,0,0,0-56.81-45.91Z" transform="translate(0 0)"/></svg>
+		</span><!--
+		--><span class="control control-svg control-heart u--clickable {{isFavClass}}" title="{{isFavTitle}}" data-test="mantra-fav-button">
+			<svg class="icon icon-heart" data-test="mantra-fav-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 953 1000"><path d="M1 329q7-115 79-191h2l2-2q88-76 199-76t191 70q32-28 67-45l2-2h2q56-23 117-23 88-2 161 43t110 124v2l2 4q30 106 10 202t-80 175q-62 88-162 172 0 2-2 2-49 45-107 90-34 25-59 41-33 23-55 23l-6 2-5-2q-28-3-59-29-10-6-21-16t-16-13h-2Q125 692 43 540v-2Q-6 444 1 329zm85 1"></path></svg>
+		</span><!--
+		{{#if onCustomSubnav}}
+			--><span class="control control-edit u--clickable" title="Edit" data-test="mantra-edit-button"><i class="icon-edit" data-test="mantra-edit-icon"></i></span><!--
+			--><span class="control control-delete u--clickable" title="Delete" data-test="mantra-delete-button">
+				<i class="icon-trash" data-test="mantra-delete-icon">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 24"><path d="M19.15 7.5H2.838a.5.5 0 0 0-.5.5l1.81 14a2 2 0 0 0 2 2h9.954a2 2 0 0 0 2-2L19.65 8a.5.5 0 0 0-.5-.5zm-9.9 13a.75.75 0 0 1-1.5 0v-9a.75.75 0 0 1 1.5 0v9zm5 0a.75.75 0 0 1-1.5 0v-9a.75.75 0 0 1 1.5 0v9zM20.43 4h-4.18a.25.25 0 0 1-.25-.25V2.5A2.5 2.5 0 0 0 13.5 0h-5A2.5 2.5 0 0 0 6 2.5v1.25a.25.25 0 0 1-.25.25h-4.5a1 1 0 0 0 0 2h19.18a1 1 0 0 0 0-2zM8 3.75V2.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5v1.25a.25.25 0 0 1-.25.25h-5.5A.25.25 0 0 1 8 3.75z" fill-rule="nonzero"/></svg>
+				</i>
+			</span><!--
+		{{/if}}
+		--><span class="delete-group"><!--
+			--><span class="control delete-msg">Delete?</span><!--
+			--><span class="control delete-loading">Deleting...</span><!--
+			--><span class="control delete-failed u--clickable" title="Click to retry">Trouble connecting...</span><!--
+			--><span class="control delete-yes u--clickable" title="Confirm" data-test="mantra-delete-yes">
+				<i class="icon icon-checkmark">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 577.95 469.42"><polygon points="195.09 469.42 137.44 424.64 140.4 421.42 0 298 46.22 245.43 187.68 369.79 526.33 0 577.95 47.28 229.72 427.53 195.09 469.42"/></svg>
+				</i>
+			</span><!--
+			--><span class="control delete-no u--clickable" title="Cancel">
+				<i class="icon icon-x">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 47.97 47.97"><path d="M28.23,24,47.09,5.12A3,3,0,0,0,42.85.88L24,19.74,5.12.88A3,3,0,0,0,.88,5.12L19.74,24,.88,42.85a3,3,0,1,0,4.24,4.24L24,28.23,42.85,47.09a3,3,0,0,0,4.24-4.24Z" transform="translate(0 0)"/></svg>
+				</i>
+			</span>
+		</span>
+	</span>
+</div>
+
+<form class="edit settings-form-basic list-edit-form">
+	<input class="list-edit-input" placeholder="Mantra" value="{{body}}" maxlength="{{inputLengthMaxHtml}}" autocomplete="off" data-test="mantra-edit-input"><!--
+	--><span class="char-count"></span><!--
+	--><span class="cancel u--clickable">
+		<span class="icon-wrapper">
+			<svg class="icon icon-cancel" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 212.982 212.982" ><path d="M131.804 106.491l75.936-75.936c6.99-6.99 6.99-18.323 0-25.312-6.99-6.99-18.322-6.99-25.312 0L106.491 81.18 30.554 5.242c-6.99-6.99-18.322-6.99-25.312 0-6.989 6.99-6.989 18.323 0 25.312l75.937 75.936-75.937 75.937c-6.989 6.99-6.989 18.323 0 25.312 6.99 6.99 18.322 6.99 25.312 0l75.937-75.937 75.937 75.937c6.989 6.99 18.322 6.99 25.312 0 6.99-6.99 6.99-18.322 0-25.312l-75.936-75.936z"/></svg>
+		</span>
+	</span>
+</form>

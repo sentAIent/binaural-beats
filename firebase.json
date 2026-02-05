@@ -10,7 +10,8 @@
             "config.js",
             "README.md",
             ".firebaserc",
-            "*.log"
+            "*.log",
+            "functions"
         ],
         "headers": [
             {

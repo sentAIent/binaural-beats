@@ -1,0 +1,84 @@
+{{#unless hideBookmarks}}
+<h3>Links & Bookmarks Bar</h3>
+{{else}}
+<h3>Links</h3>
+{{/unless}}
+
+<p class="description">Quick access to your favorite links</p>
+
+<div data-test="settings-links">
+	<ul class="settings-list options-list">
+		{{!-- <li class="slide-toggle has-toggle links-enable on" data-option="">
+			<span class="toggle-slider"><svg class="toggle-switch" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50"/></svg></span>
+			<span class="setting-name">Show Links</span>
+		</li>
+		<li class="slide-toggle has-toggle bookmarks-enable on" data-option="" data-test="bookmarks-toggle">
+			<span class="toggle-slider"><svg class="toggle-switch" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50"/></svg></span>
+			<span class="setting-name">Show Bookmarks Bar</span>
+		</li> --}}
+	{{#supportsNewTabUrl}}
+		<li class="has-toggle has-toggle-options bookmark-option on" data-option="">
+			<span class="setting-name">Show {{browserName}} Tab in</span>
+			<span class="toggle-options">
+				<span class="toggle-option special-link-option" data-link="chromeTabLocation" data-place="links" data-test="show-tab-links"><span class="toggle-label">Links</span></span>
+				{{#isChromium}}<span class="toggle-divider">|</span>
+				<span class="toggle-option special-link-option" data-link="chromeTabLocation" data-place="bookmarks" data-test="show-tab-bookmarks"><span class="toggle-label">Bookmarks</span></span>{{/isChromium}}
+				<span class="toggle-divider">|</span>
+				<span class="toggle-option special-link-option" data-link="chromeTabLocation" data-place="dash" data-test="show-tab-dash"><span class="toggle-label">Dash</span></span>
+				<span class="toggle-divider">|</span>
+				<span class="toggle-option special-link-option" data-link="chromeTabLocation" data-place="none"><span class="toggle-label">None</span></span>
+			</span>
+		</li>
+	{{/supportsNewTabUrl}}
+		<li class="slide-toggle has-toggle bookmark-option on" data-option="openInNewTab" data-test="open-link-new-tab-toggle">
+			<span class="toggle-slider"><svg class="toggle-switch" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50"/></svg></span>
+			<span class="setting-name">Open links in new tab</span>
+		</li>
+	</ul>
+
+	<div class="section section-links">
+		<h4>Links</h4>
+		<ul class="settings-list options-list">
+			<li class="slide-toggle has-toggle on stay-open" data-option="linksKeepOpen">
+				<span class="toggle-slider"><svg class="toggle-switch" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50"/></svg></span>
+				<span class="setting-name">Stay open</span>
+				<span class="option-message">Stay open on new tab and other usage</span>
+			</li>
+		</ul>
+	</div>
+
+
+	{{#unless hideBookmarks}}
+	<div class="section section-bookmarks">
+		<h4>Bookmarks Bar</h4>
+		<ul class="settings-list options-list" data-test="bookmarks-options">
+			<li class="slide-toggle has-toggle bookmark-option on" data-option="iconsOnly" data-test="toggle-icons-only">
+				<span class="toggle-slider"><svg class="toggle-switch" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50"/></svg></span>
+				<span class="setting-name">Icons only</span>
+				<span class="option-message">Hide titles for a clean and compact look</span>
+			</li>
+			<li class="slide-toggle has-toggle bookmark-option on" data-option="defaultMostVisited" data-test="toggle-start-most-visited">
+				<span class="toggle-slider"><svg class="toggle-switch" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50"/></svg></span>
+				<span class="setting-name">Start in Top Sites</span>
+				<span class="option-message">Show most visited websites by default in Bookmarks Bar</span>
+			</li>
+			<li class="slide-toggle has-toggle bookmark-option on" data-option="includeMostVisited" data-test="toggle-show-most-visited">
+				<span class="toggle-slider"><svg class="toggle-switch" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50"/></svg></span>
+				<span class="setting-name">Show Top Sites</span>
+				<span class="option-message">Add a folder with most visited websites to Bookmarks Bar</span>
+			</li>
+			{{#isChrome}}
+			<li class="slide-toggle has-toggle bookmark-option on" data-option="includeBookmarks" data-test="toggle-show-manager">
+				<span class="toggle-slider"><svg class="toggle-switch" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50"/></svg></span>
+				<span class="setting-name">Show Bookmarks Manager</span>
+			</li>
+			{{/isChrome}}
+			<li class="slide-toggle has-toggle bookmark-option on" data-option="includeOtherBookmarks" data-test="toggle-show-other">
+				<span class="toggle-slider"><svg class="toggle-switch" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50"/></svg></span>
+				<span class="setting-name">Show Other Bookmarks</span>
+			</li>
+		</ul>
+	</div>
+	{{/unless}}
+</div>
+

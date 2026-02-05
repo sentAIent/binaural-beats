@@ -1,0 +1,1 @@
+const s="/assets/svg/thanks-CVq8T2Fm.svg";export{s as default};

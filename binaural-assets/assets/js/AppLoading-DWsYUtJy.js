@@ -1,0 +1,1 @@
+import{n as i}from"./_plugin-vue2_normalizer-DeUNqxFl.js";const n=i({name:"AppLoading"},(function(){return this._self._c,this._m(0)}),[function(){var i=this._self._c;return i("div",{staticClass:"app-loading"},[this._v(" Loading… "),i("div",{staticClass:"loading-icon"})])}],!1,null,"be9b9dac").exports;export{n as A};

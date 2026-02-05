@@ -1,0 +1,1 @@
+import{s as e}from"./auth-BwdMrzFn.js";import{g as o}from"./dynamic-import-helper-CTnsj-vI.js";const r=()=>e().then((()=>o().tabs.create({url:"momentumdash://upgrade"}))),t=Object.freeze(Object.defineProperty({__proto__:null,openAppleUpgrade:r},Symbol.toStringTag,{value:"Module"}));export{t as e,r as o};

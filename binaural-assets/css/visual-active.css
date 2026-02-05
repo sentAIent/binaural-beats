@@ -1,0 +1,40 @@
+/* Visual Button Active State */
+.visual-btn.active {
+    background-color: var(--accent);
+    background-color: rgb(var(--accent) / 0.2);
+    color: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 15px var(--accent-glow);
+}
+
+/* Specific override for better visibility */
+.visual-btn.active {
+    background-color: rgba(var(--color-accent), 0.2);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    border-color: var(--accent);
+    color: white;
+    filter: drop-shadow(0 0 8px var(--accent));
+}
+
+/* Light Theme Adjustments */
+[data-theme="cloud"] .visual-btn,
+[data-theme="dawn"] .visual-btn {
+    background-color: rgba(0, 0, 0, 0.05);
+    /* Light bg for buttons in light mode */
+    border-color: rgba(0, 0, 0, 0.1);
+    color: var(--text-muted);
+}
+
+[data-theme="cloud"] .visual-btn:hover,
+[data-theme="dawn"] .visual-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+[data-theme="cloud"] .visual-btn.active,
+[data-theme="dawn"] .visual-btn.active {
+    background-color: var(--accent);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}

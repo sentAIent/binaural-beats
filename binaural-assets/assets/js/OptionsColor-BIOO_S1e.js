@@ -1,0 +1,1 @@
+import{i as a,a as s}from"./FlashMessage-ghB6f3ER.js";class l{constructor(){this.value=""}static create(o,e){const t=new l;return t.load(o),void 0!==e&&(a(e)||s(e)?t.load({value:e}):t.load(e)),t}load(a){void 0!==(null==a?void 0:a.value)&&(this.value=a.value)}}export{l as O};

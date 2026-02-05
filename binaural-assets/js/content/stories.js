@@ -1,0 +1,651 @@
+// Sleep Stories Module
+// Plays narrated stories layered with binaural frequencies
+
+import { state, els } from '../state.js';
+import { isPremiumUser } from '../services/stripe-simple.js';
+import { showPricingModal } from '../ui/pricing-3tier.js';
+
+// Built-in sleep stories with recommended soundscapes
+export const SLEEP_STORIES = [
+    // ========== CHILDREN'S STORIES ==========
+    {
+        id: 'story-sleepy-cloud-ship',
+        title: 'The Sleepy Cloud Ship',
+        description: 'Float on a magical cloud through the starry night sky',
+        duration: '10 min',
+        narrator: 'Studio',
+        audioUrl: null, // Can be set via upload
+        thumbnail: null,
+        recommendedFreq: { base: 200, beat: 3 }, // Delta for deep sleep
+        recommendedSoundscape: 'wind',
+        category: 'kids',
+        age: '4-8',
+        bpm: 55,
+        premium: true
+    },
+    {
+        id: 'story-friendly-dragon',
+        title: "The Friendly Dragon's Lullaby",
+        description: 'Fly with Ember the gentle dragon to a magical sleepy forest',
+        duration: '12 min',
+        narrator: 'Studio',
+        audioUrl: null,
+        thumbnail: null,
+        recommendedFreq: { base: 220, beat: 4 }, // Theta
+        recommendedSoundscape: 'bells',
+        category: 'kids',
+        age: '5-10',
+        bpm: 60,
+        premium: true
+    },
+    {
+        id: 'story-starlight-express',
+        title: 'The Starlight Express Train',
+        description: 'Ride the cozy nighttime train to Dreamland Station',
+        duration: '15 min',
+        narrator: 'Studio',
+        audioUrl: null,
+        thumbnail: null,
+        recommendedFreq: { base: 180, beat: 3 }, // Delta
+        recommendedSoundscape: 'wind',
+        category: 'kids',
+        age: '6-12',
+        bpm: 58,
+        premium: true
+    },
+
+    // ========== ADULT STORIES ==========
+    {
+        id: 'story-ancient-forest-path',
+        title: 'The Ancient Forest Path',
+        description: 'A mindful walking meditation through timeless woods',
+        duration: '15 min',
+        narrator: 'Studio',
+        audioUrl: null,
+        thumbnail: null,
+        recommendedFreq: { base: 200, beat: 6 }, // Theta
+        recommendedSoundscape: 'strings',
+        category: 'adults',
+        bpm: 60,
+        premium: true
+    },
+    {
+        id: 'story-ocean-consciousness',
+        title: 'Ocean of Consciousness',
+        description: 'Float in infinite awareness on a calm, vast sea',
+        duration: '20 min',
+        narrator: 'Studio',
+        audioUrl: null,
+        thumbnail: null,
+        recommendedFreq: { base: 180, beat: 4 }, // Theta
+        recommendedSoundscape: 'ocean',
+        category: 'adults',
+        bpm: 55,
+        premium: true
+    },
+    {
+        id: 'story-mountain-temple',
+        title: 'Mountain Temple at Twilight',
+        description: 'Find peace in an ancient meditation hall above the clouds',
+        duration: '18 min',
+        narrator: 'Studio',
+        audioUrl: null,
+        thumbnail: null,
+        recommendedFreq: { base: 200, beat: 7 }, // Theta
+        recommendedSoundscape: 'bells',
+        category: 'adults',
+        bpm: 58,
+        premium: true
+    },
+
+    // ========== ORIGINAL DEMO STORIES (kept for backwards compatibility) ==========
+    {
+        id: 'story-peaceful-night',
+        title: 'Peaceful Night',
+        description: 'A gentle journey through a moonlit garden',
+        duration: '10 min',
+        narrator: 'Demo',
+        audioUrl: null,
+        thumbnail: null,
+        recommendedFreq: { base: 200, beat: 2 },
+        recommendedSoundscape: 'ocean',
+        category: 'nature',
+        bpm: 60,
+        premium: false
+    },
+    {
+        id: 'story-ocean-dreams',
+        title: 'Ocean Dreams',
+        description: 'Drift away on gentle waves under starry skies',
+        duration: '15 min',
+        narrator: 'Demo',
+        audioUrl: null,
+        thumbnail: null,
+        recommendedFreq: { base: 180, beat: 3 },
+        recommendedSoundscape: 'ocean',
+        category: 'nature',
+        bpm: 55,
+        premium: false
+    },
+    {
+        id: 'story-forest-meditation',
+        title: 'Enchanted Forest',
+        description: 'Walk through an ancient forest at twilight',
+        duration: '12 min',
+        narrator: 'Demo',
+        audioUrl: null,
+        thumbnail: null,
+        recommendedFreq: { base: 220, beat: 4 },
+        recommendedSoundscape: 'rain',
+        category: 'fantasy',
+        bpm: 65,
+        premium: true
+    },
+    {
+        id: 'story-cosmic-journey',
+        title: 'Cosmic Journey',
+        description: 'Float through galaxies and nebulae',
+        duration: '20 min',
+        narrator: 'Demo',
+        audioUrl: null,
+        thumbnail: null,
+        recommendedFreq: { base: 200, beat: 6 },
+        recommendedSoundscape: 'strings',
+        category: 'space',
+        bpm: 70,
+        premium: true
+    }
+];
+
+// Story player state
+export let storyState = {
+    currentStory: null,
+    audioElement: null,
+    isPlaying: false,
+    isTransitioning: false, // NEW: Tracks loading state to prevent gaps in protection
+    volume: 0.7,
+    customAudioTracks: {} // Map of storyId -> audioDataUrl
+};
+
+// Initialize story player
+export function initStoryPlayer() {
+    // Load any saved custom audio mappings from localStorage
+    try {
+        const saved = localStorage.getItem('mindwave_story_audio');
+        if (saved) {
+            storyState.customAudioTracks = JSON.parse(saved);
+        }
+    } catch (e) {
+        console.warn('[Stories] Failed to load custom audio mappings:', e);
+    }
+    console.log('[Stories] Story player initialized');
+
+    // Subscribe to theme changes to re-render UI
+    if (!window._storyThemeListenerAttached) {
+        window.addEventListener('themeChanged', () => {
+            const container = document.getElementById('storyContainer');
+            if (container) renderStoryCards(container);
+        });
+        window._storyThemeListenerAttached = true;
+    }
+}
+
+// Play a story layered with frequencies and soundscapes
+export async function playStory(storyId) {
+    const story = SLEEP_STORIES.find(s => s.id === storyId);
+    if (!story) {
+        console.error('[Stories] Story not found:', storyId);
+        return false;
+    }
+
+    // Check premium status
+    const isPremium = await isPremiumUser();
+    if (story.premium && !isPremium) {
+        showPricingModal();
+        return false;
+    }
+
+    // Set transitioning flag to blockade controls.js immediately
+    storyState.isTransitioning = true;
+
+    // Stop any currently playing story
+    // stopStory() may restore saved frequency state (e.g. from localStorage via side effects), 
+    // so we must set sliders AFTER this to ensure our new values persist.
+    if (storyState.isPlaying) {
+        stopStory();
+    }
+
+    // Set sliders immediately after stopStory to ensure correct Hz is displayed
+    if (story.recommendedFreq) {
+        setStoryFrequencySliders(story.recommendedFreq);
+    }
+
+    // GUARD LOOP: Start a requestAnimationFrame loop to enforce frequencies during any async transition
+    // This fights any async state restoration that might happen (e.g. from stopStory side-effects resolving later)
+    let guardActive = true;
+    const enforceFreq = () => {
+        if (!guardActive || !story.recommendedFreq) return;
+        const corrected = setStoryFrequencySliders(story.recommendedFreq);
+        if (corrected) {
+            // Force reflow and log if we had to correct it (catching the 5.5Hz enemy)
+            // document.body.offsetHeight; 
+            console.log('[Stories] Guard corrected frequency drift!');
+        }
+        requestAnimationFrame(enforceFreq);
+    };
+    enforceFreq();
+
+    // MULTI-LAYER PROTECTION: Bomb state at critical microtask points
+    setTimeout(enforceFreq, 0);
+    setTimeout(enforceFreq, 10);
+    setTimeout(enforceFreq, 50);
+
+    storyState.currentStory = story;
+    storyState.isPlaying = true;
+
+    // Import engine module for direct function calls
+    const engine = await import('../audio/engine.js');
+    console.log('[Stories] Starting:', story.title);
+
+    // Stop any active frequency sweeps (Journeys) so they don't fight our sliders
+    // Note: stopSweep(false) ensures we DO NOT restore old frequency, preventing 5.5Hz flash
+    if (engine.stopSweep) {
+        engine.stopSweep(false);
+    }
+
+    // Start audio if needed
+    if (!state.isPlaying) {
+        try {
+            await engine.startAudio();
+            console.log('[Stories] Started binaural player');
+        } catch (e) {
+            console.error('[Stories] Failed to start audio:', e);
+        }
+    }
+
+    // Stop the guard loop
+    guardActive = false;
+    // Clear transitioning flag as we are now fully playing
+    storyState.isTransitioning = false;
+
+    // Final force update ensuring engine state matches UI
+    if (story.recommendedFreq) {
+        setStoryFrequencySliders(story.recommendedFreq);
+        engine.updateFrequencies();
+        console.log('[Stories] Applied story frequency:', story.recommendedFreq.beat, 'Hz');
+    }
+
+    // 4. Activate recommended soundscape
+    if (story.recommendedSoundscape) {
+        activateSoundscape(story.recommendedSoundscape);
+    }
+
+    // 4. Check for custom audio (uploaded by user)
+    const customAudioUrl = storyState.customAudioTracks[storyId];
+    const audioUrl = customAudioUrl || story.audioUrl;
+
+    if (audioUrl) {
+        // Play the actual narration audio
+        storyState.audioElement = new Audio(audioUrl);
+        storyState.audioElement.volume = storyState.volume;
+        storyState.audioElement.loop = false;
+
+        storyState.audioElement.addEventListener('ended', () => {
+            console.log('[Stories] Audio playback ended');
+            // Keep frequencies playing, just mark audio as not playing
+            if (storyState.audioElement) {
+                storyState.audioElement = null;
+            }
+        });
+
+        storyState.audioElement.play()
+            .then(() => {
+                console.log('[Stories] Playing audio:', story.title);
+            })
+            .catch(err => {
+                console.error('[Stories] Playback error:', err);
+                showToast('Failed to play audio. Try uploading a new file.', 'error');
+            });
+    }
+
+    // 5. Update UI and show feedback
+    updateStoryUI(true);
+    showStopButton(true);
+
+    const soundscapeName = story.recommendedSoundscape
+        ? story.recommendedSoundscape.charAt(0).toUpperCase() + story.recommendedSoundscape.slice(1)
+        : 'ambient';
+    showToast(`🌙 "${story.title}" — ${story.recommendedFreq.beat}Hz + ${soundscapeName}`);
+
+    console.log('[Stories] Playing:', story.title);
+    return true;
+}
+
+// Stop currently playing story
+export function stopStory() {
+    // Stop any narration audio
+    if (storyState.audioElement) {
+        storyState.audioElement.pause();
+        storyState.audioElement.currentTime = 0;
+        storyState.audioElement = null;
+    }
+
+    // Deactivate story's soundscape
+    if (storyState.currentStory?.recommendedSoundscape) {
+        deactivateSoundscape(storyState.currentStory.recommendedSoundscape);
+    }
+
+    storyState.isPlaying = false;
+    storyState.currentStory = null;
+
+    updateStoryUI(false);
+    showStopButton(false);
+    console.log('[Stories] Stopped');
+}
+
+// Set story volume (0-1)
+export function setStoryVolume(volume) {
+    storyState.volume = Math.max(0, Math.min(1, volume));
+    if (storyState.audioElement) {
+        storyState.audioElement.volume = storyState.volume;
+    }
+}
+
+// Get story volume
+export function getStoryVolume() {
+    return storyState.volume;
+}
+
+// Check if story is playing
+export function isStoryPlaying() {
+    return storyState.isPlaying;
+}
+
+// Get current story
+export function getCurrentStory() {
+    return storyState.currentStory;
+}
+
+// Upload custom audio for a story
+export async function uploadStoryAudio(storyId, file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => {
+            const audioDataUrl = reader.result;
+            storyState.customAudioTracks[storyId] = audioDataUrl;
+
+            // Save to localStorage
+            try {
+                localStorage.setItem('mindwave_story_audio', JSON.stringify(storyState.customAudioTracks));
+            } catch (e) {
+                console.warn('[Stories] Failed to save to localStorage:', e);
+            }
+
+            console.log('[Stories] Uploaded audio for:', storyId);
+            showToast(`✓ Audio added to "${SLEEP_STORIES.find(s => s.id === storyId)?.title}"`);
+
+            // Re-render cards to show upload indicator
+            const container = document.getElementById('storyContainer');
+            if (container) renderStoryCards(container);
+
+            resolve(audioDataUrl);
+        };
+
+        reader.onerror = () => {
+            console.error('[Stories] File read error:', reader.error);
+            reject(reader.error);
+        };
+
+        reader.readAsDataURL(file);
+    });
+}
+
+// Remove custom audio from a story
+export function removeStoryAudio(storyId) {
+    delete storyState.customAudioTracks[storyId];
+    try {
+        localStorage.setItem('mindwave_story_audio', JSON.stringify(storyState.customAudioTracks));
+    } catch (e) {
+        console.warn('[Stories] Failed to save to localStorage:', e);
+    }
+
+    const container = document.getElementById('storyContainer');
+    if (container) renderStoryCards(container);
+
+    showToast('Audio removed');
+}
+
+// Check if story has custom audio
+export function hasCustomAudio(storyId) {
+    return !!storyState.customAudioTracks[storyId];
+}
+
+// Set slider values only (no audio update) - for use BEFORE startAudio
+// Uses direct DOM access to ensure values are set correctly
+function setStoryFrequencySliders(freq) {
+    // Use direct DOM access instead of shared els object
+    const baseSlider = document.getElementById('baseSlider');
+    const beatSlider = document.getElementById('beatSlider');
+    const baseValue = document.getElementById('baseValue');
+    const beatValue = document.getElementById('beatValue');
+    let changed = false;
+
+    // Only update if value changed to avoid DOM thrashing
+    if (baseSlider && parseFloat(baseSlider.value) !== freq.base) {
+        baseSlider.value = freq.base;
+        if (baseValue) baseValue.textContent = freq.base + ' Hz';
+        changed = true;
+    }
+    if (beatSlider && parseFloat(beatSlider.value) !== freq.beat) {
+        beatSlider.value = freq.beat;
+        if (beatValue) beatValue.textContent = freq.beat + ' Hz';
+        changed = true;
+    }
+    return changed;
+}
+
+// Apply story's recommended frequencies (with audio update)
+function applyStoryFrequencies(freq) {
+    setStoryFrequencySliders(freq);
+    // Trigger frequency update if audio is playing
+    if (window.updateFrequencies) {
+        window.updateFrequencies();
+    }
+}
+
+// Activate a soundscape for the story experience
+function activateSoundscape(soundscapeId) {
+    // Set the soundscape volume via state
+    if (!state.soundscapeSettings) state.soundscapeSettings = {};
+    if (!state.soundscapeSettings[soundscapeId]) {
+        state.soundscapeSettings[soundscapeId] = { vol: 0, tone: 1, speed: 1 };
+    }
+
+    // Set to moderate volume for story ambience
+    state.soundscapeSettings[soundscapeId].vol = 0.4;
+
+    // Update the UI slider if it exists
+    const volSlider = document.querySelector(`[data-soundscape-id="${soundscapeId}"] input[type="range"]`);
+    if (volSlider) {
+        volSlider.value = 0.4;
+        // Trigger input event to sync everything
+        volSlider.dispatchEvent(new Event('input'));
+    }
+
+    // If audio is playing, start the soundscape
+    if (state.isPlaying && window.updateSoundscape) {
+        window.updateSoundscape(soundscapeId, 'vol', 0.4);
+    }
+
+    console.log('[Stories] Activated soundscape:', soundscapeId);
+}
+
+// Deactivate a soundscape
+function deactivateSoundscape(soundscapeId) {
+    if (state.soundscapeSettings && state.soundscapeSettings[soundscapeId]) {
+        state.soundscapeSettings[soundscapeId].vol = 0;
+    }
+
+    const volSlider = document.querySelector(`[data-soundscape-id="${soundscapeId}"] input[type="range"]`);
+    if (volSlider) {
+        volSlider.value = 0;
+        volSlider.dispatchEvent(new Event('input'));
+    }
+
+    if (state.isPlaying && window.updateSoundscape) {
+        window.updateSoundscape(soundscapeId, 'vol', 0);
+    }
+
+    console.log('[Stories] Deactivated soundscape:', soundscapeId);
+}
+
+// Update UI to reflect story state
+function updateStoryUI(playing) {
+    const storyCards = document.querySelectorAll('.story-card');
+    storyCards.forEach(card => {
+        card.classList.remove('playing');
+    });
+
+    if (playing && storyState.currentStory) {
+        const activeCard = document.querySelector(`[data-story-id="${storyState.currentStory.id}"]`);
+        if (activeCard) {
+            activeCard.classList.add('playing');
+        }
+    }
+}
+
+// Show/hide stop story button
+function showStopButton(show) {
+    const stopBtn = document.getElementById('stopStoryBtn');
+    if (stopBtn) {
+        stopBtn.classList.toggle('hidden', !show);
+    }
+}
+
+// DEPRECATED: Use imported isPremiumUser
+// function isPremiumUser() { ... }
+
+// DEPRECATED: Use showPricingModal directly
+// function showPremiumPrompt(feature) { ... }
+
+// Toast helper
+function showToast(message, type = 'info') {
+    const colors = {
+        info: 'bg-[var(--accent)]/90 text-black',
+        success: 'bg-green-500/90 text-black',
+        warning: 'bg-amber-500/90 text-black',
+        error: 'bg-red-500/90 text-white'
+    };
+
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-24 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl text-sm font-medium z-50 transition-all ${colors[type] || colors.info}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Render story cards in UI
+export function renderStoryCards(container) {
+    if (!container) return;
+
+    // Check for Light Mode
+    const themeAttr = document.documentElement.getAttribute('data-theme') || document.body.getAttribute('data-theme');
+    const lightThemes = ['cloud', 'dawn', 'paper', 'ash', 'light'];
+    const isLight = lightThemes.includes(themeAttr) || document.body.getAttribute('data-theme-type') === 'light';
+
+    container.innerHTML = SLEEP_STORIES.map(story => {
+        const hasAudio = hasCustomAudio(story.id);
+        const isPlaying = storyState.currentStory?.id === story.id && storyState.isPlaying;
+
+        // Determine styling base on theme and state
+        let cardClasses = `bg-white/5 border border-white/10 hover:bg-white/10 hover:border-purple-500/50`;
+        let cardStyle = '';
+
+        if (!isPlaying && isLight) {
+            // Light Mode Outline Style
+            // Using inline styles for precise accent color matching as fallback or primary
+            cardClasses = `bg-transparent border transition-all hover:bg-[var(--accent)]/5`;
+            cardStyle = `border-color: var(--accent); color: var(--accent);`;
+        }
+
+        return `
+        <div class="story-card group relative flex flex-col items-center justify-center p-3 rounded-xl transition-all ${story.premium ? 'premium-content' : ''} ${isPlaying ? 'playing border-purple-500 bg-purple-500/10' : cardClasses}"
+            style="${isPlaying ? '' : cardStyle}"
+            data-story-id="${story.id}">
+            
+            <!-- Premium badge -->
+            <div class="absolute top-1 right-1 flex gap-1">
+                ${hasAudio ? '<span class="text-[8px] px-1 py-0.5 rounded-full bg-green-500/20 text-green-400">🎵</span>' : ''}
+                ${story.premium ? '<span class="text-[8px] px-1 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-bold">PRO</span>' : ''}
+            </div>
+            
+            <!-- Icon with play indicator -->
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center mb-2 ${isPlaying ? 'animate-pulse' : ''}">
+                ${isPlaying
+                ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="text-purple-300"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
+                : '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="text-purple-300"><polygon points="5,3 19,12 5,21"/></svg>'
+            }
+            </div>
+            
+            <!-- Title and duration -->
+            <span class="text-[10px] font-bold text-purple-300 text-center leading-tight">${story.title}</span>
+            <span class="text-[8px] text-[var(--text-muted)] mt-0.5">${story.duration}${story.bpm ? ` • ${story.bpm} BPM` : ''}</span>
+            
+            <!-- Action buttons - styled like other right menu buttons -->
+            <div class="flex justify-center gap-1 mt-2 w-full">
+                <button class="story-play-btn flex-1 px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-purple-300 text-[9px] font-bold hover:bg-purple-500/20 hover:border-purple-500/30 transition-all"
+                    onclick="event.stopPropagation(); window.playStoryById('${story.id}')">
+                    ${isPlaying ? '⏹ Stop' : '▶ Play'}
+                </button>
+                <label class="story-upload-btn px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-[var(--text-muted)] text-[9px] font-bold hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer"
+                    onclick="event.stopPropagation()" title="${hasAudio ? 'Replace audio' : 'Upload audio'}">
+                    ${hasAudio ? '🔄' : '📤'}
+                    <input type="file" accept="audio/*" class="hidden" onchange="window.uploadStoryAudioHandler(event, '${story.id}')">
+                </label>
+            </div>
+        </div>
+    `;
+    }).join('');
+
+    // Add click handler for card itself
+    container.querySelectorAll('.story-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const storyId = card.dataset.storyId;
+            if (storyState.currentStory?.id === storyId && storyState.isPlaying) {
+                stopStory();
+            } else {
+                playStory(storyId);
+            }
+        });
+    });
+}
+
+// Global function for onclick handlers
+window.playStoryById = (storyId) => {
+    if (storyState.currentStory?.id === storyId && storyState.isPlaying) {
+        stopStory();
+    } else {
+        playStory(storyId);
+    }
+};
+
+// Global handler for file uploads
+window.uploadStoryAudioHandler = async (event, storyId) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 100MB)
+    if (file.size > 100 * 1024 * 1024) {
+        showToast('File too large (max 100MB)', 'error');
+        return;
+    }
+
+    await uploadStoryAudio(storyId, file);
+};
+
+// Export stopStory for main.js wiring
+export { stopStory as stopCurrentStory };

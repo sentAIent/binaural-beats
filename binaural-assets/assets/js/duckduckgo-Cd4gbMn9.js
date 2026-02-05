@@ -1,0 +1,1 @@
+const s="/assets/svg/duckduckgo-Bufp3z3v.svg";export{s as default};

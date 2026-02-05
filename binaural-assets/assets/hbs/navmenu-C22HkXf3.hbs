@@ -1,0 +1,118 @@
+<div class="settings-nav-header">
+	<div class="settings-nav-chooser">
+		<span class="settings-nav-active">{{ active }}</span><svg class="setting-nav-icon icon icon-angle-down" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 55.751 55.751"><path d="M31.836 43.006c.282-.281.518-.59.725-.912L54.17 20.485a5.403 5.403 0 0 0 0-7.638 5.403 5.403 0 0 0-7.638 0l-18.608 18.61L9.217 12.753A5.4 5.4 0 0 0 0 16.571a5.363 5.363 0 0 0 1.582 3.816l21.703 21.706c.207.323.445.631.729.913a5.367 5.367 0 0 0 3.91 1.572 5.37 5.37 0 0 0 3.912-1.572z"></path></svg>
+	</div>
+
+	<div class="settings-nav-user">
+		{{#if loggedIn}}
+			<div class="user-container u--no-transition">
+				<div class="user" data-test="user-info" title="{{email}}">
+					<div class="user-row">
+						<div class="user-avatar-wrapper" data-test="avatar-wrapper">
+							<div class="user-avatar">
+								<img class="user-avatar-img" src="/img/icon/anonymous.jpg">
+								<div class="user-badge-wrapper">
+									{{#if isMomentum}}<span class="badge badge-plus" data-test="plus">PLUS</span>{{/if}}
+									<span class="badge badge-team" data-test="team">TEAM</span>
+								</div>
+							</div>
+							<div class="user-avatar-hidden"><img src=""></div>
+						</div>
+
+						<span class="user-name-wrapper">
+							<span class="user-info-name">{{displayName}}</span>
+							<span class="anim-caret u--no-transition">
+								<svg class="icon anim-caret-left" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52.16 11.75"><path d="M52.16,26.08A5.87,5.87,0,0,1,46.29,32H5.88A5.88,5.88,0,0,1,0,26.08H0a5.87,5.87,0,0,1,5.88-5.87H46.29a5.87,5.87,0,0,1,5.87,5.87Z" transform="translate(0 -20.21)"/></svg>
+								<svg class="icon anim-caret-right" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52.16 11.75"><path d="M52.16,26.08A5.87,5.87,0,0,1,46.29,32H5.88A5.88,5.88,0,0,1,0,26.08H0a5.87,5.87,0,0,1,5.88-5.87H46.29a5.87,5.87,0,0,1,5.87,5.87Z" transform="translate(0 -20.21)"/></svg>
+							</span>
+						</span>
+					</div>
+
+					<div class="user-nav-desktop">
+						<ul class="user-nav">
+							<li class="action action-profile" data-test="profile">Profile</li>
+							<li class="action action-logout">Log Out</li>
+						</ul>
+						<div class="user-close"></div>
+					</div>
+
+					<div class="user-nav-mobile">
+						<nav class="user-nav dropdown nipple nipple-top-right">
+							<ul class="dropdown-list">
+								<li class="dropdown-list-item action action-profile">Profile</li>
+								<li class="dropdown-list-item action action-logout">Log Out</li>
+							</ul>
+						</nav>
+					</div>
+				</div>
+			</div>
+
+		{{else}}
+
+			<div class="user login" data-test="user-unregistered-action">
+				<div class="button login-button">
+					<div class="login-title">Log In<span class="slash">/</span>Sign up</div>
+					<div class="login-description">Sync your account</div>
+				</div>
+			</div>
+		{{/if}}
+	</div>
+
+	<span class="mobile-close">
+		<span class="icon-wrapper u--mobile-show-bg hide">
+			<svg class="icon icon-hide" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 348.333 348.334"><path d="M336.559 68.611L231.016 174.165l105.543 105.549c15.699 15.705 15.699 41.145 0 56.85-7.844 7.844-18.128 11.769-28.407 11.769-10.296 0-20.581-3.919-28.419-11.769L174.167 231.003 68.609 336.563c-7.843 7.844-18.128 11.769-28.416 11.769-10.285 0-20.563-3.919-28.413-11.769-15.699-15.698-15.699-41.139 0-56.85l105.54-105.549L11.774 68.611c-15.699-15.699-15.699-41.145 0-56.844 15.696-15.687 41.127-15.687 56.829 0l105.563 105.554L279.721 11.767c15.705-15.687 41.139-15.687 56.832 0 15.705 15.699 15.705 41.145.006 56.844z"/></svg>
+		</span>
+	</span>
+</div>
+
+<div class="settings-nav-list" data-test="nav-menu">
+	{{#each menu.navItems}}
+		<div data-navitem="{{id}}" class="settings-nav-item" data-test="nav-menu-{{id}}">{{title}}</div>
+	{{/each}}
+
+	{{#each menu.secondaryNavItems}}
+	{{#if isUpgradeButton}}
+		<div class="upgrade-button-experiment settings-nav-item secondary" data-navitem="{{id}}" data-test="nav-menu-{{id}}">
+			<div class="title">{{title}}</div>
+			<svg class="title" width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+				<path d="M11.9687 4.34566C11.8902 4.10267 11.6746 3.93009 11.4197 3.90711L7.95614 3.59262L6.58656 0.387003C6.48558 0.152073 6.25559 0 6.00006 0C5.74453 0 5.51455 0.152073 5.41356 0.387553L4.04399 3.59262L0.579909 3.90711C0.325385 3.93064 0.110414 4.10267 0.0314019 4.34566C-0.0476102 4.58865 0.0253592 4.85516 0.2179 5.02317L2.83592 7.31919L2.06393 10.7198C2.00744 10.9699 2.10448 11.2283 2.31195 11.3783C2.42346 11.4588 2.55393 11.4999 2.68549 11.4999C2.79893 11.4999 2.91145 11.4693 3.01244 11.4089L6.00006 9.62326L8.98659 11.4089C9.20513 11.5403 9.48062 11.5283 9.68763 11.3783C9.89518 11.2279 9.99214 10.9693 9.93565 10.7198L9.16366 7.31919L11.7817 5.02363C11.9742 4.85516 12.0477 4.58911 11.9687 4.34566Z" fill="currentColor"/>
+			</svg>
+		</div>
+		<style>
+			.upgrade-button-experiment {
+				display: flex !important;
+				align-items: center;
+				justify-content: space-between;
+			}
+			.upgrade-button-experiment .title {
+				opacity: var(--opacity-stop-4) !important;
+			}
+
+			.upgrade-button-experiment:hover .title {
+				opacity: var(--opacity-stop-5) !important;
+			}
+		</style>
+	{{else}}
+		<div data-navitem="{{id}}" class="settings-nav-item secondary {{#if @first}} secondary-first{{/if}} {{#if class}}{{class}}{{/if}}" data-test="nav-menu-{{id}}">{{title}}</div>
+	{{/if}}
+	{{/each}}
+</div>
+<style>
+.upgrade-button-experiment {
+	margin: 0 11px;
+	position: relative;
+	--app-padding: 10px;
+	overflow: hidden;
+	background-color: var(--color-stop-1);
+	border-radius: var(--radius-m);
+	cursor: pointer;
+	opacity: 1 !important;
+	padding-top: 5px !important;
+	padding-bottom: 5px !important;
+}
+
+.upgrade-button-experiment:hover {
+	background-color: var(--color-stop-2);
+}
+</style>
+
