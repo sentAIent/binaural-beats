@@ -109,6 +109,10 @@ export function setupUI() {
     els.sphereBtn = document.getElementById('sphereBtn');
     els.flowBtn = document.getElementById('flowBtn');
     els.lavaBtn = document.getElementById('lavaBtn');
+    els.fireplaceBtn = document.getElementById('fireplaceBtn');
+    els.rainBtn = document.getElementById('rainBtn');
+    els.zenBtn = document.getElementById('zenBtn');
+    els.oceanBtn = document.getElementById('oceanBtn');
 
     // Session Timer Elements
     els.sessionDuration = document.getElementById('sessionDuration');
@@ -493,6 +497,10 @@ export function setupUI() {
     if (els.sphereBtn) els.sphereBtn.addEventListener('click', () => setVisualMode('sphere'));
     if (els.flowBtn) els.flowBtn.addEventListener('click', () => setVisualMode('particles'));
     if (els.lavaBtn) els.lavaBtn.addEventListener('click', () => setVisualMode('lava'));
+    if (els.fireplaceBtn) els.fireplaceBtn.addEventListener('click', () => setVisualMode('fireplace'));
+    if (els.rainBtn) els.rainBtn.addEventListener('click', () => setVisualMode('rainforest'));
+    if (els.zenBtn) els.zenBtn.addEventListener('click', () => setVisualMode('zengarden'));
+    if (els.oceanBtn) els.oceanBtn.addEventListener('click', () => setVisualMode('ocean'));
     if (els.visualSpeedSlider) {
 
         els.visualSpeedSlider.addEventListener('input', (e) => {
@@ -1487,7 +1495,11 @@ export function setVisualMode(mode) {
     const buttons = [
         { el: els.sphereBtn, mode: 'sphere' },
         { el: els.flowBtn, mode: 'particles' },
-        { el: els.lavaBtn, mode: 'lava' }
+        { el: els.lavaBtn, mode: 'lava' },
+        { el: els.fireplaceBtn, mode: 'fireplace' },
+        { el: els.rainBtn, mode: 'rainforest' },
+        { el: els.zenBtn, mode: 'zengarden' },
+        { el: els.oceanBtn, mode: 'ocean' }
     ];
 
     buttons.forEach(({ el, mode: btnMode }) => {
@@ -2614,13 +2626,13 @@ function updateCategoryTabs() {
             if (cat === 'ambient') {
                 tab.classList.add('bg-purple-500/20', 'text-purple-400', 'border', 'border-purple-500/30');
             } else if (cat === 'pulse') {
-                tab.classList.add('bg-pink-500/20', 'text-pink-400', 'border', 'border-pink-500/30');
+                tab.classList.add('bg-red-500/20', 'text-red-400', 'border', 'border-red-500/30');
             } else if (cat === 'texture') {
-                tab.classList.add('bg-cyan-500/20', 'text-cyan-400', 'border', 'border-cyan-500/30');
+                tab.classList.add('bg-yellow-500/20', 'text-yellow-400', 'border', 'border-yellow-500/30');
             } else if (cat === 'healing') {
                 tab.classList.add('bg-emerald-500/20', 'text-emerald-400', 'border', 'border-emerald-500/30');
             } else if (cat === 'drops') {
-                tab.classList.add('bg-red-500/20', 'text-red-400', 'border', 'border-red-500/30');
+                tab.classList.add('bg-blue-500/20', 'text-blue-400', 'border', 'border-blue-500/30');
             }
         } else {
             // Inactive state
@@ -2671,17 +2683,17 @@ function renderDJPads(category) {
         gradientFrom = 'from-purple-500'; gradientTo = 'to-violet-600';
         borderColor = 'border-purple-500/30'; textColor = 'text-purple-400'; glowColor = 'shadow-purple-500/30';
     } else if (category === 'pulse') {
-        gradientFrom = 'from-pink-500'; gradientTo = 'to-rose-600';
-        borderColor = 'border-pink-500/30'; textColor = 'text-pink-400'; glowColor = 'shadow-pink-500/30';
+        gradientFrom = 'from-red-500'; gradientTo = 'to-rose-600';
+        borderColor = 'border-red-500/30'; textColor = 'text-red-400'; glowColor = 'shadow-red-500/30';
     } else if (category === 'texture') {
-        gradientFrom = 'from-cyan-500'; gradientTo = 'to-teal-600';
-        borderColor = 'border-cyan-500/30'; textColor = 'text-cyan-400'; glowColor = 'shadow-cyan-500/30';
+        gradientFrom = 'from-yellow-500'; gradientTo = 'to-amber-600';
+        borderColor = 'border-yellow-500/30'; textColor = 'text-yellow-400'; glowColor = 'shadow-yellow-500/30';
     } else if (category === 'healing') {
         gradientFrom = 'from-emerald-500'; gradientTo = 'to-green-600';
         borderColor = 'border-emerald-500/30'; textColor = 'text-emerald-400'; glowColor = 'shadow-emerald-500/30';
     } else if (category === 'drops') {
-        gradientFrom = 'from-red-500'; gradientTo = 'to-orange-600';
-        borderColor = 'border-red-500/30'; textColor = 'text-red-400'; glowColor = 'shadow-red-500/30';
+        gradientFrom = 'from-blue-500'; gradientTo = 'to-cyan-600';
+        borderColor = 'border-blue-500/30'; textColor = 'text-blue-400'; glowColor = 'shadow-blue-500/30';
     } else if (category === 'bass') {
         gradientFrom = 'from-indigo-500'; gradientTo = 'to-blue-600';
         borderColor = 'border-indigo-500/30'; textColor = 'text-indigo-400'; glowColor = 'shadow-indigo-500/30';
@@ -2825,10 +2837,10 @@ renderAllDJPads = function () {
 
         // Category-specific styling
         let headerColor = 'text-purple-400';
-        if (category === 'pulse') headerColor = 'text-pink-400';
-        else if (category === 'texture') headerColor = 'text-cyan-400';
+        if (category === 'pulse') headerColor = 'text-red-400';
+        else if (category === 'texture') headerColor = 'text-yellow-400';
         else if (category === 'healing') headerColor = 'text-emerald-400';
-        else if (category === 'drops') headerColor = 'text-red-400';
+        else if (category === 'drops') headerColor = 'text-blue-400';
 
         const icon = catData.sounds[Object.keys(catData.sounds)[0]]?.icon || '';
         header.innerHTML = `<span class="${headerColor}">${icon} ${category.toUpperCase()}</span>`;
@@ -2841,17 +2853,17 @@ renderAllDJPads = function () {
             gradientFrom = 'from-purple-500'; gradientTo = 'to-violet-600';
             borderColor = 'border-purple-500/30'; glowColor = 'shadow-purple-500/30';
         } else if (category === 'pulse') {
-            gradientFrom = 'from-pink-500'; gradientTo = 'to-rose-600';
-            borderColor = 'border-pink-500/30'; glowColor = 'shadow-pink-500/30';
+            gradientFrom = 'from-red-500'; gradientTo = 'to-rose-600';
+            borderColor = 'border-red-500/30'; glowColor = 'shadow-red-500/30';
         } else if (category === 'texture') {
-            gradientFrom = 'from-cyan-500'; gradientTo = 'to-teal-600';
-            borderColor = 'border-cyan-500/30'; glowColor = 'shadow-cyan-500/30';
+            gradientFrom = 'from-yellow-500'; gradientTo = 'to-amber-600';
+            borderColor = 'border-yellow-500/30'; glowColor = 'shadow-yellow-500/30';
         } else if (category === 'healing') {
             gradientFrom = 'from-emerald-500'; gradientTo = 'to-green-600';
             borderColor = 'border-emerald-500/30'; glowColor = 'shadow-emerald-500/30';
         } else if (category === 'drops') {
-            gradientFrom = 'from-red-500'; gradientTo = 'to-orange-600';
-            borderColor = 'border-red-500/30'; glowColor = 'shadow-red-500/30';
+            gradientFrom = 'from-blue-500'; gradientTo = 'to-cyan-600';
+            borderColor = 'border-blue-500/30'; glowColor = 'shadow-blue-500/30';
         }
 
         // Add all pads for this category

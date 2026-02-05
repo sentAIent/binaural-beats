@@ -1,6 +1,6 @@
 import { state, els, THEMES, SOUNDSCAPES, PRESET_COMBOS } from '../state.js';
 import { startAudio, stopAudio, updateFrequencies, updateBeatsVolume, updateMasterVolume, updateMasterBalance, updateAtmosMaster, updateSoundscape, registerUICallback, fadeIn, fadeOut, cancelFadeOut, cancelStopAudio, resetAllSoundscapes, isVolumeHigh, playCompletionChime, setAudioMode, getAudioMode, startSweep, stopSweep, startSweepPreset, isSweepActive, isAudioPlaying, SWEEP_PRESETS } from '../audio/engine.js';
-import { initVisualizer, toggleVisual, setVisualSpeed, setVisualColor, pauseVisuals, resumeVisuals, getVisualizer, isVisualsPaused } from '../visuals/visualizer_nuclear_v3.js?v=FIX_CUSTOM_FINAL';
+import { initVisualizer, toggleVisual, setVisualSpeed, setVisualColor, pauseVisuals, resumeVisuals, getVisualizer, isVisualsPaused } from '../visuals/visualizer_nuclear_v4.js';
 import { startRecording, stopRecording, startExport, cancelExport, updateExportPreview } from '../export/recorder.js';
 import { openAuthModal, renderLibraryList } from './auth-controller.js';
 import { saveMixToCloud } from '../services/firebase.js';

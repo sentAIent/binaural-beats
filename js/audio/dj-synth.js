@@ -145,7 +145,7 @@ export const DJ_SOUNDS = {
     pulse: {
         label: 'Pulse',
         icon: '💓',
-        color: 'from-pink-500 to-rose-600',
+        color: 'from-red-500 to-rose-600',
         sounds: {
             heartbeat: { label: 'Heartbeat', icon: '❤️', canLoop: true },
             shaker: { label: 'Soft Shaker', icon: '🎵', canLoop: true },
@@ -160,7 +160,7 @@ export const DJ_SOUNDS = {
     texture: {
         label: 'Texture',
         icon: '🌊',
-        color: 'from-cyan-500 to-teal-600',
+        color: 'from-yellow-500 to-amber-600',
         sounds: {
             sweepup: { label: 'Rise', icon: '⬆️', canLoop: true },
             sweepdown: { label: 'Fall', icon: '⬇️', canLoop: true },
@@ -190,7 +190,7 @@ export const DJ_SOUNDS = {
     drops: {
         label: 'Drops',
         icon: '💥',
-        color: 'from-red-500 to-orange-600',
+        color: 'from-blue-500 to-cyan-600',
         sounds: {
             riser: { label: 'Build Up', icon: '📈', canLoop: true },
             impact: { label: 'Impact', icon: '💥', canLoop: true },
