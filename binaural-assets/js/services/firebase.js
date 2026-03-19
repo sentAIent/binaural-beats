@@ -34,15 +34,42 @@ export async function initFirebase() {
     try {
         const firebaseConfig = JSON.parse(window.__firebase_config || '{}');
 
-        // Validation: Check if config is dummy
-        if (firebaseConfig.apiKey === "dummy-api-key") {
-            console.warn("Using Dummy Firebase Config - ACTIVATING MOCK MODE");
+        // Validation: Check if config is missing or dummy
+        if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "dummy-api-key") {
+            console.warn(`[Firebase] No valid config found (apiKey: ${firebaseConfig.apiKey}) - ACTIVATING MOCK MODE`);
             isMock = true;
-            // ✅ FIX Issue #7: Wrap JSON.parse in try/catch
+
+            // CHECK FOR URL PARAM OVERRIDE (Bypasses localStorage blocks)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mock_profile') === 'full') {
+                console.log('[Firebase] ✅ URL override: activating FULL MOCK PROFILE');
+
+                const fullProfile = {
+                    uid: "user-referred-123",
+                    email: "referred@example.com",
+                    displayName: "Referred Friend",
+                    photoURL: "https://api.dicebear.com/7.x/avataaars/svg?seed=ReferredFriend"
+                };
+
+                state.currentUser = fullProfile;
+
+                // Set global flags for other services (Bypasses Firestore/Storage)
+                window.__MOCK_PREMIUM = true;
+                window.__MOCK_ANALYTICS = true;
+
+                console.log("[Mock] Auto-login (URL):", fullProfile.displayName);
+                authCallbacks.forEach(cb => cb(fullProfile));
+                return;
+            }
+
+            // Normal localStorage Mock
             const storedUser = localStorage.getItem('mindwave_mock_user');
             if (storedUser) {
                 try {
                     const user = JSON.parse(storedUser);
+                    if (localStorage.getItem('mindwave_premium') === 'true') {
+                        window.__MOCK_PREMIUM = true;
+                    }
                     state.currentUser = user;
                     console.log("[Mock] Auto-login:", user.displayName);
                     authCallbacks.forEach(cb => cb(user));

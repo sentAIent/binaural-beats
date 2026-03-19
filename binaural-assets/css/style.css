@@ -41,7 +41,7 @@ body {
     transition: background-color 0.5s, color 0.5s;
     overscroll-behavior: none;
     touch-action: manipulation;
-    cursor: url('/mindwave-logo.png') 8 8, auto;
+    cursor: auto;
 }
 
 /* Interactive elements - pointer cursor with MW logo */
@@ -58,7 +58,7 @@ button,
 .dj-pad,
 [onclick],
 .cursor-pointer {
-    cursor: url('/mindwave-logo.png') 8 8, auto !important;
+    cursor: pointer;
 }
 
 /* Text input elements - standard text cursor */
@@ -72,11 +72,11 @@ textarea {
 
 /* Range sliders - inherit cursor */
 input[type='range'] {
-    cursor: url('/mindwave-logo.png') 8 8, auto !important;
+    cursor: pointer;
 }
 
 input[type='range']::-webkit-slider-thumb {
-    cursor: url('/mindwave-logo.png') 8 8, auto !important;
+    cursor: pointer;
 }
 
 
@@ -313,12 +313,17 @@ a:active,
 }
 
 /* sentAIent Theme: Force Headers to Orange, everything else follows base theme (Blue) */
+body[data-theme="sentaient"] {
+    --accent: #fc9c36 !important;
+    --accent-glow: rgba(252, 156, 54, 0.4) !important;
+}
+
 body[data-theme="sentaient"] .mixer-section h3,
 body[data-theme="sentaient"] [data-section="atmosphere"] h3,
 body[data-theme="sentaient"] [data-section="journeys"] h3,
 body[data-theme="sentaient"] #rightPanel h3,
 body[data-theme="sentaient"] #leftPanel .section-label {
-    color: #fc9c36 !important;
+    color: var(--accent) !important;
 }
 
 /* 
@@ -511,10 +516,9 @@ span[id$="Val"] {
 }
 
 .atmos-sublabel {
-    color: var(--accent) !important;
-    /* Universal Accent Color */
-    font-weight: 600;
-    opacity: 0.9;
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-weight: 500;
+    opacity: 1;
 }
 
 /* MIXER HEADERS - Force Accent Color */
@@ -526,25 +530,31 @@ span[id$="Val"] {
 
 /* MIXER SECTIONS UNIVERSAL ENFORCEMENT (User Request: "Everything match theme") */
 /* Targets: Section Header Icon, Labels, Item Names, Muted Text */
-[data-section="atmosphere"] .text-\[var\(--text-muted\)\],
 [data-section="atmosphere"] svg,
 [data-section="atmosphere"] label,
-[data-section="journeys"] .text-\[var\(--text-muted\)\],
 [data-section="journeys"] svg,
 [data-section="journeys"] label,
-[data-section="djpads"] .text-\[var\(--text-muted\)\],
 [data-section="djpads"] svg,
 [data-section="djpads"] label,
-[data-section="stories"] .text-\[var\(--text-muted\)\],
 [data-section="stories"] svg,
 [data-section="stories"] label,
-[data-section="uploads"] .text-\[var\(--text-muted\)\],
 [data-section="uploads"] svg,
 [data-section="uploads"] label,
-[data-section="classical"] .text-\[var\(--text-muted\)\],
 [data-section="classical"] svg,
 [data-section="classical"] label {
     color: var(--accent) !important;
+}
+
+/* Explicitly target Mixer/Fader Labels to be readable (Neutral) */
+.fader-label {
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+.fader-value {
+    color: var(--accent) !important;
+    font-weight: 700;
 }
 
 /* Top Bar Labels (PITCH, BEAT, VOL) */
@@ -784,12 +794,12 @@ input[type=range]::-webkit-slider-runnable-track {
         max-width: calc(100vw - 32px);
     }
 
-    /* Make modal content scrollable */
+    /* Modal content should stay centered if possible, but allow natural scroll */
     .modal {
-        align-items: flex-start;
-        padding-top: 2rem;
-        padding-bottom: 100px;
-        /* Space for mobile nav */
+        align-items: center;
+        padding-top: 1rem;
+        padding-bottom: 80px;
+        /* Balanced space for mobile nav */
     }
 }
 
@@ -1099,10 +1109,10 @@ select {
 /* --- COCKPIT LAYOUT (Desktop) --- */
 @media (min-width: 1024px) {
 
-    /* Fixed Sidebars with Enhanced Glassmorphism */
+    /* Fixed Sidebars with Enhanced Glassmorphism - Increased Opacity for Background Masking */
     #leftPanel {
         transform: translateX(0) !important;
-        background: rgba(15, 23, 42, 0.75);
+        background: rgba(15, 23, 42, 0.98);
         backdrop-filter: blur(24px) saturate(150%);
         -webkit-backdrop-filter: blur(24px) saturate(150%);
         box-shadow:
@@ -1112,7 +1122,7 @@ select {
 
     #rightPanel {
         transform: translateX(0) !important;
-        background: rgba(15, 23, 42, 0.75);
+        background: rgba(15, 23, 42, 0.98);
         backdrop-filter: blur(24px) saturate(150%);
         -webkit-backdrop-filter: blur(24px) saturate(150%);
         box-shadow:
@@ -1128,14 +1138,12 @@ select {
         display: none !important;
     }
 
-    /* Adjust Center Content to fit between panels */
+    /* Adjust Center Content to fit between panels - handled dynamically by resize-panels.js */
     header,
     #tapZone {
         transition: all 0.5s ease;
-        margin-left: 16rem;
-        /* Match w-64 */
-        margin-right: 20rem;
-        /* Match w-80 */
+        margin-left: 0;
+        margin-right: 0;
     }
 
 }
@@ -1583,12 +1591,37 @@ button,
 }
 
 /* Responsive Footer */
+/* Responsive Footer */
 .footer-compact {
-    gap: 1rem !important;
+    gap: 0.5rem !important;
+    height: auto !important;
+    min-height: 80px !important;
+    max-height: none !important;
+    flex-wrap: wrap !important;
+    padding-bottom: 2rem !important;
+    justify-content: center !important;
+    overflow: visible !important;
+    /* Allow vertical expansion when wrapping */
+    flex-direction: row !important;
+    /* Ensure horizontal layout that can wrap */
 }
 
 .footer-medium {
     gap: 1.5rem !important;
+}
+
+/* Ensure children behave well when wrapped - force all columns to stack vertically in compact mode */
+.footer-compact>div {
+    margin-bottom: 0.5rem;
+    width: 100%;
+    max-width: 100%;
+    flex: 1 0 100%;
+    /* Take full width, forcing each column to its own row */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 /* Hide labels in compact footer to save space */
@@ -1603,13 +1636,13 @@ button,
 
 /* Scale down Visual Dock in compact mode */
 .footer-compact .visual-btn {
-    height: 3.5rem !important;
-    min-width: 3.5rem !important;
+    height: 3rem !important;
+    min-width: 3rem !important;
     padding: 0.25rem !important;
 }
 
 .footer-compact .visual-btn span.text-2xl {
-    font-size: 1.5rem !important;
+    font-size: 1.25rem !important;
 }
 
 /* Hide some elements in medium mode if needed */
@@ -1621,6 +1654,8 @@ button,
 .footer-compact #leftToggle,
 .footer-compact #rightToggle {
     transform: scale(0.9);
+    position: relative;
+    /* Changed from absolute - let them flow with content */
 }
 
 /* ================================ */
@@ -2617,6 +2652,61 @@ body[data-theme="dawn"] input[type="range"] {
 body[data-theme="cloud"] input[type="range"]::-webkit-slider-runnable-track,
 body[data-theme="dawn"] input[type="range"]::-webkit-slider-runnable-track {
     background: var(--border) !important;
+}
+
+/* Modal & Glassmorphic Component Overrides for Light Mode */
+[data-theme-type="light"] .modal>.glass-card,
+[data-theme-type="light"] .modal>div>.glass-card,
+[data-theme-type="light"] .glass-card:not(aside) {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    backdrop-filter: blur(40px) saturate(180%);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Enforce dark text inside light-mode modals - Expanded set */
+[data-theme-type="light"] .modal h2,
+[data-theme-type="light"] .modal h3,
+[data-theme-type="light"] .modal p,
+[data-theme-type="light"] .modal .text-white,
+[data-theme-type="light"] .modal .text-lg,
+[data-theme-type="light"] .modal .text-sm,
+[data-theme-type="light"] .modal .text-xs,
+[data-theme-type="light"] .modal .auth-text-high,
+[data-theme-type="light"] .modal .auth-text-muted,
+[data-theme-type="light"] .modal span.text-white,
+[data-theme-type="light"] .modal #authToggle,
+[data-theme-type="light"] .modal #forgotPasswordBtn,
+[data-theme-type="light"] .modal p.auth-text-muted,
+[data-theme-type="light"] .modal div:not([class*="text-"]):not([class*="text-amber"]):not([class*="text-red"]),
+[data-theme-type="light"] .modal div[class*="text-slate-"],
+[data-theme-type="light"] .modal span[class*="text-slate-"] {
+    color: var(--text-main) !important;
+}
+
+/* Specific fix for amber text in light mode (e.g. Unlimited status) */
+[data-theme-type="light"] .text-amber-400 {
+    color: #b45309 !important;
+    /* amber-700/800 equivalent for high contrast */
+}
+
+[data-theme-type="light"] .modal .text-white:hover {
+    color: var(--accent) !important;
+}
+
+
+
+/* Fix for specific bottom links in auth modal */
+[data-theme-type="light"] .modal #authSubtitle,
+[data-theme-type="light"] .modal #resetPasswordBtn,
+[data-theme-type="light"] .modal button[id*="toggle"],
+[data-theme-type="light"] .modal .cursor-pointer span {
+    color: var(--text-main) !important;
+}
+
+[data-theme-type="light"] .modal .bg-\[var\(--bg-main\)\]\/50 {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
 }
 
 body[data-theme="cloud"] input[type="range"]::-webkit-slider-thumb,

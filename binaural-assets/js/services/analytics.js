@@ -215,6 +215,27 @@ export function getWeeklyData() {
     return days;
 }
 
+// --- SYNC DAILY USAGE ---
+
+export function syncDailyUsage() {
+    try {
+        const dailyUsage = JSON.parse(localStorage.getItem('mindwave_daily_usage') || '{}');
+        if (!dailyUsage.minutes || dailyUsage.synced) return;
+
+        const analytics = getAnalytics();
+        analytics.stats.totalMinutes += dailyUsage.minutes;
+
+        // Mark as synced to avoid double-counting
+        dailyUsage.synced = true;
+        localStorage.setItem('mindwave_daily_usage', JSON.stringify(dailyUsage));
+
+        saveAnalytics(analytics);
+        console.log('[Analytics] Synced daily usage:', dailyUsage.minutes, 'minutes');
+    } catch (e) {
+        console.warn('[Analytics] Failed to sync daily usage:', e);
+    }
+}
+
 // --- CLEAR DATA ---
 
 export function clearAnalytics() {

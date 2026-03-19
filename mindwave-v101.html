@@ -1,0 +1,3040 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f172a">
+    <script>
+        // AGGRESSIVE SW PURGE - Force browser to dump cache and unregister phantom workers
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                for (let registration of registrations) {
+                    console.log('[CACHE-BUSTER] Force Unregistering SW:', registration);
+                    registration.unregister();
+                }
+            });
+        }
+        console.log("CACHE-BUSTER BOOT: NUCLEAR_V101 - Date: " + new Date().toISOString());
+    </script>
+
+    <!-- Driver.js (Premium Tour Engine) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css" />
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+
+    <style>
+        /* Driver.js Premium Theme (Tesla/Apple Style) */
+        .driverjs-theme-premium {
+            background-color: rgba(15, 23, 42, 0.95) !important;
+            color: #ffffff !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9) !important;
+            padding: 24px !important;
+            max-width: 360px !important;
+        }
+
+        /* Typography */
+        .driver-popover-title {
+            font-family: 'Inter', system-ui, sans-serif !important;
+            font-size: 20px !important;
+            font-weight: 700 !important;
+            letter-spacing: -0.5px !important;
+            color: #2dd4bf !important;
+            /* Teal Accent */
+            margin-bottom: 12px !important;
+        }
+
+        .driver-popover-description {
+            font-family: 'Inter', system-ui, sans-serif !important;
+            font-size: 15px !important;
+            line-height: 1.6 !important;
+            color: #cbd5e1 !important;
+            /* Slate 300 */
+        }
+
+        /* Buttons (Ghost / Premium) */
+        .driver-popover-footer button {
+            background-color: transparent !important;
+            color: #94a3b8 !important;
+            text-shadow: none !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 8px !important;
+            padding: 8px 16px !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            transition: all 0.2s ease;
+        }
+
+        .driver-popover-footer button:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+        }
+
+        /* Primary "Next" Button Highlight */
+        .driver-popover-footer button.driver-popover-next-btn {
+            background-color: #2dd4bf !important;
+            color: #0f172a !important;
+            /* Dark Text */
+            border: none !important;
+            box-shadow: 0 0 15px rgba(45, 212, 191, 0.2) !important;
+        }
+
+        .driver-popover-footer button.driver-popover-next-btn:hover {
+            background-color: #5eead4 !important;
+            /* Brighter Teal */
+            box-shadow: 0 0 25px rgba(45, 212, 191, 0.4) !important;
+            transform: translateY(-1px);
+        }
+
+        /* Close Button */
+        .driver-popover-close-btn {
+            color: #64748b !important;
+            transition: color 0.2s !important;
+        }
+
+        .driver-popover-close-btn:hover {
+            color: white !important;
+        }
+
+        /* Progress Text */
+        .driver-popover-progress-text {
+            color: #475569 !important;
+            font-family: monospace !important;
+            font-size: 10px !important;
+        }
+
+        /* Footer Compact Mode - Hide speed/color controls in left group */
+        .footer-compact #speedSliderContainer,
+        .footer-compact .left-group-color-controls {
+            display: none !important;
+        }
+
+        /* Show compact-mode-only elements only when footer is compact */
+        .compact-only {
+            display: none !important;
+        }
+
+        .footer-compact .compact-only {
+            display: flex !important;
+        }
+
+        /* Matrix Rainbow Toggle Fill */
+        #matrixRainbowToggle:checked+.rainbow-track {
+            background: var(--accent) !important;
+            box-shadow: 0 0 10px var(--accent);
+        }
+    </style>
+
+    <!-- Import Map for ES6 Module Resolution -->
+    <script type="importmap">
+    {
+        "imports": {
+            "firebase/app": "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js",
+            "firebase/auth": "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js",
+            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js"
+        }
+    }
+    </script>
+
+
+    <style>
+        /* Driver.js Premium Theme (Tesla/Apple Style) */
+        .driverjs-theme-premium {
+            background-color: rgba(15, 23, 42, 0.95) !important;
+            color: #ffffff !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9) !important;
+            padding: 24px !important;
+            max-width: 360px !important;
+        }
+
+        /* Typography */
+        .driver-popover-title {
+            font-family: 'Inter', system-ui, sans-serif !important;
+            font-size: 20px !important;
+            font-weight: 700 !important;
+            letter-spacing: -0.5px !important;
+            color: #2dd4bf !important;
+            /* Teal Accent */
+            margin-bottom: 12px !important;
+        }
+
+        .driver-popover-description {
+            font-family: 'Inter', system-ui, sans-serif !important;
+            font-size: 15px !important;
+            line-height: 1.6 !important;
+            color: #cbd5e1 !important;
+            /* Slate 300 */
+        }
+
+        /* Buttons (Ghost / Premium) */
+        .driver-popover-footer button {
+            background-color: transparent !important;
+            color: #94a3b8 !important;
+            text-shadow: none !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 8px !important;
+            padding: 8px 16px !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            transition: all 0.2s ease;
+        }
+
+        .driver-popover-footer button:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+        }
+
+        /* Primary "Next" Button Highlight */
+        .driver-popover-footer button.driver-popover-next-btn {
+            background-color: #2dd4bf !important;
+            color: #0f172a !important;
+            /* Dark Text */
+            border: none !important;
+            box-shadow: 0 0 15px rgba(45, 212, 191, 0.2) !important;
+        }
+
+        .driver-popover-footer button.driver-popover-next-btn:hover {
+            background-color: #5eead4 !important;
+            /* Brighter Teal */
+            box-shadow: 0 0 25px rgba(45, 212, 191, 0.4) !important;
+            transform: translateY(-1px);
+        }
+
+        /* Close Button */
+        .driver-popover-close-btn {
+            color: #64748b !important;
+            transition: color 0.2s !important;
+        }
+
+        .driver-popover-close-btn:hover {
+            color: white !important;
+        }
+
+        /* Progress Text */
+        .driver-popover-progress-text {
+            color: #475569 !important;
+            font-family: monospace !important;
+            font-size: 10px !important;
+        }
+    </style>
+
+    <script>
+        // VISUAL ERROR LOGGER
+        window.onerror = function (msg, url, lineNo, columnNo, error) {
+            // Filter out expected errors
+            const msgStr = String(msg).toLowerCase();
+            if (msgStr.includes('firebase') ||
+                msgStr.includes('failed to fetch') ||
+                msgStr.includes('dynamically imported module') ||
+                msgStr.includes('serviceworker') ||
+                msgStr.includes('sw.js')) {
+                console.warn('[Ignored Error]', msg);
+                return false; // Suppress error box for these
+            }
+
+            const box = document.getElementById('debug-error-box') || document.createElement('div');
+            box.id = 'debug-error-box';
+            box.style.cssText = 'position:fixed;top:0;left:0;right:0;background:rgba(255,0,0,0.9);color:white;padding:10px;z-index:99999;font-family:monospace;font-size:12px;pointer-events:none;';
+            box.innerHTML += `<div>ERROR: ${msg} (${url}:${lineNo})</div>`;
+            document.body.appendChild(box);
+            return false;
+        };
+        window.addEventListener('unhandledrejection', function (event) {
+            // Filter out expected promise rejections
+            const reasonStr = String(event.reason).toLowerCase();
+            if (reasonStr.includes('firebase') ||
+                reasonStr.includes('failed to fetch') ||
+                reasonStr.includes('dynamically imported module') ||
+                reasonStr.includes('serviceworker')) {
+                console.warn('[Ignored Promise Rejection]', event.reason);
+                return; // Suppress error box for these
+            }
+
+            const box = document.getElementById('debug-error-box') || document.createElement('div');
+            box.id = 'debug-error-box';
+            box.style.cssText = 'position:fixed;top:0;left:0;right:0;background:rgba(255,0,0,0.9);color:white;padding:10px;z-index:99999;font-family:monospace;font-size:12px;pointer-events:none;';
+            box.innerHTML += `<div>PROMISE REJECT: ${event.reason}</div>`;
+            document.body.appendChild(box);
+        });
+
+        // GLOBAL FAILSAFES - Prevent ReferenceErrors during module loading/caching
+        window.renderThemeModal = window.renderThemeModal || function () { console.log('[Failsafe] renderThemeModal called early'); };
+        window.setCursorShape = window.setCursorShape || function (s) { console.log('[Failsafe] setCursorShape called:', s); };
+    </script>
+    <title>MindWave - Binaural Beats Studio</title>
+    <!-- Compiled Tailwind utilities instead of CDN (300KB+ → ~20KB) -->
+    <link rel="stylesheet" href="/binaural-assets/css/tailwind-compiled.css">
+    <link rel="stylesheet" href="/binaural-assets/css/style.css?v=NUCLEAR_V101">
+    <link rel="stylesheet" href="/binaural-assets/css/visual-active.css?v=1">
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/binaural-assets/js/main_vFINAL.js?v=NUCLEAR_V101" as="script" crossorigin>
+    <script src="/binaural-assets/config.js" defer
+        onerror="console.log('[Config] No config.js found - using mock mode')"></script>
+    <script type="module" src="/binaural-assets/js/main_vFINAL.js?v=NUCLEAR_V101"></script>
+    <style>
+        /* Fallback Styles if Tailwind fails */
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+
+        #classicalContainer {
+            display: block !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        /* Loading Screen */
+        #loadingScreen {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: #0f172a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            transition: opacity 0.5s ease;
+        }
+
+        #loadingScreen.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(45, 212, 191, 0.2);
+            border-top-color: #2dd4bf;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            margin-top: 1rem;
+            font-family: system-ui, sans-serif;
+            font-size: 0.875rem;
+            color: #94a3b8;
+            letter-spacing: 0.1em;
+        }
+    </style>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Apple PWA Meta Tags -->
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <meta name="apple-mobile-web-app-title" content="MindWave">
+
+    <!-- Service Worker Registration for PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .then(function (registration) {
+                        console.log('[PWA] Service Worker registered:', registration.scope);
+                    })
+                    .catch(function (error) {
+                        console.log('[PWA] Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+    <!-- Firebase SDKs removed to prevent blocking. Logic is in js/services/firebase.js -->
+</head>
+
+<body
+    class="w-full relative min-h-screen bg-slate-900 text-slate-200 antialiased selection:bg-cyan-500 selection:text-white">
+    <!-- UNIFIED COMMAND CENTER (Moved to root for z-index) -->
+
+
+    <!-- Loading Screen -->
+    <div id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">MINDWAVE</div>
+    </div>
+
+    <!-- FULL-SCREEN 3D BACKGROUND -->
+    <canvas id="visualizer" class="fixed inset-0 w-full h-full z-0"
+        style="opacity: 0; transition: opacity 0.8s ease-in;"></canvas>
+
+
+    <!-- IMMERSIVE OVERLAY CONTAINER -->
+    <!-- FIX: relative positioning allows natural scrolling -->
+    <div id="appOverlay" class="relative w-full min-h-screen z-10 flex flex-col pointer-events-none">
+
+
+
+        <header id="topHeader"
+            class="fixed top-0 left-0 right-0 z-[100] p-2 pointer-events-none flex justify-center transition-[left,right] duration-300 ease-in-out"
+            style="margin: 0 !important;">
+
+
+
+            <!-- Main Control Panel - Responsive & Centered -->
+            <div id="topControlBar"
+                class="glass-card rounded-2xl px-3 py-2 pointer-events-auto backdrop-blur-2xl bg-[#0f172a]/90 border border-white/10 shadow-2xl flex flex-wrap items-center justify-center gap-3">
+
+                <!-- Status Indicator -->
+                <div id="statusIndicator"
+                    class="h-3 w-3 rounded-full bg-slate-600 shadow-[0_0_12px_currentColor] shrink-0"></div>
+                <span
+                    class="text-[9px] font-bold text-[var(--accent)] bg-black/50 px-1.5 py-0.5 rounded border border-[var(--accent)]">BETA</span>
+
+                <!-- Mode Toggles - Theme Aware -->
+                <div id="modeToggle" class="flex gap-0.5 p-1 bg-black/40 rounded-xl border border-white/10 shrink-0">
+                    <button data-mode="binaural"
+                        class="mode-btn toggle-active px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all duration-200">
+                        Binaural
+                    </button>
+                    <button data-mode="isochronic"
+                        class="mode-btn toggle-inactive px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all duration-200">
+                        Isochronic
+                    </button>
+                    <button data-mode="monaural"
+                        class="mode-btn toggle-inactive px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all duration-200">
+                        Monaural
+                    </button>
+                </div>
+
+                <!-- Divider - Hidden on narrow screens -->
+                <div class="w-px h-6 bg-white/20 hidden sm:block"></div>
+
+                <!-- Generator Sliders - Responsive -->
+                <div class="flex items-center gap-3 flex-wrap justify-center">
+                    <!-- Base Pitch -->
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] font-bold text-[var(--accent)]">PITCH</span>
+                        <input type="range" id="baseSlider" min="50" max="1000" value="200"
+                            class="w-16 sm:w-20 h-1.5 bg-white/15 rounded-full appearance-none cursor-pointer hover:bg-white/25 transition-all">
+                        <span id="baseValue"
+                            class="text-[10px] font-mono text-[var(--accent)] w-10 text-right font-bold">200Hz</span>
+                    </div>
+
+                    <!-- Beat Freq -->
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] font-bold text-[var(--accent)]">BEAT</span>
+                        <input type="range" id="beatSlider" min="0.5" max="100" step="0.1" value="10"
+                            class="w-14 sm:w-16 h-1.5 bg-white/15 rounded-full appearance-none cursor-pointer hover:bg-white/25 transition-all">
+                        <span id="beatValue"
+                            class="text-[10px] font-mono text-[var(--accent)] w-8 text-right font-bold">10Hz</span>
+                    </div>
+
+                    <!-- Volume -->
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] font-bold text-[var(--accent)]">VOL</span>
+                        <input type="range" id="volSlider" min="0" max="1" step="0.01" value="0.5"
+                            class="w-12 sm:w-14 h-1.5 bg-white/15 rounded-full appearance-none cursor-pointer hover:bg-white/25 transition-all">
+                        <span id="volValue"
+                            class="text-[10px] font-mono text-white/70 w-7 text-right font-bold">50%</span>
+                    </div>
+                </div>
+
+                <!-- Divider -->
+                <div class="w-px h-6 bg-white/20 hidden sm:block"></div>
+
+                <!-- Action Icons -->
+                <div class="flex items-center gap-1 shrink-0">
+                    <button id="tutorialBtn" onclick="window.startOnboarding()"
+                        class="p-2 rounded-full bg-transparent hover:bg-[var(--accent)]/20 transition-all"
+                        style="color: var(--accent);" title="Tutorial">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                    </button>
+                    <button id="feedbackBtn" onclick="window.showFeedbackSurvey()"
+                        class="p-2 rounded-full bg-transparent hover:bg-[var(--accent)]/20 transition-all"
+                        style="color: var(--accent);" title="Give Feedback">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </button>
+                    <button id="profileBtn"
+                        class="p-2 rounded-full bg-transparent hover:bg-[var(--accent)]/20 transition-all"
+                        style="color: var(--accent);" title="Account">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </button>
+                    <button id="themeBtn"
+                        class="p-2 rounded-full bg-transparent hover:bg-[var(--accent)]/20 transition-all"
+                        style="color: var(--accent);" title="Theme">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5" />
+                            <path
+                                d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                        </svg>
+                    </button>
+                </div>
+
+            </div>
+        </header>
+
+        <!-- CENTER (Visualizer Interaction) -->
+        <main class="flex-1 flex items-center justify-center pointer-events-auto" id="tapZone">
+        </main>
+
+        <!-- FOOTER -->
+        <footer id="bottomControlBar"
+            class="fixed bottom-0 left-0 right-0 p-6 pointer-events-none flex flex-nowrap justify-between items-end gap-4 pb-8 transition-[left,right,width] duration-300 ease-in-out overflow-visible">
+
+            <!-- Footer Toggle Button (Absolute Top Center) -->
+            <div id="footerToggleContainer"
+                class="absolute -top-4 left-1/2 -translate-x-1/2 z-[101] transition-opacity duration-300">
+                <button id="footerCompactBtn" onclick="toggleFooterMode()"
+                    class="bg-black/40 hover:bg-black/80 backdrop-blur-md text-white/70 hover:text-white rounded-full p-1.5 border border-white/10 transition-all shadow-lg">
+                    <svg id="footerCompactIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" class="transition-transform duration-300">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- LEFT: Visual Controls & Toggle -->
+            <div
+                class="footer-left z-[100] pointer-events-auto flex flex-col gap-4 items-center shrink-0 transition-all duration-300">
+                <!-- New Presets Toggle Button (Use old ID 'leftToggle' for logic compat) -->
+                <button id="leftToggle"
+                    class="p-3 rounded-full bg-white/5 border border-white/10 text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--accent)] transition-all"
+                    title="Presets">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                    </svg>
+                </button>
+                <!-- Visual Mode Grid Toggle - 2 Rows -->
+                <!-- Visual Grid Moved to Center Dock -->
+
+
+                <!-- Speed Slider for Visuals -->
+                <div class="flex items-end gap-2">
+                    <!-- Speed Slider -->
+                    <div class="w-28 flex flex-col gap-1 opacity-50 hover:opacity-100 transition-opacity"
+                        id="speedSliderContainer" title="Manual Speed (Disabled in Auto Mode)">
+                        <div class="flex justify-between items-center">
+                            <label class="text-[8px] font-mono text-white/70 tracking-widest uppercase">SPEED</label>
+                            <span id="speedValue"
+                                class="text-[10px] font-mono text-[var(--accent)] tabular-nums">1.0x</span>
+                        </div>
+                        <input type="range" id="visualSpeedSlider" min="0.1" max="40.0" step="0.1" value="1.0" disabled
+                            class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer disabled:cursor-not-allowed">
+                    </div>
+                    <!-- Auto Sync Toggle -->
+                    <button id="visualSyncBtn"
+                        class="p-1.5 rounded-lg bg-[var(--accent)] text-[var(--bg-main)] hover:opacity-90 transition-all mb-0.5"
+                        title="Lock Speed to Hz (Auto)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Color Controls -->
+                <div class="flex items-center gap-2 mt-1 left-group-color-controls">
+                    <!-- Color Picker -->
+                    <div class="relative group" title="Particle Color">
+                        <div id="colorPreview"
+                            class="w-6 h-6 rounded-full border border-white/20 cursor-pointer shadow-[0_0_10px_rgba(255,255,255,0.2)] transition-transform active:scale-95"
+                            style="background-color: #60a9ff;"></div>
+                        <input type="color" id="visualColorPicker" value="#60a9ff"
+                            class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                    </div>
+
+                    <!-- Random Color Button -->
+                    <button id="randomColorBtn"
+                        class="glass-pill p-1.5 rounded-full hover:bg-white/20 active:scale-95 transition-all text-[var(--text-muted)] hover:text-white"
+                        title="Random Color">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 3 21 3 21 8"></polyline>
+                            <line x1="4" y1="20" x2="21" y2="3"></line>
+                            <polyline points="21 16 21 21 16 21"></polyline>
+                            <line x1="15" y1="15" x2="21" y2="21"></line>
+                            <line x1="4" y1="4" x2="9" y2="9"></line>
+                        </svg>
+                    </button>
+
+                    <!-- Previous Color Back Button -->
+                    <button id="prevColorBtn"
+                        class="glass-pill p-1.5 rounded-full hover:bg-white/20 active:scale-95 transition-all text-[var(--text-muted)] hover:text-white hidden"
+                        title="Previous Color">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- CENTER: Main Play with Session Timer -->
+            <div
+                class="footer-center z-[100] pointer-events-auto flex flex-col items-center justify-end gap-3 pb-0 max-w-4xl mx-auto shrink min-w-0 transition-all duration-300">
+
+                <!-- 1. Play & Timer Controls (Horizontal Row) -->
+                <div class="play-row flex items-center gap-6 mb-1 order-1 transition-all duration-300">
+                    <!-- Audio Play/Pause Button -->
+                    <div class="flex flex-col items-center gap-1">
+                        <button id="audioPlayBtn"
+                            class="glass-card w-9 h-9 rounded-full flex items-center justify-center shadow-[0_0_20px_var(--accent-glow)] hover:scale-105 active:scale-95 transition-all bg-white/5 border border-white/20 backdrop-blur-xl group shrink-0"
+                            style="width: 36px; height: 36px;" title="Toggle Audio">
+
+                            <svg id="audioPlayIcon"
+                                class="w-3.5 h-3.5 text-[var(--accent)] group-hover:text-white transition-colors ml-0.5"
+                                style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="currentColor">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                            <svg id="audioPauseIcon"
+                                class="hidden w-3.5 h-3.5 text-[var(--accent)] group-hover:text-white transition-colors"
+                                style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="currentColor">
+                                <rect x="6" y="4" width="4" height="16"></rect>
+                                <rect x="14" y="4" width="4" height="16"></rect>
+                            </svg>
+                        </button>
+                        <span id="audioLabel" class="text-[8px] font-bold uppercase tracking-widest"
+                            style="color: #60a9ff;">Audio</span>
+                    </div>
+
+                    <!-- Main Play Button -->
+                    <div class="flex flex-col items-center gap-1">
+                        <div class="relative">
+                            <!-- Progress Ring -->
+                            <svg id="timerRing"
+                                class="absolute inset-0 w-[66px] h-[66px] -m-[5px] rotate-[-90deg] opacity-0 transition-opacity pointer-events-none"
+                                viewBox="0 0 120 120" style="width: 66px; height: 66px;">
+                                <circle cx="60" cy="60" r="54" fill="none" stroke="var(--border)" stroke-width="4"
+                                    opacity="0.3" />
+                                <circle id="timerProgress" cx="60" cy="60" r="54" fill="none" stroke="var(--accent)"
+                                    stroke-width="4" stroke-linecap="round" stroke-dasharray="339.292"
+                                    stroke-dashoffset="339.292" />
+                            </svg>
+
+                            <button id="playBtn"
+                                class="glass-card w-14 h-14 rounded-full flex items-center justify-center shadow-[0_0_50px_var(--accent-glow)] hover:scale-105 active:scale-95 transition-all bg-white/5 border border-white/20 backdrop-blur-xl group relative z-10 shrink-0">
+                                <svg id="playIcon"
+                                    class="w-6 h-6 text-[var(--accent)] group-hover:text-white transition-colors ml-1"
+                                    viewBox="0 0 24 24" fill="currentColor">
+                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                                <svg id="pauseIcon"
+                                    class="hidden w-6 h-6 text-[var(--accent)] group-hover:text-white transition-colors"
+                                    viewBox="0 0 24 24" fill="currentColor">
+                                    <rect x="6" y="4" width="4" height="16"></rect>
+                                    <rect x="14" y="4" width="4" height="16"></rect>
+                                </svg>
+                            </button>
+                        </div>
+                        <span id="sessionLabel" class="text-[8px] font-bold uppercase tracking-widest"
+                            style="color: #60a9ff;">Session</span>
+                    </div>
+
+                    <!-- Visual Play/Pause -->
+                    <div class="flex flex-col items-center gap-1">
+                        <button id="visualPlayBtn"
+                            class="glass-card w-9 h-9 rounded-full flex items-center justify-center shadow-[0_0_20px_var(--accent-glow)] hover:scale-105 active:scale-95 transition-all bg-white/5 border border-white/20 backdrop-blur-xl group shrink-0"
+                            style="width: 36px; height: 36px;" title="Toggle Visuals">
+                            <svg id="visualPlayIcon"
+                                class="w-3.5 h-3.5 text-[var(--accent)] group-hover:text-white transition-colors ml-0.5"
+                                style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="currentColor">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                            <svg id="visualPauseIcon"
+                                class="hidden w-3.5 h-3.5 text-[var(--accent)] group-hover:text-white transition-colors"
+                                style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="currentColor">
+                                <rect x="6" y="4" width="4" height="16"></rect>
+                                <rect x="14" y="4" width="4" height="16"></rect>
+                            </svg>
+                        </button>
+                        <span id="visualsLabel" class="text-[8px] font-bold uppercase tracking-widest"
+                            style="color: #60a9ff;">Visuals</span>
+                    </div>
+
+                    <!-- Timer & Duration (Integrated) -->
+                    <div
+                        class="flex items-center gap-3 bg-white/5 rounded-full px-4 py-1.5 border border-white/10 ml-2">
+                        <!-- Timer Display -->
+                        <div id="timerDisplay"
+                            class="text-sm font-mono text-[var(--accent)] opacity-0 transition-opacity tabular-nums">
+                            --:--
+                        </div>
+
+                        <div class="w-px h-4 bg-white/10"></div>
+
+                        <!-- Duration Selector -->
+                        <div id="durationSelector" class="flex items-center gap-2 text-[10px]">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" class="text-[var(--text-muted)]">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <select id="sessionDuration"
+                                class="bg-transparent text-[var(--accent)] font-bold cursor-pointer outline-none hover:text-white transition-colors">
+                                <option value="0">∞ Free</option>
+                                <option value="5">5 min</option>
+                                <option value="15">15 min</option>
+                                <option value="30">30 min</option>
+                                <option value="60">1 hour</option>
+                                <option value="90">90 min</option>
+                                <option value="120">2 hours</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Matrix Settings Bar (Horizontal - Refined) -->
+                <div id="matrixSettingsPanel"
+                    class="hidden order-2 flex flex-wrap items-center justify-center gap-3 px-4 py-3 bg-[var(--bg-panel)]/80 backdrop-blur-xl border border-[var(--border)] rounded-2xl shadow-2xl transition-all animate-fade-in-up w-auto max-w-full">
+
+                    <!-- Label -->
+                    <span class="text-[10px] font-bold text-[var(--accent)] uppercase tracking-wider">Matrix</span>
+
+                    <div class="w-px h-6 bg-white/10"></div>
+
+                    <!-- Custom Text Input -->
+                    <!-- Color, Rainbow & Mode -->
+                    <div class="flex flex-wrap items-center gap-3">
+
+                        <!-- Color Picker (Proxy) -->
+                        <div class="relative w-8 h-8 group hover:scale-110 transition-transform cursor-pointer">
+                            <div id="matrixColorSwatch"
+                                class="absolute inset-0 rounded-full shadow-inner ring-0 border border-white/10"
+                                style="background-color: #00FF41;"></div>
+                            <input type="color" id="matrixColorPicker" value="#00FF41"
+                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer p-0 m-0 border-0 appearance-none">
+                        </div>
+
+                        <!-- Rainbow Toggle (RGB / RAINBOW) -->
+                        <div class="flex items-center gap-3">
+                            <span
+                                class="text-[9px] font-mono uppercase tracking-widest transition-colors text-[var(--accent)]"
+                                id="labelRGB">RGB</span>
+
+                            <label class="relative inline-flex items-center cursor-pointer" title="Toggle Rainbow Mode">
+                                <input type="checkbox" id="matrixRainbowToggle" class="sr-only peer" checked>
+                                <div class="rainbow-track w-9 h-5 bg-slate-700 rounded-full peer transition-all">
+                                </div>
+                                <span
+                                    class="absolute left-[2px] top-[2px] bg-white w-4 h-4 rounded-full shadow-sm transition-all peer-checked:translate-x-4"></span>
+                            </label>
+
+                            <span
+                                class="text-[9px] text-[var(--text-muted)] font-mono uppercase tracking-widest transition-colors"
+                                id="labelRainbow">RAINBOW</span>
+                        </div>
+
+                        <!-- MindWave Mode Toggle -->
+                        <div class="flex items-center gap-3 border-l border-white/10 pl-4">
+                            <span id="labelRandom"
+                                class="text-[9px] font-mono uppercase tracking-widest text-[var(--text-muted)] transition-colors">RAND</span>
+                            <label class="relative inline-flex items-center cursor-pointer" title="Toggle Text Mode">
+                                <input type="checkbox" id="matrixModeToggle" class="sr-only peer" checked>
+                                <div
+                                    class="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:bg-[var(--accent)] transition-all">
+                                </div>
+                                <span
+                                    class="absolute left-[2px] top-[2px] bg-white w-4 h-4 rounded-full shadow-sm transition-all peer-checked:translate-x-4"></span>
+                            </label>
+                            <span id="labelMindwave"
+                                class="text-[9px] font-mono uppercase tracking-widest text-[var(--accent)] font-bold transition-colors">WAVE</span>
+
+                            <!-- Label / Input Area -->
+                            <div class="relative ml-1">
+                                <input type="text" id="matrixTextInput" placeholder="CUSTOM TXT" value="MINDWAVE"
+                                    maxlength="12"
+                                    class="w-20 bg-transparent border-b border-white/20 px-0 py-0.5 text-[9px] text-white/70 outline-none focus:border-[var(--accent)] font-mono uppercase transition-all placeholder:text-white/30">
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="w-px h-6 bg-white/10"></div>
+
+                    <!-- Sliders Group -->
+                    <div class="flex flex-wrap items-center gap-3">
+                        <!-- Speed -->
+                        <div class="flex flex-col gap-1 w-20 group">
+                            <div class="flex justify-between text-[8px] text-[var(--text-muted)] uppercase">
+                                <span>Speed</span>
+                                <span id="matrixSpeedVal" class="text-[var(--accent)] font-mono">1.0</span>
+                            </div>
+                            <input type="range" id="matrixSpeedSlider" min="0.1" max="5.0" step="0.1" value="1.0"
+                                class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[var(--accent)] hover:bg-white/20 transition-all">
+                        </div>
+
+                        <!-- Length -->
+                        <div class="flex flex-col gap-1 w-20 group">
+                            <div class="flex justify-between text-[8px] text-[var(--text-muted)] uppercase">
+                                <span>Length</span>
+                                <span id="matrixLengthVal" class="text-[var(--accent)] font-mono">1.0</span>
+                            </div>
+                            <input type="range" id="matrixLengthSlider" min="0.1" max="2.0" step="0.1" value="1.0"
+                                class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[var(--accent)] hover:bg-white/20 transition-all">
+                        </div>
+
+                        <!-- Angle -->
+                        <div class="flex flex-col gap-1 w-20 group">
+                            <div class="flex justify-between text-[8px] text-[var(--text-muted)] uppercase">
+                                <span>Angle</span>
+                                <span id="matrixAngleVal" class="text-[var(--accent)] font-mono">0°</span>
+                            </div>
+                            <input type="range" id="matrixAngleSlider" min="0" max="360" step="15" value="0"
+                                class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[var(--accent)] hover:bg-white/20 transition-all">
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <!-- 3. New Horizontal Visual Dock -->
+                <div id="visualDock"
+                    class="order-3 flex flex-wrap justify-center items-center gap-2 mt-0 px-4 py-3 bg-[var(--bg-panel)]/90 backdrop-blur-2xl rounded-2xl border border-[var(--border)] shadow-2xl overflow-visible w-fit max-w-[calc(100%-2rem)] mx-auto z-50 relative tooltip-container transition-all duration-300 ease-in-out">
+
+                    <style>
+                        .visual-btn .custom-tooltip {
+                            top: -40px;
+                            bottom: auto;
+                            transform: translateX(-50%);
+                        }
+                    </style>
+
+                    <!-- SPHERE -->
+                    <button id="sphereBtn"
+                        class="visual-btn p-2 rounded-xl bg-[var(--bg-main)]/50 border border-[var(--border)] hover:bg-[var(--bg-main)] hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
+                        <span class="text-2xl filter drop-shadow-lg">🔮</span>
+                        <span
+                            class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Sphere</span>
+                    </button>
+
+                    <!-- FLOW -->
+                    <button id="flowBtn"
+                        class="visual-btn p-2 rounded-xl bg-[var(--bg-main)]/50 border border-[var(--border)] hover:bg-[var(--bg-main)] hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
+                        <span class="text-2xl filter drop-shadow-lg">🌀</span>
+                        <span
+                            class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Flow</span>
+                    </button>
+
+                    <!-- LAVA -->
+                    <button id="lavaBtn"
+                        class="visual-btn p-2 rounded-xl bg-[var(--bg-main)]/50 border border-[var(--border)] hover:bg-[var(--bg-main)] hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
+                        <span class="text-2xl filter drop-shadow-lg">🌋</span>
+                        <span
+                            class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Lava</span>
+                    </button>
+
+                    <!-- FIRE -->
+                    <button id="fireplaceBtn"
+                        class="visual-btn p-2 rounded-xl bg-[var(--bg-main)]/50 border border-[var(--border)] hover:bg-[var(--bg-main)] hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
+                        <span class="text-2xl filter drop-shadow-lg">🔥</span>
+                        <span
+                            class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Fire</span>
+                    </button>
+
+                    <!-- RAIN -->
+                    <!-- RAIN -->
+                    <button id="rainBtn"
+                        class="visual-btn p-2 rounded-xl bg-[var(--bg-main)]/50 border border-[var(--border)] hover:bg-[var(--bg-main)] hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
+                        <span class="text-2xl filter drop-shadow-lg">🌿</span>
+                        <span
+                            class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Rain</span>
+                    </button>
+
+                    <!-- ZEN -->
+                    <button id="zenBtn"
+                        class="visual-btn p-2 rounded-xl bg-[var(--bg-main)]/50 border border-[var(--border)] hover:bg-[var(--bg-main)] hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
+                        <span class="text-2xl filter drop-shadow-lg">🌸</span>
+                        <span
+                            class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Zen</span>
+                    </button>
+
+                    <!-- OCEAN -->
+                    <button id="oceanBtn"
+                        class="visual-btn p-2 rounded-xl bg-[var(--bg-main)]/50 border border-[var(--border)] hover:bg-[var(--bg-main)] hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
+                        <span class="text-2xl filter drop-shadow-lg">🌊</span>
+                        <span
+                            class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Ocean</span>
+                    </button>
+
+                    <!-- MATRIX -->
+                    <button id="matrixBtn"
+                        class="visual-btn p-2 rounded-xl bg-[var(--bg-main)]/50 border border-[var(--border)] hover:bg-[var(--bg-main)] hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
+                        <span class="text-2xl filter drop-shadow-lg">💻</span>
+                        <span
+                            class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Matrix</span>
+                        <!-- Toggle Icon -->
+                        <div id="matrixSettingsToggle"
+                            class="absolute top-1 right-1 w-4 h-4 rounded-full bg-[var(--text-muted)]/20 hover:bg-[var(--accent)] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-20 shadow-lg"
+                            title="Settings" onclick="event.stopPropagation(); toggleMatrixSettings(this);">
+                            <span class="text-[8px] leading-none text-[var(--bg-main)]">⚙️</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- RIGHT: Recording & Mixer Toggle -->
+            <div
+                class="footer-right z-[100] pointer-events-auto flex flex-col gap-2 items-center pb-2 shrink-0 transition-all duration-300">
+                <!-- Mixer & Video toggles row -->
+                <div class="flex items-center gap-2">
+                    <!-- New Mixer Toggle Button (Use old ID 'rightToggle') -->
+                    <button id="rightToggle"
+                        class="p-2 rounded-full bg-white/5 border border-white/10 text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--accent)] transition-all"
+                        title="Mixer">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 20v-6M6 20V10M18 20V4" />
+                        </svg>
+                    </button>
+                    <!-- Video Toggle (Modern) -->
+                    <button id="videoToggleBtn"
+                        class="p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-[var(--text-muted)]"
+                        title="Toggle Video Recording">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 7l-7 5 7 5V7z"></path>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Record + Speed row (horizontal, only in compact mode) -->
+                <div class="flex flex-row items-center gap-3 flex-nowrap">
+                    <!-- Compact Mode Speed Controls with Sync Button -->
+                    <div class="compact-only flex flex-row items-center gap-2 shrink-0">
+                        <!-- Speed Slider -->
+                        <div class="w-14 flex flex-col gap-0.5">
+                            <div class="flex justify-between items-center">
+                                <label class="text-[6px] font-mono text-white/60 tracking-widest uppercase">SPD</label>
+                                <span
+                                    class="text-[7px] font-mono text-[var(--accent)] tabular-nums compact-speed-value">1.0x</span>
+                            </div>
+                            <input type="range"
+                                class="compact-speed-slider w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                                min="0.1" max="40.0" step="0.1" value="1.0">
+                        </div>
+                        <!-- Compact Sync Button -->
+                        <button
+                            class="compact-sync-btn p-1 rounded bg-[var(--accent)] text-[var(--bg-main)] hover:opacity-90 transition-all"
+                            title="Lock Speed to Hz (Auto)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Record Button -->
+                    <button id="recordBtn"
+                        class="w-10 h-10 rounded-full border-2 border-[var(--border)] flex items-center justify-center hover:border-red-500 transition-colors group bg-black/20 backdrop-blur-sm shrink-0">
+                        <div
+                            class="w-4 h-4 rounded-full bg-red-500 transition-all group-hover:scale-110 shadow-[0_0_15px_rgba(239,68,68,0.5)]">
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </footer>
+
+        <!-- Footer Compact Mode Styles & Script -->
+        <style>
+            /* Compact Mode Styles */
+            #bottomControlBar.footer-compact {
+                height: auto !important;
+                padding-top: 0 !important;
+                padding-bottom: 20px !important;
+                background: transparent !important;
+                pointer-events: none;
+                align-items: flex-end;
+            }
+
+            #bottomControlBar.footer-compact .footer-left,
+            #bottomControlBar.footer-compact .footer-right,
+            #bottomControlBar.footer-compact #matrixSettingsPanel,
+            #bottomControlBar.footer-compact #visualDock {
+                opacity: 0;
+                pointer-events: none;
+                transform: translateY(20px);
+                display: none;
+                /* Hide to clear space */
+            }
+
+            /* Center Column Adaptation */
+            #bottomControlBar.footer-compact .footer-center {
+                pointer-events: auto;
+                padding-bottom: 0;
+            }
+
+            #bottomControlBar.footer-compact .play-row {
+                margin-bottom: 0;
+            }
+
+            /* Hide everything else in center except play-row */
+            #bottomControlBar.footer-compact .footer-center> :not(.play-row) {
+                display: none;
+            }
+
+            /* Arrow Rotation */
+            #bottomControlBar.footer-compact #footerCompactIcon {
+                transform: rotate(180deg);
+            }
+        </style>
+
+        <script>
+            // Footer Compact Toggle
+            window.toggleFooterMode = function (forceCompact) {
+                const footer = document.getElementById('bottomControlBar');
+
+                if (typeof forceCompact === 'boolean') {
+                    if (forceCompact) footer.classList.add('footer-compact');
+                    else footer.classList.remove('footer-compact');
+                } else {
+                    footer.classList.toggle('footer-compact');
+                }
+            };
+        </script>
+
+    </div>
+
+    <!-- LEFT SIDEBAR: PRESETS -->
+    <aside id="leftPanel"
+        class="fixed top-0 left-0 h-full w-64 glass-card border-r border-white/10 transform -translate-x-full transition-transform duration-500 z-40 flex flex-col pointer-events-auto backdrop-blur-2xl bg-[var(--bg-panel)]">
+        <div
+            class="relative w-full p-6 border-b border-white/10 flex flex-col justify-center items-center bg-[var(--bg-panel)] shrink-0 min-h-[140px] gap-4">
+            <a href="#" onclick="window.location.reload()" class="hover:opacity-80 transition-opacity block">
+                <img src="/mindwave-logo.png" alt="MindWave Logo"
+                    class="h-20 w-auto object-contain drop-shadow-[0_0_15px_rgba(45,212,191,0.3)] rounded-xl relative z-10">
+            </a>
+            <button id="closeLeftBtn" class="absolute top-4 right-4 opacity-50 hover:opacity-100 z-20"><svg width="20"
+                    height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg></button>
+        </div>
+
+        <!-- MAIN CONTAINER FOR BUTTONS - Scrollable -->
+        <div class="flex-1 flex flex-col p-2 gap-1 overflow-y-auto overflow-x-hidden min-h-0 custom-scrollbar">
+            <!-- Brain Waves Group - 2 Column Grid -->
+            <div class="flex flex-col gap-1.5 shrink-0">
+
+                <div class="py-2 flex items-center justify-center shrink-0">
+                    <div class="h-px w-full bg-white/10"></div>
+                    <span
+                        class="px-2 text-[10px] font-bold text-[var(--accent)] tracking-widest bg-[#0f172a]/0 whitespace-nowrap">BRAIN
+                        WAVES</span>
+                    <button class="mr-2 transition-colors relative" aria-label="Info"
+                        onclick="showInfoModal('brain_waves')"
+                        style="background: transparent !important; border: none !important; box-shadow: none !important; color: var(--text-muted) !important;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                    </button>
+                    <div class="h-px w-full bg-white/10"></div>
+                </div>
+                <!-- 2-Column Grid for Brain Waves -->
+                <div class="grid grid-cols-2 gap-1.5 w-full">
+                    <button title="Deep restorative sleep (0.5-4Hz)" onclick="applyPreset('delta', this)"
+                        class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-3">
+                        <span
+                            class="text-sm font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100 uppercase tracking-wide">Delta</span>
+                        <span class="text-[9px] text-[var(--text-muted)] mt-0.5">Sleep</span>
+                    </button>
+                    <button title="Deep meditation and dreaming (4-8Hz)" onclick="applyPreset('theta', this)"
+                        class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-3 relative">
+                        <span class="absolute top-1 right-1 text-[9px] opacity-70">🔒</span>
+                        <span
+                            class="text-sm font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100 uppercase tracking-wide">Theta</span>
+                        <span class="text-[9px] text-[var(--text-muted)] mt-0.5">Meditation</span>
+                    </button>
+                    <button title="Relaxed focus and creativity (8-14Hz)" onclick="applyPreset('alpha', this)"
+                        class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-3 relative">
+                        <span class="absolute top-1 right-1 text-[9px] opacity-70">🔒</span>
+                        <span
+                            class="text-sm font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100 uppercase tracking-wide">Alpha</span>
+                        <span class="text-[9px] text-[var(--text-muted)] mt-0.5">Relaxation</span>
+                    </button>
+                    <!-- Mu Waves (8-13Hz, between Alpha and Beta) -->
+                    <button title="Sensorimotor rhythm for body syncing (9-11Hz)" onclick="applyPreset('mu', this)"
+                        class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-3 relative">
+                        <span class="absolute top-1 right-1 text-[9px] opacity-70">🔒</span>
+                        <span
+                            class="text-sm font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100 uppercase tracking-wide">Mu</span>
+                        <span class="text-[9px] text-[var(--text-muted)] mt-0.5">Body Sync</span>
+                    </button>
+                    <button title="Active focus and alertness (14-30Hz)" onclick="applyPreset('beta', this)"
+                        class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-3">
+                        <span
+                            class="text-sm font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100 uppercase tracking-wide">Beta</span>
+                        <span class="text-[9px] text-[var(--text-muted)] mt-0.5">Focus</span>
+                    </button>
+                    <button title="Peak awareness and cognition (30-100Hz)" onclick="applyPreset('gamma', this)"
+                        class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-3 relative">
+                        <span class="absolute top-1 right-1 text-[9px] opacity-70">🔒</span>
+                        <span
+                            class="text-sm font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100 uppercase tracking-wide">Gamma</span>
+                        <span class="text-[9px] text-[var(--text-muted)] mt-0.5">Awareness</span>
+                    </button>
+                    <!-- Hyper-Gamma (Locked by default) - Full width spanning both columns -->
+                    <button id="hyperGammaBtn" title="Advanced high-frequency states (40-100Hz)"
+                        onclick="handleHyperGammaClick(this)"
+                        class="preset-btn col-span-2 flex flex-col items-center justify-center rounded-xl bg-white/5 border border-amber-500/30 hover:bg-white/10 hover:border-amber-500/50 transition-all group relative py-3">
+                        <span id="hyperGammaLock" class="absolute top-1 right-1 text-[10px]">🔒</span>
+                        <span
+                            class="text-sm font-bold text-amber-400 text-opacity-80 group-hover:text-opacity-100 uppercase tracking-wide">Hyper-Γ</span>
+                        <span class="text-[9px] text-[var(--text-muted)] mt-0.5">40-100Hz • Advanced</span>
+                    </button>
+                </div>
+            </div>
+
+
+
+            <div class="py-2 flex items-center justify-center shrink-0">
+                <div class="h-px w-full bg-white/10"></div>
+                <span
+                    class="px-2 text-[10px] font-bold text-[var(--accent)] tracking-widest bg-[#0f172a]/0">HEALING</span>
+                <button class="mr-2 transition-colors relative" aria-label="Info" onclick="showInfoModal('healing')"
+                    style="background: transparent !important; border: none !important; box-shadow: none !important; color: var(--text-muted) !important;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                </button>
+                <div class="h-px w-full bg-white/10"></div>
+            </div>
+
+            <!-- Healing Group - 2 Column Grid -->
+            <div class="grid grid-cols-2 gap-1.5 shrink-0">
+
+                <button title="Pain relief and security" onclick="applyPreset('heal-174', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">174
+                        Hz</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Pain Relief</span>
+                </button>
+                <button title="Tissue regeneration" onclick="applyPreset('heal-285', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">285
+                        Hz</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Tissue</span>
+                </button>
+                <button title="Liberation from fear" onclick="applyPreset('heal-396', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">396
+                        Hz</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Liberation</span>
+                </button>
+                <button title="Facilitating change" onclick="applyPreset('heal-417', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">417
+                        Hz</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Change</span>
+                </button>
+                <button title="Nature's balance" onclick="applyPreset('heal-432', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">432
+                        Hz</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Nature</span>
+                </button>
+                <button title="DNA repair and miracles" onclick="applyPreset('heal-528', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">528
+                        Hz</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Repair</span>
+                </button>
+                <button title="Connecting relationships" onclick="applyPreset('heal-639', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">639
+                        Hz</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Connection</span>
+                </button>
+                <button title="Awakening intuition" onclick="applyPreset('heal-741', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">741
+                        Hz</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Intuition</span>
+                </button>
+                <button title="Returning to spiritual order" onclick="applyPreset('heal-852', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">852
+                        Hz</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Spirit</span>
+                </button>
+                <button title="Divine consciousness" onclick="applyPreset('heal-963', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">963
+                        Hz</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Oneness</span>
+                </button>
+            </div>
+
+            <div class="py-2 flex items-center justify-center shrink-0">
+                <div class="h-px w-full bg-white/10"></div>
+                <span
+                    class="px-2 text-[10px] font-bold text-[var(--accent)] tracking-widest bg-[#0f172a]/0">AMBIENCE</span>
+                <button class="mr-2 transition-colors relative" aria-label="Info" onclick="showInfoModal('ambience')"
+                    style="background: transparent !important; border: none !important; box-shadow: none !important; color: var(--text-muted) !important;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                </button>
+                <div class="h-px w-full bg-white/10"></div>
+            </div>
+
+            <!-- Ambience Combos - 2 Column Grid -->
+            <div class="grid grid-cols-2 gap-1.5 shrink-0">
+                <button title="Cozy rain with chill beats" onclick="applyComboPreset('lofi-rain', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span class="text-sm">🌧️</span>
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">Lofi
+                        Rain</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Chill + Rain</span>
+                </button>
+                <button title="Peaceful night atmosphere" onclick="applyComboPreset('night-ambient', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span class="text-sm">🌙</span>
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">Night</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Peaceful Sleep</span>
+                </button>
+                <button title="Dramatic focus music" onclick="applyComboPreset('epic-focus', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span class="text-sm">⚔️</span>
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">Epic</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Focus Mode</span>
+                </button>
+                <button title="Calming waves" onclick="applyComboPreset('ocean-drift', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span class="text-sm">🌊</span>
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">Ocean</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Wave Drift</span>
+                </button>
+                <button title="Intense thunderstorm" onclick="applyComboPreset('storm-focus', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span class="text-sm">⛈️</span>
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">Storm</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Intense Work</span>
+                </button>
+                <button title="Spiritual bells and chants" onclick="applyComboPreset('temple-zen', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span class="text-sm">🔔</span>
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">Temple</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Spiritual Zen</span>
+                </button>
+                <button title="Crackling fire warmth" onclick="applyComboPreset('cozy-fireplace', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span class="text-sm">🔥</span>
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">Fireplace</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Cozy Warmth</span>
+                </button>
+                <button title="Birds and nature sounds" onclick="applyComboPreset('forest-retreat', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span class="text-sm">🌲</span>
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">Forest</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Nature Immersion</span>
+                </button>
+                <button title="Space drone ambience" onclick="applyComboPreset('cosmic-journey', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span class="text-sm">🌌</span>
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">Cosmic</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Exploration</span>
+                </button>
+                <button title="Gentle sunrise vibes" onclick="applyComboPreset('morning-clarity', this)"
+                    class="preset-btn flex flex-col items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group py-2">
+                    <span class="text-sm">☀️</span>
+                    <span
+                        class="text-xs font-bold text-[var(--accent)] text-opacity-80 group-hover:text-opacity-100">Morning</span>
+                    <span class="text-[8px] text-[var(--text-muted)] mt-0.5">Gentle Clarity</span>
+                </button>
+            </div>
+            <!-- Saved Mixes Link -->
+            <div class="p-4 border-t border-white/10 flex flex-col gap-2">
+                <!-- Journey Program Button -->
+                <button id="journeyBtn"
+                    class="w-full py-2.5 px-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[var(--accent)]/50 text-xs font-bold flex items-center gap-3 text-[var(--text-muted)] hover:text-[var(--accent)] transition-all">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                        <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                    </svg>
+                    <span class="flex-1 text-left">My Journey</span>
+                    <span class="px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-400 text-[8px] uppercase">21
+                        Days</span>
+                </button>
+                <button id="historyBtn"
+                    class="w-full py-2.5 px-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[var(--accent)]/50 text-xs font-bold flex items-center gap-3 text-[var(--text-muted)] hover:text-[var(--accent)] transition-all">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                    <span class="flex-1 text-left">My Library</span>
+                </button>
+                <!-- Stats Button -->
+                <button id="statsBtn"
+                    class="w-full py-2.5 px-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[var(--accent)]/50 text-xs font-bold flex items-center gap-3 text-[var(--text-muted)] hover:text-[var(--accent)] transition-all">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 20V10"></path>
+                        <path d="M12 20V4"></path>
+                        <path d="M6 20v-6"></path>
+                    </svg>
+                    <span class="flex-1 text-left">My Stats</span>
+                </button>
+
+                <!-- Download App Button (PWA Install) -->
+                <button id="downloadAppBtn"
+                    class="w-full py-2.5 px-4 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/30 hover:bg-[var(--accent)]/20 hover:border-[var(--accent)] text-xs font-bold flex items-center gap-3 text-[var(--accent)] hover:text-white transition-all hidden">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span class="flex-1 text-left">Download App</span>
+                </button>
+            </div>
+
+    </aside>
+
+    <!-- RIGHT SIDEBAR: MIXER -->
+    <aside id="rightPanel"
+        class="fixed top-0 right-0 h-full w-80 glass-card border-l border-white/10 transform translate-x-full transition-transform duration-500 z-40 flex flex-col pointer-events-auto backdrop-blur-2xl bg-[var(--bg-panel)]">
+        <div class="p-6 border-b border-white/10 flex justify-between items-center shrink-0">
+            <h2 class="text-xs font-bold tracking-widest text-[var(--accent)]">STUDIO MIXER</h2>
+            <div class="flex items-center gap-2">
+                <button id="collapseAllBtn"
+                    class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[var(--accent)] transition-all opacity-70 hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--accent)]"
+                    title="Collapse All Sections">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                        <polyline points="6 3 12 9 18 3"></polyline>
+                    </svg>
+                </button>
+                <button id="closeRightBtn"
+                    class="opacity-70 hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--accent)] transition-all"
+                    title="Close Panel"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg></button>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+            <!-- Generator MOVED TO TOP BAR -->
+
+            <!-- Frequency Sweep Programs (NEW) -->
+            <section class="mixer-section" data-section="journeys">
+                <div class="flex justify-between items-center mb-3 cursor-pointer section-header"
+                    onclick="toggleMixerSection('journeys')">
+                    <div class="flex items-center gap-2">
+                        <svg class="section-arrow transition-transform duration-200" width="12" height="12"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                        <h3 class="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Journeys
+                        </h3>
+                        <button class="ml-2 transition-colors relative" aria-label="Info"
+                            onclick="event.stopPropagation(); showInfoModal('journeys')"
+                            style="background: transparent !important; border: none !important; box-shadow: none !important; color: var(--text-muted) !important;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <span id="sweepStatus" class="text-[9px] font-mono text-[var(--text-muted)] hidden">
+                        <span class="inline-block w-2 h-2 bg-green-400 rounded-full animate-pulse mr-1"></span>Active
+                    </span>
+                </div>
+                <div class="section-content">
+                    <div class="grid grid-cols-2 gap-2">
+                        <button data-journey="wakeUp" onclick="startSweepPreset('wakeUp')"
+                            class="sweep-btn flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[var(--accent)] transition-all group">
+                            <span class="text-lg mb-1">🌅</span>
+                            <span class="text-[10px] font-bold text-[var(--accent)]">Wake Up</span>
+                            <span class="text-[8px] text-[var(--text-muted)]">Theta → Beta • 5min</span>
+                        </button>
+                        <button data-journey="windDown" onclick="startSweepPreset('windDown')"
+                            class="sweep-btn flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[var(--accent)] transition-all group">
+                            <span class="text-lg mb-1">🌙</span>
+                            <span class="text-[10px] font-bold text-[var(--accent)]">Wind Down</span>
+                            <span class="text-[8px] text-[var(--text-muted)]">Beta → Alpha • 10min</span>
+                        </button>
+                        <button data-journey="deepSleep" onclick="startSweepPreset('deepSleep')"
+                            class="sweep-btn flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[var(--accent)] transition-all group">
+                            <span class="text-lg mb-1">💤</span>
+                            <span class="text-[10px] font-bold text-[var(--accent)]">Deep Sleep</span>
+                            <span class="text-[8px] text-[var(--text-muted)]">Alpha → Delta • 20min</span>
+                        </button>
+                        <button data-journey="focusBuilder" onclick="startSweepPreset('focusBuilder')"
+                            class="sweep-btn flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[var(--accent)] transition-all group">
+                            <span class="text-lg mb-1">🎯</span>
+                            <span class="text-[10px] font-bold text-[var(--accent)]">Focus Builder</span>
+                            <span class="text-[8px] text-[var(--text-muted)]">Alpha → Beta • 5min</span>
+                        </button>
+                        <button data-journey="meditation" onclick="startSweepPreset('meditation')"
+                            class="sweep-btn flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[var(--accent)] transition-all group">
+                            <span class="text-lg mb-1">🧘</span>
+                            <span class="text-[10px] font-bold text-[var(--accent)]">Meditation</span>
+                            <span class="text-[8px] text-[var(--text-muted)]">Alpha → Theta • 10min</span>
+                        </button>
+                        <button data-journey="creativity" onclick="startSweepPreset('creativity')"
+                            class="sweep-btn flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[var(--accent)] transition-all group">
+                            <span class="text-lg mb-1">🎨</span>
+                            <span class="text-[10px] font-bold text-[var(--accent)]">Creative Flow</span>
+                            <span class="text-[8px] text-[var(--text-muted)]">Beta → Theta • 8min</span>
+                        </button>
+                    </div>
+                    <button id="stopSweepBtn" onclick="stopSweep()"
+                        class="hidden w-full mt-2 py-2 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-bold uppercase tracking-wide hover:bg-red-500/30 transition-all">
+                        ⏹ Stop Journey
+                    </button>
+                </div>
+            </section>
+
+            <!-- DJ PADS (Pioneer XDJ-style) -->
+            <section class="mixer-section" data-section="djpads">
+                <div class="flex justify-between items-center mb-3 section-header">
+                    <div class="flex items-center gap-2">
+                        <button
+                            class="p-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[var(--accent)] transition-all text-[var(--text-muted)] hover:text-[var(--accent)]"
+                            onclick="toggleMixerSection('djpads')" title="Toggle DJ Studio Section">
+                            <svg class="section-arrow transition-transform duration-200" width="14" height="14"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9" />
+                                <polyline points="6 3 12 9 18 3" />
+                            </svg>
+                        </button>
+                        <h3 class="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">DJ Studio
+                        </h3>
+                        <button class="ml-2 transition-colors relative" aria-label="Info"
+                            onclick="showInfoModal('djpads'); event.stopPropagation();"
+                            style="background: transparent !important; border: none !important; box-shadow: none !important; color: var(--text-muted) !important;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+                        <span class="text-[10px] text-[var(--text-muted)]">VOL</span>
+                        <input type="range" id="djMasterVolume" min="0" max="1" step="0.01" value="0.8"
+                            class="w-14 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                        <span id="djMasterValue"
+                            class="text-[10px] font-mono text-pink-400 tabular-nums w-8 text-right">80%</span>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <!-- Mode Toggle & Stop All - NOW AT TOP -->
+                    <div class="flex items-center justify-between mb-3 pb-3 border-b border-white/5">
+                        <div class="flex items-center gap-3">
+                            <span class="text-[9px] text-[var(--text-muted)] uppercase">Mode:</span>
+                            <div class="flex gap-1 bg-black/30 rounded-lg p-0.5">
+                                <button id="djModeOneShot"
+                                    class="dj-mode-btn px-2 py-1 rounded text-[9px] font-bold bg-pink-500/20 text-pink-400 border border-pink-500/30">
+                                    One-Shot
+                                </button>
+                                <button id="djModeLoop"
+                                    class="dj-mode-btn px-2 py-1 rounded text-[9px] font-bold bg-white/5 text-[var(--text-muted)] border border-white/10 hover:bg-white/10">
+                                    Loop
+                                </button>
+                            </div>
+                        </div>
+                        <button id="djStopAll"
+                            class="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-[var(--text-muted)] text-[9px] font-bold uppercase hover:bg-white/10 transition-all">
+                            ⏹ Stop All
+                        </button>
+                    </div>
+
+                    <!-- Category Tabs with Show All Button -->
+                    <div class="flex items-center justify-between gap-2 mb-3">
+                        <div class="flex gap-1 overflow-x-auto pb-1" id="djCategoryTabs">
+                            <button data-category="ambient"
+                                class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-purple-500/20 text-purple-400 border border-purple-500/30 whitespace-nowrap hover:bg-white/10">
+                                🎧 Ambient
+                            </button>
+                            <button data-category="pulse"
+                                class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-red-500/20 text-red-400 border border-red-500/30 whitespace-nowrap hover:bg-white/10">
+                                💓 Pulse
+                            </button>
+                            <button data-category="texture"
+                                class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 whitespace-nowrap hover:bg-white/10">
+                                🌌 Texture
+                            </button>
+                            <button data-category="healing"
+                                class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 whitespace-nowrap hover:bg-white/10">
+                                🧘 Healing
+                            </button>
+                            <button data-category="drops"
+                                class="dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-blue-500/20 text-blue-400 border border-blue-500/30 whitespace-nowrap hover:bg-white/10">
+                                💥 Drops
+                            </button>
+                        </div>
+                        <button id="djShowAllCategoriesBtn"
+                            class="px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 whitespace-nowrap hover:bg-cyan-500/30 transition-all flex items-center gap-1 shrink-0"
+                            title="Show All Categories">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                            </svg>
+                            All
+                        </button>
+                    </div>
+
+                    <!-- Pads Grid -->
+                    <div id="djPadsGrid" class="grid grid-cols-3 gap-2">
+                        <!-- JS will populate pads here -->
+                    </div>
+
+                    <!-- DJ Sound Controls -->
+                    <div class="mt-4 pt-6 space-y-2">
+                        <div class="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wide mb-2">
+                            Sound
+                            Controls</div>
+
+                        <!-- Pitch (+/- semitones) -->
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] text-[var(--text-muted)] w-12">PITCH</span>
+                            <input type="range" id="djSoundPitch" min="-12" max="12" step="1" value="0"
+                                class="flex-1 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                            <span id="djSoundPitchVal"
+                                class="text-[9px] font-mono text-[var(--accent)] tabular-nums w-8 text-right">0</span>
+                        </div>
+
+                        <!-- Tone (filter cutoff) -->
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] text-[var(--text-muted)] w-12">TONE</span>
+                            <input type="range" id="djSoundTone" min="200" max="8000" step="100" value="4000"
+                                class="flex-1 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                            <span id="djSoundToneVal"
+                                class="text-[9px] font-mono text-[var(--accent)] tabular-nums w-8 text-right">4k</span>
+                        </div>
+
+                        <!-- Speed (retrigger rate multiplier) -->
+                        <div class="flex items-center gap-2 pb-8">
+                            <span class="text-[9px] text-[var(--text-muted)] w-12">SPEED</span>
+                            <input type="range" id="djSoundSpeed" min="0.5" max="2" step="0.1" value="1"
+                                class="flex-1 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                            <span id="djSoundSpeedVal"
+                                class="text-[9px] font-mono text-[var(--accent)] tabular-nums w-8 text-right">1x</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- Soundscapes -->
+            <section class="mixer-section" data-section="atmosphere">
+                <div class="flex justify-between items-center mb-4 cursor-pointer section-header"
+                    onclick="toggleMixerSection('atmosphere')">
+                    <div class="flex items-center gap-2">
+                        <svg class="section-arrow transition-transform duration-200" width="12" height="12"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                        <h3 class="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Atmosphere
+                        </h3>
+                        <button class="ml-2 transition-colors relative" aria-label="Info"
+                            onclick="showInfoModal('atmosphere'); event.stopPropagation();"
+                            style="background: transparent !important; border: none !important; box-shadow: none !important; color: var(--text-muted) !important;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+                        <span class="text-[10px] text-[var(--text-muted)]">MASTER</span>
+                        <input type="range" id="atmosMasterSlider" min="0" max="1" step="0.01" value="0.8"
+                            class="w-16 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                        <span id="atmosMasterValue"
+                            class="text-[10px] font-mono text-[var(--accent)] tabular-nums w-8 text-right">80%</span>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <div id="soundscapeContainer" class="grid grid-cols-1 gap-3">
+                        <!-- JS Generated Items Will Go Here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLEEP STORIES (NEW) -->
+            <section class="mixer-section" data-section="stories">
+                <div class="flex justify-between items-center mb-4 cursor-pointer section-header"
+                    onclick="toggleMixerSection('stories')">
+                    <div class="flex items-center gap-2">
+                        <svg class="section-arrow transition-transform duration-200" width="12" height="12"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                        <h3 class="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Sleep
+                            Stories</h3>
+                        <button class="ml-2 transition-colors relative" aria-label="Info"
+                            onclick="showInfoModal('stories'); event.stopPropagation();"
+                            style="background: transparent !important; border: none !important; box-shadow: none !important; color: var(--text-muted) !important;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+                        <span class="text-[10px] text-[var(--text-muted)]">VOL</span>
+                        <input type="range" id="storyVolumeSlider" min="0" max="1" step="0.01" value="0.7"
+                            class="w-14 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                        <span id="storyVolumeValue"
+                            class="text-[10px] font-mono text-purple-400 tabular-nums w-8 text-right">70%</span>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <div id="storyContainer" class="grid grid-cols-2 gap-2">
+                        <!-- Story cards will be rendered by JS -->
+                    </div>
+                    <button id="stopStoryBtn"
+                        class="hidden w-full mt-2 py-2 rounded-lg bg-purple-500/20 border border-purple-500/30 text-purple-400 text-xs font-bold uppercase tracking-wide hover:bg-purple-500/30 transition-all">
+                        ⏹ Stop Story
+                    </button>
+                </div>
+            </section>
+
+            <!-- UPLOAD MUSIC (Custom Audio) -->
+            <section class="mixer-section mb-6 relative z-10" data-section="uploads">
+                <div class="flex justify-between items-center mb-4 cursor-pointer section-header"
+                    onclick="toggleMixerSection('uploads')">
+                    <div class="flex items-center gap-2">
+                        <svg class="section-arrow transition-transform duration-200" width="12" height="12"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                        <h3 class="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Upload
+                            Audio</h3>
+                        <button class="ml-2 transition-colors relative" aria-label="Info"
+                            onclick="showInfoModal('uploads'); event.stopPropagation();"
+                            style="background: transparent !important; border: none !important; box-shadow: none !important; color: var(--text-muted) !important;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <label for="audioUploadInput" onclick="event.stopPropagation()"
+                        class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/30 text-[var(--accent)] text-[10px] font-bold uppercase tracking-wide cursor-pointer hover:bg-[var(--accent)]/20 transition-all">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Add Track
+                    </label>
+                    <input type="file" id="audioUploadInput" accept="audio/*" class="hidden" multiple
+                        onclick="event.stopPropagation()">
+                </div>
+                <div class="section-content">
+                    <div id="myAudioContainer" class="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                        <div class="text-xs text-center py-4 text-[var(--text-muted)] opacity-60">
+                            Upload MP3s (Classical, Nature, etc.) to layer with frequencies.
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 mt-4 pt-6">
+                        <span class="text-[10px] text-[var(--text-muted)]">TRACK VOL</span>
+                        <input type="range" id="customAudioVolume" min="0" max="1" step="0.01" value="0.7"
+                            class="flex-1 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                        <span id="customAudioVolumeValue"
+                            class="text-[10px] font-mono text-[var(--accent)] tabular-nums w-8 text-right">70%</span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="h-6 border-b border-white/5 mb-6"></div>
+
+            <!-- CLASSICAL MASTERPIECES -->
+            <section class="mixer-section" data-section="classical">
+                <div class="flex justify-between items-center mb-4 cursor-pointer section-header"
+                    onclick="toggleMixerSection('classical')">
+                    <div class="flex items-center gap-2">
+                        <svg class="section-arrow transition-transform duration-200" width="12" height="12"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                        <h3 class="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Music
+                            Library</h3>
+                        <button class="ml-2 transition-colors relative" aria-label="Info"
+                            onclick="showInfoModal('classical'); event.stopPropagation();"
+                            style="background: transparent !important; border: none !important; box-shadow: none !important; color: var(--text-muted) !important;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <label for="classicalUploadInput" onclick="event.stopPropagation()"
+                        class="flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/30 text-[var(--accent)] text-[9px] font-bold uppercase tracking-wide cursor-pointer hover:bg-[var(--accent)]/20 transition-all">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        Add
+                    </label>
+                    <input type="file" id="classicalUploadInput" accept="audio/*" class="hidden" multiple
+                        onclick="event.stopPropagation()">
+                </div>
+                <div class="section-content">
+                    <!-- Removed max-h-64 to ensure visibility -->
+                    <div id="classicalContainer" class="overflow-y-auto custom-scrollbar space-y-3 pr-1"
+                        style="min-height: 100px; max-height: 300px;">
+                        <!-- Classical items generated by JS -->
+                        <div class="text-xs text-center py-4 text-[var(--text-muted)] opacity-60">
+                            Loading Classical Music...
+                        </div>
+                    </div>
+
+                    <!-- RESCUE SCRIPT: Fallback if main.js Classical init fails (2s timeout for ES module loading) -->
+                    <script>
+                        setTimeout(() => {
+                            const container = document.getElementById('classicalContainer');
+                            // Check if main.js already initialized - if so, skip rescue
+                            if (container && container.dataset.initialized === 'true') {
+                                return; // main.js handled it
+                            }
+                            if (container && (container.innerText.includes('Loading') || container.children.length < 2)) {
+                                console.warn('[Rescue] Classical not loaded by main.js - using fallback');
+
+                                const RESCUE_PIECES = [
+                                    { id: 'satie_gymnopedie', title: 'Gymnopédie No. 1', composer: 'Erik Satie' },
+                                    { id: 'debussy_clair', title: 'Clair de Lune', composer: 'Claude Debussy' },
+                                    { id: 'beethoven_moonlight', title: 'Moonlight Sonata', composer: 'Beethoven' },
+                                    { id: 'bach_cello', title: 'Cello Suite No. 1', composer: 'J.S. Bach' },
+                                    { id: 'vivaldi_spring', title: 'The Four Seasons', composer: 'Vivaldi' },
+                                    { id: 'mozart_eine', title: 'Eine kleine Nachtmusik', composer: 'Mozart' },
+                                    { id: 'chopin_nocturne', title: 'Nocturne Op. 9', composer: 'Chopin' },
+                                    { id: 'tchaikovsky_nutcracker', title: 'Nutcracker', composer: 'Tchaikovsky' },
+                                    { id: 'bach_air', title: 'Air on G String', composer: 'J.S. Bach' }
+                                ];
+
+                                container.innerHTML = RESCUE_PIECES.map(piece => `
+                                    <div class="classical-item flex items-center gap-3 p-4 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-all cursor-pointer"
+                                         onclick="window.playClassicalPiece ? window.playClassicalPiece('${piece.id}') : new Audio('audio/classical/${piece.id}.ogg').play()">
+                                        <div class="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--accent)]/20 text-[var(--accent)] play-icon">▶</div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-xs font-medium text-[var(--text-main)] truncate">${piece.title}</div>
+                                            <div class="text-[9px] text-[var(--text-muted)] truncate">${piece.composer}</div>
+                                        </div>
+                                    </div>
+                                `).join('');
+                            }
+                        }, 2000);
+                    </script>
+
+
+                    <!-- Classical Volume -->
+                    <div class="flex items-center gap-2 mt-4 pt-6">
+                        <span class="text-[10px] text-[var(--text-muted)]">CLASSICAL VOL</span>
+                        <input type="range" id="classicalVolumeSlider" min="0" max="1" step="0.01" value="0.7"
+                            class="flex-1 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                        <span id="classicalVolumeValue"
+                            class="text-[10px] font-mono text-[var(--accent)] tabular-nums w-8 text-right">70%</span>
+                    </div>
+
+                    <!-- Classical Player Controls (Hidden by default) -->
+                    <div id="classicalControls" class="hidden mt-3 pt-3 border-t border-white/5 space-y-3">
+                        <!-- Now Playing Info -->
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] text-[var(--text-muted)] uppercase tracking-wide">NOW
+                                PLAYING:</span>
+                            <span id="classicalNowPlaying"
+                                class="text-xs text-[var(--text-main)] truncate flex-1">—</span>
+                        </div>
+
+                        <!-- Time Progress -->
+                        <div class="flex items-center gap-2">
+                            <span id="classicalCurrentTime"
+                                class="text-[10px] font-mono text-[var(--accent)] w-10 text-right">0:00</span>
+                            <div class="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden cursor-pointer relative group"
+                                id="classicalProgressBar">
+                                <div id="classicalProgressFill"
+                                    class="h-full bg-[var(--accent)] transition-[width] duration-100" style="width: 0%">
+                                </div>
+                            </div>
+                            <span id="classicalTotalTime"
+                                class="text-[10px] font-mono text-[var(--text-muted)] w-10">0:00</span>
+                        </div>
+
+                        <!-- Playback Controls -->
+                        <div class="flex items-center justify-center gap-3">
+                            <!-- Rewind 10s -->
+                            <button id="classicalRewindBtn"
+                                class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all text-[var(--accent)]"
+                                title="Rewind 10s">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
+                                </svg>
+                            </button>
+
+                            <!-- Play/Pause -->
+                            <button id="classicalPlayPauseBtn"
+                                class="w-10 h-10 flex items-center justify-center rounded-full bg-[var(--accent)] text-[var(--bg-main)] hover:opacity-90 transition-all shadow-lg shadow-[var(--accent)]/20">
+                                <svg id="classicalPlayIcon" width="18" height="18" viewBox="0 0 24 24"
+                                    fill="currentColor" class="ml-0.5 hidden">
+                                    <polygon points="5,3 19,12 5,21" />
+                                </svg>
+                                <svg id="classicalPauseIcon" width="18" height="18" viewBox="0 0 24 24"
+                                    fill="currentColor">
+                                    <rect x="6" y="4" width="4" height="16" />
+                                    <rect x="14" y="4" width="4" height="16" />
+                                </svg>
+                            </button>
+
+                            <!-- Stop -->
+                            <button id="stopClassicalBtn"
+                                class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all text-red-400 hover:text-red-300"
+                                title="Stop">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <rect x="4" y="4" width="16" height="16" rx="2" />
+                                </svg>
+                            </button>
+
+                            <!-- Forward 10s -->
+                            <button id="classicalForwardBtn"
+                                class="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all text-[var(--accent)]"
+                                title="Forward 10s">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M13 17l5-5-5-5M6 17l5-5-5-5" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="h-20"></div> <!-- Spacer -->
+
+        </div>
+
+        <!-- Master Volume & Balance Footer -->
+        <div class="p-6 pr-10 border-t border-white/10 bg-black/20 shrink-0 space-y-4">
+            <!-- Volume -->
+            <div>
+                <div class="flex justify-between mb-2">
+                    <span class="text-xs font-bold fader-label">MAIN OUT</span>
+                    <span id="masterVolValue" class="text-xs font-mono fader-value">100%</span>
+                </div>
+                <input type="range" id="masterVolSlider" min="0" max="1" step="0.01" value="1.0"
+                    class="w-full h-2 bg-slate-700 rounded-full appearance-none cursor-pointer accent-[var(--accent)]">
+            </div>
+
+            <!-- Balance -->
+            <div>
+                <div class="flex justify-between mb-1">
+                    <span class="text-xs font-bold fader-label">L/R FADER</span>
+                </div>
+                <!-- Custom styled balance slider with L/R labels -->
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-mono fader-label">L</span>
+                    <div class="relative flex-1 h-2 flex items-center">
+                        <div class="absolute w-0.5 h-3 bg-white/30 left-1/2 -translate-x-1/2 rounded-full z-10"></div>
+                        <input type="range" id="balanceSlider" min="-1" max="1" step="0.1" value="0"
+                            class="relative w-full h-2 bg-slate-700/50 rounded-full appearance-none cursor-pointer accent-[var(--text-muted)] hover:accent-[var(--accent)] transition-all">
+                    </div>
+                    <span class="text-[10px] font-mono fader-label">R</span>
+                </div>
+                <div class="text-center mt-1 overflow-visible">
+                    <span id="balanceValue" class="text-xs font-mono fader-value inline-block min-w-[3rem]">0</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Modals (kept outside overlay for z-index) -->
+    <!-- Library Panel (slides from right) -->
+    <div id="libraryPanel" class="fixed inset-0 z-40 transform translate-x-full transition-transform duration-300">
+        <!-- Backdrop -->
+        <div id="libraryBackdrop" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+        <!-- Panel Content -->
+        <div
+            class="absolute right-0 top-0 bottom-0 w-full max-w-md glass-card border-l border-white/10 flex flex-col shadow-2xl">
+            <!-- Header -->
+            <div class="p-5 border-b border-white/10 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-bold text-white">My Library</h2>
+                            <p class="text-[10px] text-[var(--text-muted)]">Your saved frequency mixes</p>
+                        </div>
+                    </div>
+                    <button id="closeLibraryBtn" class="p-2.5 rounded-full hover:bg-white/10 transition-colors"
+                        style="color: var(--text-muted);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Library List -->
+            <div id="libraryList" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                <!-- Loading state (replaced by JS) -->
+                <div class="flex flex-col items-center justify-center h-64 text-center">
+                    <div
+                        class="w-12 h-12 mb-4 rounded-full border-2 border-purple-500/30 border-t-purple-500 animate-spin">
+                    </div>
+                    <p class="text-sm text-[var(--text-muted)]">Loading your mixes...</p>
+                </div>
+            </div>
+
+            <!-- Footer with Save Button -->
+            <div class="p-4 border-t border-white/10 bg-white/5">
+                <button id="quickSaveMixBtn"
+                    class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-gray-900 text-sm font-bold uppercase tracking-wide hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-lg">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        class="text-gray-900">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Save Current Mix
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- THEME GALLERY MODAL -->
+    <div id="themeModal"
+        class="modal fixed inset-0 z-[150] flex items-center justify-center p-4 backdrop-blur-md bg-black/40 hidden">
+        <div class="glass-card w-[90vw] md:w-[75vw] max-w-none max-h-[85vh] flex flex-col rounded-3xl overflow-hidden shadow-2xl border border-white/10 transform scale-95 opacity-0 transition-all duration-300"
+            id="themeModalCard">
+
+            <!-- Header -->
+            <div class="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)]">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5" />
+                            <path
+                                d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold tracking-tight">THEME GALLERY</h2>
+                        <div class="text-xs text-[var(--text-muted)]">Select your visual atmosphere</div>
+                    </div>
+                </div>
+                <button id="closeThemeBtn" class="p-2 rounded-full hover:bg-white/10 transition-colors">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Grid Content -->
+            <div id="themeModalContent" class="flex-1 overflow-y-auto custom-scrollbar p-6"
+                style="background-color: var(--bg-main);">
+                <div id="themeGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <!-- Theme Cards Injected via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Profile Modal (Duplicate Removed) -->
+
+    <div id="saveMixBtn" class="hidden"></div>
+    <!-- Playback/Export Modal -->
+    <div id="videoModal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
+        <div class="panel p-4 rounded-xl shadow-2xl max-w-sm w-full border border-[var(--border)] flex flex-col gap-4">
+            <div class="flex justify-between items-center border-b border-[var(--border)] pb-2">
+                <h3 class="text-sm font-bold" style="color: var(--accent);">Session Recorded</h3>
+                <button id="closeModalBtn" class="p-1 rounded hover:bg-white/10" style="color: var(--text-muted);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Preview Player -->
+            <div class="relative w-full aspect-video bg-black rounded-lg overflow-hidden border border-[var(--border)]">
+                <video id="playbackVideo" class="w-full h-full object-cover hidden" controls playsinline loop></video>
+
+                <!-- Audio Only Player UI -->
+                <div id="audioOnlyPlayer"
+                    class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 hidden">
+                    <div
+                        class="w-16 h-16 rounded-full bg-[var(--accent)]/20 flex items-center justify-center mb-2 animate-pulse">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                            stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                            <path
+                                d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z">
+                            </path>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-mono text-[var(--text-muted)]">Audio Preview</span>
+                    <audio id="playbackAudio" class="w-full mt-4 px-4" controls loop></audio>
+                </div>
+            </div>
+
+            <!-- Export Options -->
+            <div class="mt-4 px-2 border-t border-[var(--border)] pt-3 space-y-3 relative">
+                <!-- Export Options Row -->
+                <div class="flex justify-between items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] uppercase font-bold" style="color: var(--text-muted);">Loops:</span>
+                        <input type="number" id="loopCountInput" value="1" min="1" max="100"
+                            class="w-14 text-[10px] rounded border border-[var(--border)] py-1 px-1 focus:outline-none focus:border-[var(--accent)]"
+                            style="background-color: var(--bg-main); color: var(--text-main);">
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] uppercase font-bold" style="color: var(--text-muted);">Format:</span>
+                        <select id="formatSelect"
+                            class="text-[10px] rounded border border-[var(--border)] py-1 px-2 focus:outline-none focus:border-[var(--accent)] cursor-pointer"
+                            style="background-color: var(--bg-main); color: var(--text-main);">
+                            <option value="wav-16">WAV 16-bit (CD)</option>
+                            <option value="wav-24">WAV 24-bit (Studio)</option>
+                            <option value="mp3-320">MP3 320kbps</option>
+                            <option value="mp3-192">MP3 192kbps</option>
+                            <option value="mp4-h264">MP4 (H.264 Video)</option>
+                            <option value="mp4-vp9">MP4 (VP9 Video)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Info Row -->
+                <div class="flex justify-between text-[10px] font-mono px-1" style="color: var(--text-muted);">
+                    <span>Length: <span id="loopDurationDisplay">--:--</span></span>
+                    <span id="sizeText">~0 MB</span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <button id="modalDlBtn"
+                        class="py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all transform hover:scale-[1.02]"
+                        style="background-color: var(--accent); color: var(--bg-main);">
+                        Export High-Res
+                    </button>
+                    <button id="quickExportBtn"
+                        class="py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border border-[var(--border)] hover:bg-white/5"
+                        style="color: var(--bg-main); background-color: var(--text-main);">
+                        Quick Save
+                    </button>
+                </div>
+
+                <!-- Processing Overlay -->
+                <div id="loopProcessing"
+                    class="absolute inset-0 bg-black/90 z-50 flex items-center justify-center flex-col rounded-xl p-6"
+                    style="display: none;">
+                    <div class="w-full max-w-[200px] mb-4">
+                        <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div id="progressFill" class="h-full bg-[var(--accent)] transition-all duration-300"
+                                style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="text-xs font-bold mb-1" style="color: var(--accent);" id="progressStep">Initializing...
+                    </div>
+                    <div class="text-[10px] opacity-70 mb-2" style="color: var(--text-main);" id="progressDetail">
+                        Preparing audio...</div>
+                    <!-- Progress Stats -->
+                    <div class="flex justify-between text-[10px] font-mono" style="color: var(--text-muted);">
+                        <span id="progressPercent">0% </span>
+                        <span id="progressEta">Calculating...</span>
+                    </div>
+                    <!-- Cancel Button -->
+                    <button id="cancelExportBtn"
+                        class="mt-3 px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/30 hover:border-red-500">
+                        Cancel Export
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Save Mix Modal -->
+    <div id="saveModal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 hidden">
+        <div class="panel p-4 rounded-xl shadow-2xl max-w-sm w-full border border-[var(--border)] flex flex-col gap-4">
+            <h3 class="text-sm font-bold" style="color: var(--accent);">Save Custom Mix</h3>
+            <input type="text" id="saveNameInput"
+                class="w-full bg-[var(--bg-main)] border border-[var(--border)] rounded p-2 text-sm text-[var(--text-main)] focus:border-[var(--accent)] outline-none"
+                placeholder="Enter mix name...">
+            <div class="flex justify-end gap-2">
+                <button id="cancelSaveBtn"
+                    class="px-3 py-1.5 rounded text-xs font-bold text-[var(--text-muted)] hover:text-white transition-colors border border-[var(--border)]">Cancel</button>
+                <button id="confirmSaveBtn" class="px-3 py-1.5 rounded text-xs font-bold transition-colors"
+                    style="background-color: var(--accent); color: var(--bg-main);">Save</button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Hyper-Gamma Unlock Modal (NEW) -->
+    <div id="hyperGammaModal"
+        class="modal fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 hidden">
+        <div class="glass-card p-6 rounded-2xl shadow-2xl max-w-md w-full mx-4 flex flex-col gap-4">
+            <div class="text-center">
+                <div class="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-4">
+                    <span class="text-3xl">⚡</span>
+                </div>
+                <h3 class="text-lg font-bold text-amber-400 mb-2">Unlock Hyper-Gamma Mode</h3>
+                <p class="text-xs text-[var(--text-muted)]">Advanced frequencies: 40-100Hz</p>
+            </div>
+
+            <div class="text-sm text-[var(--text-muted)] space-y-3">
+                <p><strong class="text-amber-400">⚠️ Limited Research:</strong> Hyper-Gamma frequencies (40-100Hz) have
+                    limited scientific research compared to standard ranges.</p>
+                <p><strong class="text-amber-400">⏱️ Time Limit:</strong> Sessions will be limited to 15 minutes maximum
+                    for your safety.</p>
+                <p><strong class="text-amber-400">🧠 Experienced Users:</strong> Recommended for those familiar with
+                    brainwave entrainment.</p>
+                <p><strong class="text-[var(--text-main)]">📋 Use Cases:</strong> Higher cognitive processing, peak
+                    mental performance, heightened awareness states.</p>
+            </div>
+
+            <div class="flex items-start gap-3 mt-2">
+                <input type="checkbox" id="hyperGammaAccept" class="mt-1 accent-amber-400">
+                <label for="hyperGammaAccept" class="text-xs text-[var(--text-muted)]">
+                    I understand the experimental nature of Hyper-Gamma frequencies and accept responsibility for my
+                    use.
+                </label>
+            </div>
+
+            <div class="flex gap-3">
+                <button id="hyperGammaCancelBtn"
+                    class="flex-1 py-3 rounded-lg bg-white/10 text-[var(--text-muted)] font-bold text-sm uppercase tracking-wide hover:bg-white/20 transition-all">
+                    Cancel
+                </button>
+                <button id="hyperGammaUnlockBtn" disabled
+                    class="flex-1 py-3 rounded-lg bg-amber-500 text-[var(--bg-main)] font-bold text-sm uppercase tracking-wide hover:opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                    Unlock
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Safety Disclaimer Modal (First-Time) -->
+    <div id="disclaimerModal"
+        class="modal fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 hidden">
+        <div class="glass-card p-6 rounded-2xl shadow-2xl max-w-md w-full mx-4 flex flex-col gap-4">
+            <div class="text-center">
+                <div class="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-4">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        class="text-amber-400">
+                        <path
+                            d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-[var(--accent)] mb-2">Important Safety Information</h3>
+            </div>
+
+            <div class="text-sm text-[var(--text-muted)] space-y-3">
+                <p><strong class="text-[var(--text-main)]">🎧 Headphones Required:</strong> Binaural beats only work
+                    with stereo headphones.</p>
+                <p><strong class="text-[var(--text-main)]">⚠️ Medical Advisory:</strong> Do not use if you have
+                    epilepsy, a pacemaker, or are prone to seizures. Consult a doctor if pregnant.</p>
+                <p><strong class="text-[var(--text-main)]">🔊 Volume:</strong> Keep volume at a comfortable level.
+                    Recommended max 85 dB.</p>
+                <p><strong class="text-[var(--text-main)]">⏱️ Duration:</strong> Take breaks every 90 minutes. Avoid use
+                    while driving or operating machinery.</p>
+            </div>
+
+            <div class="flex items-start gap-3 mt-2">
+                <input type="checkbox" id="disclaimerAccept" class="mt-1 accent-[var(--accent)]">
+                <label for="disclaimerAccept" class="text-xs text-[var(--text-muted)]">
+                    I understand that binaural beats are for relaxation and wellness purposes only, not medical
+                    treatment.
+                </label>
+            </div>
+
+            <div class="flex gap-3 mt-2">
+                <button id="disclaimerBackBtn"
+                    class="flex-1 py-3 rounded-lg bg-white/10 text-[var(--text-muted)] font-bold text-sm uppercase tracking-wide hover:bg-white/20 transition-all">
+                    Back
+                </button>
+                <button id="disclaimerContinueBtn" disabled
+                    class="flex-[2] py-3 rounded-lg bg-[var(--accent)] text-[var(--bg-main)] font-bold text-sm uppercase tracking-wide hover:opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                    Continue
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Journey Modal -->
+    <div id="journeyModal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 hidden">
+        <div class="glass-card rounded-2xl shadow-2xl max-w-md w-full mx-4 flex flex-col max-h-[85vh] overflow-hidden">
+            <div class="p-6 border-b border-white/10 flex justify-between items-center shrink-0">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">🎓</span>
+                    <div>
+                        <h3 class="text-lg font-bold text-purple-400">My Journey</h3>
+                        <p class="text-[10px] text-[var(--text-muted)]">21-day meditation program</p>
+                    </div>
+                </div>
+                <button id="closeJourneyBtn" class="p-2 rounded-full hover:bg-white/10"
+                    style="color: var(--text-muted);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div id="journeyContainer" class="flex-1 overflow-y-auto custom-scrollbar p-6">
+                <!-- Journey content rendered by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Modal -->
+    <div id="statsModal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
+
+        <div class="glass-card p-6 rounded-2xl shadow-2xl max-w-md w-full mx-4 flex flex-col gap-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-bold text-[var(--accent)]">📊 My Stats</h3>
+                <button id="closeStatsBtn" class="p-2 rounded-full hover:bg-white/10" style="color: var(--text-muted);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="grid grid-cols-3 gap-3 text-center">
+                <div class="bg-white/5 rounded-xl p-3">
+                    <div id="statStreak" class="text-2xl font-bold text-[var(--accent)]">0</div>
+                    <div class="text-[9px] text-[var(--text-muted)] uppercase tracking-wide">Day Streak</div>
+                </div>
+                <div class="bg-white/5 rounded-xl p-3">
+                    <div id="statHours" class="text-2xl font-bold text-[var(--accent)]">0</div>
+                    <div class="text-[9px] text-[var(--text-muted)] uppercase tracking-wide">Total Hours</div>
+                </div>
+                <div class="bg-white/5 rounded-xl p-3">
+                    <div id="statSessions" class="text-2xl font-bold text-[var(--accent)]">0</div>
+                    <div class="text-[9px] text-[var(--text-muted)] uppercase tracking-wide">Sessions</div>
+                </div>
+            </div>
+            <div class="bg-white/5 rounded-xl p-4">
+                <div class="text-[10px] text-[var(--text-muted)] uppercase tracking-wide mb-3">This Week</div>
+                <div id="weeklyChart" class="flex items-end justify-between gap-1" style="height: 60px;"></div>
+                <div id="weeklyLabels" class="flex justify-between text-[8px] text-[var(--text-muted)] mt-1"></div>
+            </div>
+            <div class="flex justify-between items-center bg-white/5 rounded-xl p-3">
+                <div class="text-xs text-[var(--text-muted)]">Favorite Preset</div>
+                <div id="statTopPreset" class="text-sm font-bold text-[var(--accent)]">None</div>
+            </div>
+            <div class="flex justify-between items-center text-xs text-[var(--text-muted)]">
+                <span>Avg. Session Length</span>
+                <span id="statAvgSession" class="text-[var(--accent)] font-mono">0 min</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- PWA Install Prompt Banner -->
+    <div id="installPrompt"
+        class="fixed bottom-28 left-4 right-4 z-[9999] glass-card p-4 rounded-2xl flex items-center justify-between gap-4 hidden transform translate-y-full transition-transform duration-300 shadow-2xl"
+        style="max-width: 400px; margin: 0 auto; display: none;">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-[var(--accent)]/20 flex items-center justify-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+            </div>
+            <div>
+                <div class="text-sm font-bold text-[var(--text-main)]">Install MindWave</div>
+                <div class="text-[10px] text-[var(--text-muted)]">Add to home screen for offline use</div>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button id="installDismiss"
+                class="px-3 py-1.5 text-xs text-[var(--text-muted)] hover:text-white transition-colors">
+                Later
+            </button>
+            <button id="installAccept"
+                class="px-4 py-1.5 rounded-lg bg-[var(--accent)] text-[var(--bg-main)] text-xs font-bold hover:opacity-90 transition-opacity">
+                Install
+            </button>
+        </div>
+    </div>
+
+    <!-- PWA Install Logic -->
+    <script>
+        let deferredPrompt;
+        const installPrompt = document.getElementById('installPrompt');
+        const installAccept = document.getElementById('installAccept');
+        const installDismiss = document.getElementById('installDismiss');
+        const downloadAppBtn = document.getElementById('downloadAppBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            // Show the Download App button in sidebar immediately
+            if (downloadAppBtn) {
+                downloadAppBtn.classList.remove('hidden');
+            }
+
+            // Show install prompt after 30 seconds if not dismissed before
+            if (!localStorage.getItem('installPromptDismissed')) {
+                setTimeout(() => {
+                    if (deferredPrompt && installPrompt) {
+                        installPrompt.style.display = 'flex';
+                        installPrompt.classList.remove('hidden', 'translate-y-full');
+                    }
+                }, 30000);
+            }
+        });
+
+        // Handle Download App button click (in sidebar)
+        if (downloadAppBtn) {
+            downloadAppBtn.addEventListener('click', async () => {
+                // PAYWALL CHECK: Source Code / App Download ($350)
+                if (window.paywall) {
+                    const hasAccess = await window.paywall.hasPurchasedApp();
+                    if (!hasAccess) {
+                        if (confirm("The Downloadable App & Source Code is a Premium Feature ($350 Lifetime Access). \n\nClick OK to purchase.")) {
+                            window.paywall.checkAccessAndPurchase('lifetime');
+                        }
+                        return;
+                    }
+                }
+
+                if (!deferredPrompt) {
+                    // Already installed or not available
+                    alert('App is already installed or installation is not available.');
+                    return;
+                }
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log('[PWA] Install outcome:', outcome);
+                if (outcome === 'accepted') {
+                    downloadAppBtn.classList.add('hidden');
+                }
+                deferredPrompt = null;
+                if (installPrompt) {
+                    installPrompt.classList.add('hidden');
+                    installPrompt.style.display = 'none';
+                }
+            });
+        }
+
+        if (installAccept) {
+            installAccept.addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log('[PWA] Install outcome:', outcome);
+                deferredPrompt = null;
+                installPrompt.classList.add('hidden');
+                installPrompt.style.display = 'none';
+                if (downloadAppBtn) downloadAppBtn.classList.add('hidden');
+            });
+        }
+
+        if (installDismiss) {
+            installDismiss.addEventListener('click', () => {
+                localStorage.setItem('installPromptDismissed', 'true');
+                installPrompt.classList.add('translate-y-full');
+                setTimeout(() => {
+                    installPrompt.classList.add('hidden');
+                    installPrompt.style.display = 'none';
+                }, 300);
+            });
+        }
+
+        window.addEventListener('appinstalled', () => {
+            console.log('[PWA] App installed successfully');
+            if (installPrompt) {
+                installPrompt.classList.add('hidden');
+                installPrompt.style.display = 'none';
+            }
+            if (downloadAppBtn) downloadAppBtn.classList.add('hidden');
+        });
+    </script>
+
+
+    <!-- MOBILE BOTTOM NAVIGATION BAR -->
+    <nav id="mobileBottomNav" class="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-50 hidden">
+        <div
+            class="flex items-center justify-around h-full px-4 bg-[var(--bg-panel)]/95 backdrop-blur-xl border-t border-white/10">
+            <!-- Presets Button -->
+            <button id="mobilePresetsBtn"
+                class="mobile-nav-btn flex flex-col items-center justify-center gap-1 py-2 px-4 rounded-xl transition-all active:scale-95">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                    <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                    <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                    <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                </svg>
+                <span class="text-[10px] font-semibold tracking-wide">PRESETS</span>
+            </button>
+
+            <!-- Central Play Button -->
+            <button id="mobilePlayBtn"
+                class="mobile-play-btn relative flex items-center justify-center w-16 h-16 -mt-6 rounded-full bg-gradient-to-br from-[var(--accent)] to-teal-600 shadow-lg shadow-[var(--accent)]/30 transition-all active:scale-95">
+                <svg id="mobilePlayIcon" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"
+                    class="text-white ml-1">
+                    <polygon points="5,3 19,12 5,21"></polygon>
+                </svg>
+                <svg id="mobilePauseIcon" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"
+                    class="text-white hidden">
+                    <rect x="6" y="4" width="4" height="16"></rect>
+                    <rect x="14" y="4" width="4" height="16"></rect>
+                </svg>
+                <!-- Pulse ring for active state -->
+                <div id="mobilePulseRing"
+                    class="absolute inset-0 rounded-full border-2 border-[var(--accent)] opacity-0 animate-ping"></div>
+            </button>
+
+            <!-- Mixer Button -->
+            <button id="mobileMixerBtn"
+                class="mobile-nav-btn flex flex-col items-center justify-center gap-1 py-2 px-4 rounded-xl transition-all active:scale-95">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="4" y1="21" x2="4" y2="14"></line>
+                    <line x1="4" y1="10" x2="4" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12" y2="3"></line>
+                    <line x1="20" y1="21" x2="20" y2="16"></line>
+                    <line x1="20" y1="12" x2="20" y2="3"></line>
+                    <circle cx="4" cy="12" r="2"></circle>
+                    <circle cx="12" cy="10" r="2"></circle>
+                    <circle cx="20" cy="14" r="2"></circle>
+                </svg>
+                <span class="text-[10px] font-semibold tracking-wide">MIXER</span>
+            </button>
+        </div>
+
+        <!-- Safe area spacer for notched devices -->
+        <div class="h-[env(safe-area-inset-bottom)] bg-[var(--bg-panel)]"></div>
+    </nav>
+
+    <!-- Collapsible Section Styles and Script -->
+    <style>
+        .mixer-section .section-content {
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+            opacity: 1;
+        }
+
+        .mixer-section.collapsed .section-content {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .mixer-section.collapsed .section-arrow {
+            transform: rotate(-90deg);
+        }
+    </style>
+    <script>
+        // Toggle mixer sections collapse/expand
+        function toggleMixerSection(sectionName) {
+            const section = document.querySelector(`[data-section="${sectionName}"]`);
+            if (section) {
+                section.classList.toggle('collapsed');
+                // Save state to localStorage
+                const collapsed = section.classList.contains('collapsed');
+                const states = JSON.parse(localStorage.getItem('mixerSectionStates') || '{}');
+                states[sectionName] = collapsed;
+                localStorage.setItem('mixerSectionStates', JSON.stringify(states));
+            }
+        }
+
+        // Restore section states on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const states = JSON.parse(localStorage.getItem('mixerSectionStates') || '{}');
+            Object.keys(states).forEach(sectionName => {
+                if (states[sectionName]) {
+                    const section = document.querySelector(`[data-section="${sectionName}"]`);
+                    if (section) section.classList.add('collapsed');
+                }
+            });
+
+            // Collapse All / Expand All functionality
+            const collapseAllBtn = document.getElementById('collapseAllBtn');
+
+            collapseAllBtn.addEventListener('click', () => {
+                const sections = document.querySelectorAll('.mixer-section');
+
+                // Check current state: are ANY sections expanded?
+                const anyExpanded = Array.from(sections).some(section => !section.classList.contains('collapsed'));
+
+                const states = {};
+
+                sections.forEach(section => {
+                    const sectionName = section.getAttribute('data-section');
+                    if (anyExpanded) {
+                        // If any are expanded, collapse ALL
+                        section.classList.add('collapsed');
+                        states[sectionName] = true;
+                    } else {
+                        // If all are collapsed, expand ALL
+                        section.classList.remove('collapsed');
+                        states[sectionName] = false;
+
+                        // Reset DJ Studio to "Show All Categories" when expanding
+                        if (sectionName === 'djpads') {
+                            // Use setTimeout to ensure module has loaded
+                            setTimeout(() => {
+                                if (typeof window.resetDJStudioToShowAll === 'function') {
+                                    window.resetDJStudioToShowAll();
+                                }
+                            }, 0);
+                        }
+                    }
+                });
+
+                localStorage.setItem('mixerSectionStates', JSON.stringify(states));
+
+                // Update button based on NEW state (after action)
+                const allCollapsedNow = anyExpanded; // If we had expanded ones, they're all collapsed now
+
+                // Update icon
+                collapseAllBtn.innerHTML = allCollapsedNow ?
+                    // Expand All icon (chevrons up)
+                    `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                        <polyline points="18 21 12 15 6 21"></polyline>
+                    </svg>` :
+                    // Collapse All icon (chevrons down)
+                    `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                        <polyline points="6 3 12 9 18 3"></polyline>
+                    </svg>`;
+
+                collapseAllBtn.title = allCollapsedNow ? 'Expand All Sections' : 'Collapse All Sections';
+            });
+        });
+    </script>
+
+
+    <!-- FAILSAFE: Remove loading screen after max 5 seconds regardless of module loading -->
+    <script>
+        (function () {
+            function hideLoading() {
+                const ls = document.getElementById('loadingScreen');
+                if (ls) {
+                    ls.style.transition = 'opacity 0.5s ease';
+                    ls.style.opacity = '0';
+                    ls.style.pointerEvents = 'none';
+                    setTimeout(() => ls.remove(), 500);
+                    console.log('[Failsafe] Loading screen removed');
+                }
+            }
+            // Try after 3 seconds, then force after 5 seconds
+            setTimeout(hideLoading, 3000);
+            setTimeout(hideLoading, 5000);
+        })();
+    </script>
+
+    <!-- AUTH MODAL - Premium Design -->
+    <div id="authModal" class="modal fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
+
+        <div class="w-full max-w-md mx-4 overflow-y-auto max-h-[90vh] custom-scrollbar"
+            style="animation: modalFadeIn 0.3s ease-out;">
+            <!-- Card -->
+            <div class="relative auth-card-container glass-card"
+                style="border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);">
+
+                <!-- Gradient accent bar -->
+                <div
+                    style="height: 3px; background: linear-gradient(90deg, #60a9ff 0%, #60a9ff 50%, #06b6d4 100%); border-radius: 24px 24px 0 0;">
+                </div>
+
+                <!-- Header -->
+                <div style="padding: 32px 32px 24px 32px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                        <div>
+                            <h3 id="authTitle" class="auth-text-high"
+                                style="font-size: 28px; font-weight: 700; margin: 0; letter-spacing: -0.5px;">
+                                Welcome Back</h3>
+                            <p id="authSubtitle" class="auth-text-muted" style="font-size: 14px; margin: 6px 0 0 0;">
+                                Sign in to
+                                continue your journey</p>
+                        </div>
+                        <button id="closeAuthBtn" type="button"
+                            style="width: 36px; height: 36px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
+                            class="bg-white/5 hover:bg-white/10">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Form Content -->
+                <div style="padding: 0 32px 32px 32px;">
+
+                    <!-- Error Message -->
+                    <div id="authError" class="hidden"
+                        style="margin-bottom: 20px; padding: 14px 16px; border-radius: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: rgb(252, 165, 165); font-size: 14px;">
+                    </div>
+
+                    <form id="authForm" style="display: flex; flex-direction: column; gap: 20px;">
+
+                        <!-- Name Fields (hidden by default) -->
+                        <div id="authNameField" class="hidden"
+                            style="display: none; flex-direction: column; gap: 20px;">
+                            <div>
+                                <label
+                                    style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px;">First
+                                    Name</label>
+                                <input type="text" id="authFirstName"
+                                    style="width: 100%; padding: 14px 16px; border-radius: 12px; font-size: 15px; outline: none; transition: all 0.2s;"
+                                    placeholder="John" class="bg-white/5 border-white/10 focus:border-[var(--accent)]">
+                            </div>
+                            <div>
+                                <label
+                                    style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px;">Last
+                                    Name</label>
+                                <input type="text" id="authLastName"
+                                    style="width: 100%; padding: 14px 16px; border-radius: 12px; font-size: 15px; outline: none; transition: all 0.2s;"
+                                    placeholder="Doe" class="bg-white/5 border-white/10 focus:border-[var(--accent)]">
+                            </div>
+                        </div>
+
+                        <!-- Email Field -->
+                        <div>
+                            <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px;">Email
+                                Address</label>
+                            <input type="email" id="authEmail" required
+                                style="width: 100%; padding: 14px 16px; border-radius: 12px; font-size: 15px; outline: none; transition: all 0.2s;"
+                                placeholder="hello@mindwave.com"
+                                class="bg-white/5 border-white/10 focus:border-[var(--accent)]">
+                        </div>
+
+                        <!-- Password Field -->
+                        <div>
+                            <label
+                                style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px;">Password</label>
+                            <input type="password" id="authPassword" required minlength="6"
+                                style="width: 100%; padding: 14px 16px; border-radius: 12px; font-size: 15px; outline: none; transition: all 0.2s;"
+                                placeholder="Enter your password"
+                                class="bg-white/5 border-white/10 focus:border-[var(--accent)]">
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" id="authSubmitBtn"
+                            style="width: 100%; padding: 16px; margin-top: 8px; background: linear-gradient(135deg, rgb(96, 169, 255) 0%, rgb(96, 169, 255) 100%); border: none; border-radius: 12px; color: white; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 16px rgba(96, 169, 255, 0.3);"
+                            onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 20px rgba(96, 169, 255, 0.4)'"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(96, 169, 255, 0.3)'">
+                            Sign In
+                        </button>
+                    </form>
+
+                    <!-- Divider -->
+                    <div style="display: flex; align-items: center; margin: 28px 0; gap: 16px;">
+                        <div style="flex: 1; height: 1px;" class="bg-white/10"></div>
+                        <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px;"
+                            class="auth-text-muted">Or</span>
+                        <div style="flex: 1; height: 1px;" class="bg-white/10"></div>
+                    </div>
+
+                    <!-- Toggle & Forgot Password -->
+                    <div style="display: flex; flex-direction: column; gap: 12px; text-align: center;">
+                        <button id="toggleAuthModeBtn" type="button"
+                            style="padding: 12px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; font-size: 14px; cursor: pointer; transition: all 0.2s;"
+                            class="bg-white/5 hover:bg-white/10 auth-text-high">
+                            Don't have an account? <span style="color: rgb(96, 169, 255); font-weight: 600;">Sign
+                                Up</span>
+                        </button>
+
+                        <button id="resetPasswordBtn" type="button"
+                            style="padding: 8px; background: transparent; border: none; font-size: 13px; cursor: pointer; transition: color 0.2s;"
+                            class="auth-text-muted hover:text-[var(--accent)]">
+                            Forgot your password?
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .animate-slide-up {
+            animation: slideUp 0.3s ease-out forwards;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Auth Modal Compatibility */
+        #authModal {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+        }
+
+        [data-theme-type="light"] #authModal {
+            background: rgba(255, 255, 255, 0.6) !important;
+            backdrop-filter: blur(25px);
+        }
+
+        .auth-card-container {
+            background: linear-gradient(180deg, rgba(25, 25, 40, 0.98) 0%, rgba(15, 15, 26, 0.98) 100%);
+        }
+
+        [data-theme-type="light"] .auth-card-container {
+            background: rgba(255, 255, 255, 0.95) !important;
+            border-color: rgba(0, 0, 0, 0.1) !important;
+        }
+
+        [data-theme-type="light"] .auth-text-high {
+            color: #0f172a !important;
+        }
+
+        [data-theme-type="light"] .auth-text-muted {
+            color: #64748b !important;
+        }
+
+        #authEmail::placeholder,
+        #authPassword::placeholder,
+        #authDisplayName::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+
+    <!-- Profile Modal (Bottom Sheet Style) -->
+    <div id="profileModal" class="modal fixed inset-0 z-50 block hidden pointer-events-none">
+        <div class="glass-card w-full max-w-sm p-5 rounded-2xl shadow-2xl overflow-y-auto custom-scrollbar border border-[var(--border)] bg-[var(--glass-bg)] backdrop-blur-xl pointer-events-auto transition-colors duration-300"
+            style="position: absolute; bottom: 84px; left: 50%; transform: translateX(-50%); margin: 0; max-height: 75vh; top: auto;">
+            <!-- Header -->
+            <div
+                class="flex justify-between items-center sticky top-0 bg-[var(--bg-panel)] z-10 pb-2 border-b border-[var(--border)]">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-[var(--text-main)]">Your Profile</h3>
+                <button id="closeProfileBtn"
+                    class="p-2 rounded-full hover:bg-[var(--text-muted)]/10 hover:text-[var(--text-main)] transition-all duration-300 hover:rotate-90 touch-target"
+                    style="color: var(--text-muted);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- User Info -->
+            <div class="flex items-center gap-5 pb-6 border-b border-[var(--border)]">
+                <div id="profileAvatarBig"
+                    class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-2xl font-bold text-white shadow-[0_0_20px_rgba(168,85,247,0.4)] border-2 border-[var(--border)] ring-2 ring-[var(--bg-panel)]">
+                    ?
+                </div>
+                <div class="flex-1">
+                    <div id="profileUserName" class="text-lg font-bold text-[var(--text-main)] tracking-wide">Guest User
+                    </div>
+                    <div id="profileUserEmail" class="text-xs text-[var(--text-muted)] mb-2 font-medium">Not signed in
+                    </div>
+                    <div id="profileUserTier"
+                        class="inline-block text-[10px] font-bold uppercase px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 tracking-wider">
+                        Free Plan</div>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div
+                    class="p-4 rounded-2xl bg-[var(--bg-main)]/50 border border-[var(--border)] text-center hover:bg-[var(--bg-main)] hover:border-[var(--text-muted)]/30 transition-all group">
+                    <div id="statTotalSessions" class="text-2xl font-bold text-[var(--text-main)] mb-1">0</div>
+                    <div
+                        class="text-[9px] text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--accent)] transition-colors">
+                        Sessions</div>
+                </div>
+                <div
+                    class="p-4 rounded-2xl bg-[var(--bg-main)]/50 border border-[var(--border)] text-center hover:bg-[var(--bg-main)] hover:border-[var(--text-muted)]/30 transition-all group">
+                    <div id="statTotalHours" class="text-2xl font-bold text-[var(--text-main)] mb-1">0</div>
+                    <div
+                        class="text-[9px] text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--accent)] transition-colors">
+                        Hours</div>
+                </div>
+                <div
+                    class="p-4 rounded-2xl bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 text-center hover:border-orange-500/40 hover:shadow-[0_0_15px_rgba(249,115,22,0.1)] transition-all">
+                    <div id="statStreak" class="text-2xl font-bold text-orange-400 mb-1">🔥 0</div>
+                    <div class="text-[9px] text-[var(--text-muted)] uppercase tracking-widest">Day Streak</div>
+                </div>
+                <div
+                    class="p-4 rounded-2xl bg-[var(--bg-main)]/50 border border-[var(--border)] text-center hover:bg-[var(--bg-main)] hover:border-[var(--text-muted)]/30 transition-all group">
+                    <div id="statAvgSession" class="text-2xl font-bold text-[var(--text-main)] mb-1">0</div>
+                    <div
+                        class="text-[9px] text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--accent)] transition-colors">
+                        Avg Min</div>
+                </div>
+            </div>
+
+            <!-- Weekly Activity -->
+            <div
+                class="p-3 rounded-xl bg-[var(--bg-main)]/50 border border-[var(--border)] hover:bg-[var(--bg-main)] transition-colors">
+                <div
+                    class="text-[10px] font-bold uppercase text-[var(--text-muted)] mb-2 group-hover:text-[var(--text-main)]">
+                    This
+                    Week</div>
+                <div id="weeklyChart" class="flex justify-between items-end h-16 gap-1">
+                    <!-- Chart bars will be populated by JS -->
+                </div>
+                <div
+                    class="flex justify-between text-[8px] text-[var(--text-muted)] mt-1 group-hover:text-[var(--text-main)]">
+                    <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                </div>
+            </div>
+
+            <!-- Top Preset -->
+            <div
+                class="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-main)]/50 border border-[var(--border)] hover:bg-[var(--bg-main)] transition-colors">
+                <div class="text-xs text-[var(--text-muted)] group-hover:text-[var(--text-main)]">Top Preset</div>
+                <div id="statTopPreset" class="text-xs font-bold text-[var(--accent)]">None</div>
+            </div>
+
+            <!-- Referral Credits -->
+            <div
+                class="p-3 rounded-xl bg-gradient-to-br from-[var(--accent)]/10 to-blue-500/10 border border-[var(--accent)]/20 hover:border-[var(--accent)]/40 transition-colors">
+                <div class="flex justify-between items-center mb-1">
+                    <div class="text-[10px] font-bold uppercase text-[var(--accent)] tracking-wider">Referral Rewards
+                    </div>
+                    <div id="referralCredits" class="text-sm font-black text-[var(--text-main)]">0 Months</div>
+                </div>
+                <div class="text-[9px] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">Share
+                    your link to unlock
+                    premium for free.</div>
+                <button id="profileReferralBtn"
+                    class="w-full mt-2 py-2.5 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/30 text-[var(--accent)] font-bold text-xs uppercase tracking-wide hover:bg-[var(--accent)]/20 hover:text-[var(--accent)] hover:border-[var(--accent)]/50 transition-all">
+                    Copy Reward Link
+                </button>
+            </div>
+
+            <!-- Profile Name Edit -->
+            <style>
+                /* Universal Eggshell input for Profile Name */
+                #profileNameInput {
+                    background-color: #fffbf0 !important;
+                    /* Eggshell warm white */
+                    color: #000000 !important;
+                    /* Pure black for maximum contrast */
+                    border-color: rgba(0, 0, 0, 0.1) !important;
+                }
+
+                #profileNameInput::placeholder {
+                    color: rgba(0, 0, 0, 0.4) !important;
+                }
+
+                #profileNameInput:focus {
+                    background-color: #ffffff !important;
+                    border-color: var(--accent) !important;
+                    box-shadow: 0 0 0 2px rgba(96, 169, 255, 0.2) !important;
+                }
+            </style>
+            <div class="pt-4 border-t border-[var(--border)]">
+                <label
+                    class="text-[10px] font-bold uppercase mb-2 block text-[var(--text-muted)] tracking-widest pl-1">Display
+                    Name</label>
+                <input type="text" id="profileNameInput"
+                    class="w-full bg-[var(--bg-main)]/50 border border-[var(--border)] rounded-xl p-3 text-sm text-[var(--text-main)] focus:border-[var(--accent)] focus:bg-[var(--bg-main)] focus:shadow-[0_0_15px_var(--accent-glow)] outline-none hover:border-[var(--text-muted)]/50 transition-all placeholder:text-[var(--text-muted)]/50"
+                    placeholder="Enter your name">
+                <button id="saveProfileBtn"
+                    class="w-full py-3 mt-3 rounded-xl bg-[var(--accent)] text-white font-bold text-xs uppercase tracking-widest hover:brightness-110 shadow-lg shadow-[var(--accent)]/20 active:scale-[0.98] transition-all">
+                    Update Profile
+                </button>
+            </div>
+
+            <!-- Logout -->
+            <button id="logoutBtn"
+                class="w-full py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 font-bold text-xs uppercase tracking-wide hover:bg-red-500/20 hover:text-red-600 hover:border-red-500/50 transition-all">
+                Sign Out
+            </button>
+        </div>
+    </div>
+
+    <!-- Collapsible Section Styles and Script -->
+    <style>
+        .mixer-section .section-content {
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+            opacity: 1;
+        }
+
+        .mixer-section.collapsed .section-content {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .mixer-section.collapsed .section-arrow {
+            transform: rotate(-90deg);
+        }
+    </style>
+    <script>
+        // Toggle mixer sections collapse/expand
+        function toggleMixerSection(sectionName) {
+            const section = document.querySelector(`[data-section="${sectionName}"]`);
+            if (section) {
+                section.classList.toggle('collapsed');
+                // Save state to localStorage
+                const collapsed = section.classList.contains('collapsed');
+                const states = JSON.parse(localStorage.getItem('mixerSectionStates') || '{}');
+                states[sectionName] = collapsed;
+                localStorage.setItem('mixerSectionStates', JSON.stringify(states));
+            }
+        }
+
+        // Restore section states on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const states = JSON.parse(localStorage.getItem('mixerSectionStates') || '{}');
+            Object.keys(states).forEach(sectionName => {
+                if (states[sectionName]) {
+                    const section = document.querySelector(`[data-section="${sectionName}"]`);
+                    if (section) section.classList.add('collapsed');
+                }
+            });
+
+            // Collapse All / Expand All functionality
+            const collapseAllBtn = document.getElementById('collapseAllBtn');
+            if (collapseAllBtn) {
+                collapseAllBtn.addEventListener('click', () => {
+                    const sections = document.querySelectorAll('.mixer-section');
+                    const anyExpanded = Array.from(sections).some(section => !section.classList.contains('collapsed'));
+                    const states = {};
+
+                    sections.forEach(section => {
+                        const sectionName = section.getAttribute('data-section');
+                        if (anyExpanded) {
+                            section.classList.add('collapsed');
+                            states[sectionName] = true;
+                        } else {
+                            section.classList.remove('collapsed');
+                            states[sectionName] = false;
+                        }
+                    });
+                    localStorage.setItem('mixerSectionStates', JSON.stringify(states));
+                });
+            }
+        });
+    </script>
+
+    <!-- Failsafe: Ensure app unlocks even if JS errors occur -->
+    <script>
+        setTimeout(() => {
+            const loading = document.getElementById('loadingScreen');
+            if (loading) {
+                console.warn('[Failsafe] Force removing loading screen');
+                loading.classList.add('fade-out');
+                loading.style.pointerEvents = 'none';
+                setTimeout(() => loading.remove(), 500);
+            }
+            document.body.classList.remove('overflow-hidden');
+            document.body.style.overflow = '';
+        }, 3000);
+    </script>
+</body>
+
+
+</html>

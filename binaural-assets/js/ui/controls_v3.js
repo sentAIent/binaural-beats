@@ -1,24 +1,30 @@
-import { state, els, THEMES, SOUNDSCAPES, PRESET_COMBOS } from '../state.js';
-import { startAudio, stopAudio, updateFrequencies, updateBeatsVolume, updateMasterVolume, updateMasterBalance, updateAtmosMaster, updateSoundscape, registerUICallback, fadeIn, fadeOut, cancelFadeOut, cancelStopAudio, resetAllSoundscapes, isVolumeHigh, playCompletionChime, setAudioMode, getAudioMode, startSweep, stopSweep, startSweepPreset, isSweepActive, isAudioPlaying, SWEEP_PRESETS } from '../audio/engine.js';
 import { initVisualizer, toggleVisual, setVisualSpeed, setVisualColor, pauseVisuals, resumeVisuals, getVisualizer, isVisualsPaused } from '../visuals/visualizer_nuclear_v4.js';
 import { startRecording, stopRecording, startExport, cancelExport, updateExportPreview } from '../export/recorder.js';
 import { openAuthModal, renderLibraryList } from './auth-controller.js';
 import { saveMixToCloud } from '../services/firebase.js';
 import { auth, db, registerAuthCallback } from '../services/firebase.js';
-import { startSession, stopSession, pauseSession, resumeSession, isSessionPaused, formatTimeRemaining, getProgress, isSessionActive, DURATION_PRESETS } from '../audio/session-timer.js';
-import { startSessionTracking, endSessionTracking, getStats, getWeeklyData } from '../services/analytics.js';
-import { setStoryVolume, storyState } from '../content/stories.js';
+import { startSession, stopSession, pauseSession, resumeSession, isSessionPaused, formatTime, getProgress, isSessionActive, DURATION_PRESETS } from '../audio/session-timer.js';
+import { startSessionTracking, endSessionTracking, getStats, getWeeklyData, getImpactStats } from '../services/analytics.js';
+import { setStoryVolume, playStory, stopStory as stopCurrentStory, storyState } from '../content/stories.js';
 import { setCustomAudioVolume } from '../content/audio-library.js';
 import { initClassical, isClassicalPlaying, stopClassical, onClassicalStateChange } from '../content/classical.js';
 import { initDJAudio, setDJVolume, setDJPitch, setDJTone, setDJSpeed, triggerOneShot, startLoop, stopLoop, isLoopActive, stopAllLoops, getActiveLoopCount, DJ_SOUNDS } from '../audio/dj-synth.js';
 import { goToCheckout, hasPurchasedApp } from '../services/stripe-simple.js';
-
+import { initGallery } from './gallery-modal.js';
+import { getReferralCount, shareReferral } from '../services/referral.js';
+import { calculateFrequencyFromGoal, parseComplexGoal, findBestStoryForGoal } from '../services/ai-intent-service.js';
+import { startPresenceHeartbeat, stopPresenceHeartbeat, subscribeToPresenceCounts, syncPresence } from '../services/presence-service.js';
 // ... (existing code)
+import { updateTopBarWidth, updateBottomBarWidth } from './resize-panels.js';
+import { loadUserPreferences, saveUserPreferences } from '../services/persistence.js?v=NUCLEAR_FIX_V2';
+
+// Global reference for restored prefs to be used during initialization
+let restoredPrefs = null;
 
 // Use MultiReplace for multiple chunks? No, I'll use multi_replace tool.
 // This block is just for thought process.
 
-import { createCursorUIInThemeModal } from './cursor.js';
+// Cursor logic imports removed for inlined UI generation
 
 
 export function setupUI() {
@@ -43,6 +49,7 @@ export function setupUI() {
     els.canvas = document.getElementById('visualizer');
     els.canvas = document.getElementById('visualizer');
     els.themeBtn = document.getElementById('themeBtn');
+    els.galleryBtn = document.getElementById('galleryBtn');
     els.visualSpeedSlider = document.getElementById('visualSpeedSlider');
     els.speedValue = document.getElementById('speedValue');
     els.speedSliderContainer = document.getElementById('speedSliderContainer'); // Container for opacity
@@ -50,6 +57,7 @@ export function setupUI() {
     els.visualColorPicker = document.getElementById('visualColorPicker');
     els.randomColorBtn = document.getElementById('randomColorBtn');
     els.prevColorBtn = document.getElementById('prevColorBtn');
+    els.vibrationToggleBtn = document.getElementById('vibrationToggleBtn');
     els.colorPreview = document.getElementById('colorPreview');
     els.profileBtn = document.getElementById('profileBtn');
     els.recordBtn = document.getElementById('recordBtn');
@@ -61,6 +69,7 @@ export function setupUI() {
     els.journeyBtn = document.getElementById('journeyBtn');
     els.libraryPanel = document.getElementById('libraryPanel');
     els.libraryList = document.getElementById('libraryList');
+    els.hapticSyncToggle = document.getElementById('hapticSyncToggle');
 
     // Button Labels
     els.audioLabel = document.getElementById('audioLabel');
@@ -79,6 +88,10 @@ export function setupUI() {
     els.closeRightBtn = document.getElementById('closeRightBtn');
     els.statusIndicator = document.getElementById('statusIndicator');
     els.aiPrompt = document.getElementById('aiPrompt');
+    els.lockUIBtn = document.getElementById('lockUIBtn');
+    els.lockIcon = document.getElementById('lockIcon');
+    els.unlockIcon = document.getElementById('unlockIcon');
+    els.visualDock = document.getElementById('visualDock');
     els.saveModal = document.getElementById('saveModal');
     els.saveNameInput = document.getElementById('saveNameInput');
     els.cancelSaveBtn = document.getElementById('cancelSaveBtn');
@@ -100,6 +113,17 @@ export function setupUI() {
     els.aiPrompt = document.getElementById('aiPrompt');
     els.statusIndicator = document.getElementById('statusIndicator');
     els.audioOnlyPlayer = document.getElementById('audioOnlyPlayer');
+
+    // INITIAL LAYOUT SYNC:
+    // Force immediate calculation before reveal to prevent shift
+    updateTopBarWidth();
+    updateBottomBarWidth();
+
+    // INITIALIZE CYBER & MATRIX CONTROLS IMMEDIATELY
+    if (typeof setupMatrixControls === 'function') setupMatrixControls();
+    if (typeof setupCyberControls === 'function') setupCyberControls();
+
+    console.log('[Controls] Initial layout and Cyber/Matrix controls synchronized');
     els.playbackAudio = document.getElementById('playbackAudio');
     els.profileModal = document.getElementById('profileModal');
     els.profileNameInput = document.getElementById('profileNameInput');
@@ -110,17 +134,34 @@ export function setupUI() {
     els.closeLibraryBtn = document.getElementById('closeLibraryBtn');
     els.closeModalBtn = document.getElementById('closeModalBtn'); // Playback modal close
 
+    // AI Goal Elements
+    els.aiGoalInput = document.getElementById('aiGoalInput');
+    els.aiGenerateBtn = document.getElementById('aiGenerateBtn');
+    els.aiBtnText = document.getElementById('aiBtnText');
+    els.aiBtnSpinner = document.getElementById('aiBtnSpinner');
+    els.aiInsight = document.getElementById('aiInsight');
+
+    // Presence Elements
+    els.presenceCounter = document.getElementById('presenceCounter');
+    els.presenceText = document.getElementById('presenceText');
+
     // Global Interactive Elements
     els.appOverlay = document.getElementById('appOverlay');
     els.tapZone = document.getElementById('tapZone');
     els.sphereBtn = document.getElementById('sphereBtn');
+    els.cubeBtn = document.getElementById('cubeBtn');
+    els.dragonBtn = document.getElementById('dragonBtn');
+    els.galaxyBtn = document.getElementById('galaxyBtn');
     els.flowBtn = document.getElementById('flowBtn');
     els.lavaBtn = document.getElementById('lavaBtn');
     els.fireplaceBtn = document.getElementById('fireplaceBtn');
     els.rainBtn = document.getElementById('rainBtn');
     els.zenBtn = document.getElementById('zenBtn');
     els.oceanBtn = document.getElementById('oceanBtn');
+    els.mandalaBtn = document.getElementById('mandalaBtn');
+    els.cyberBtn = document.getElementById('cyberBtn');
     els.matrixBtn = document.getElementById('matrixBtn');
+    els.interstellarBtn = els.matrixBtn; // Legacy alias for some internal functions
 
     // Session Timer Elements
     els.sessionDuration = document.getElementById('sessionDuration');
@@ -164,6 +205,63 @@ export function setupUI() {
     // NEW: Stats Modal Elements
     els.statsModal = document.getElementById('statsModal');
     els.statsBtn = document.getElementById('statsBtn');
+
+    // --- PERSISTENCE RESTORATION ---
+    restoredPrefs = loadUserPreferences();
+    if (restoredPrefs) {
+        // 1. Apply Volumes to State & UI
+        if (restoredPrefs.volumes) {
+            state.masterVolume = restoredPrefs.volumes.master;
+            state.binauralVolume = restoredPrefs.volumes.binaural;
+            state.atmosVolume = restoredPrefs.volumes.atmos;
+
+            if (els.masterVolSlider) els.masterVolSlider.value = state.masterVolume;
+            if (els.beatSlider) els.beatSlider.value = state.binauralVolume;
+            if (els.atmosMasterSlider) els.atmosMasterSlider.value = state.atmosVolume;
+
+            // Trigger updates to engine
+            updateMasterVolume(state.masterVolume);
+            updateBeatsVolume(state.binauralVolume);
+            updateAtmosMaster(state.atmosVolume);
+        }
+
+        // 2. Apply Visual State
+        if (restoredPrefs.visuals) {
+            state.aiVisualsLocked = restoredPrefs.visuals.aiLocked;
+            // Update lock UI
+            if (els.lockUIBtn) {
+                if (state.aiVisualsLocked) {
+                    els.lockUIBtn.classList.add('locked');
+                    els.lockIcon.style.display = 'block';
+                    els.unlockIcon.style.display = 'none';
+                } else {
+                    els.lockUIBtn.classList.remove('locked');
+                    els.lockIcon.style.display = 'none';
+                    els.unlockIcon.style.display = 'block';
+                }
+            }
+
+            // Speed/Brightness
+            if (restoredPrefs.visuals.speed !== undefined) setVisualSpeed(restoredPrefs.visuals.speed);
+            if (restoredPrefs.visuals.brightness !== undefined) setVisualBrightness(restoredPrefs.visuals.brightness);
+        }
+
+        // 3. Theme
+        // Theme application usually happens in main.js or separate init, but we can enforce here if needed.
+        // For now, checks if we need to override the default.
+    }
+
+    // Attach Auto-Save Listeners
+    const saveTriggers = [
+        els.masterVolSlider, els.beatSlider, els.atmosMasterSlider,
+        els.visualSpeedSlider, els.lockUIBtn
+    ];
+    saveTriggers.forEach(el => {
+        if (el) el.addEventListener('input', saveUserPreferences); // For sliders
+        if (el) el.addEventListener('click', saveUserPreferences); // For buttons
+    });
+
+    console.log('[Controls] UI Setup & Persistence Loaded');
     els.closeStatsBtn = document.getElementById('closeStatsBtn');
     els.statStreak = document.getElementById('statStreak');
     els.statHours = document.getElementById('statHours');
@@ -181,6 +279,9 @@ export function setupUI() {
     els.mobilePauseIcon = document.getElementById('mobilePauseIcon');
     els.mobileMixerBtn = document.getElementById('mobileMixerBtn');
 
+    // Init Gallery (Moved to Deferred Block)
+    // initGallery();
+
     // Bind Event Listeners
 
     if (els.playBtn) {
@@ -196,6 +297,55 @@ export function setupUI() {
     if (els.visualPlayBtn) {
         els.visualPlayBtn.addEventListener('click', handleVisualToggle);
     }
+
+    // Haptic Sync Toggle
+    if (els.hapticSyncToggle) {
+        import('../utils/haptics.js').then(m => {
+            els.hapticSyncToggle.checked = m.isHapticsEnabled();
+            els.hapticSyncToggle.addEventListener('change', (e) => {
+                m.setHapticsEnabled(e.target.checked);
+                updateHapticSync();
+            });
+        });
+    }
+
+    // AI Generate Button
+    if (els.aiGenerateBtn) {
+        els.aiGenerateBtn.addEventListener('click', handleAIGenerate);
+    }
+
+    if (els.aiGoalInput) {
+        els.aiGoalInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleAIGenerate();
+        });
+    }
+
+    // Ghost Mode: Lock UI Button
+    if (els.lockUIBtn) {
+        // Load initial state
+        // Load initial state - FORCE UNLOCKED on load per user request
+        // const savedLock = localStorage.getItem('mindwave_ui_locked');
+        state.uiLocked = false;
+        localStorage.setItem('mindwave_ui_locked', 'false'); // Sync storage
+        updateLockUI();
+
+        els.lockUIBtn.addEventListener('click', () => {
+            state.uiLocked = !state.uiLocked;
+            localStorage.setItem('mindwave_ui_locked', state.uiLocked);
+            updateLockUI();
+
+            // If locking, force show everything immediately
+            if (state.uiLocked) {
+                showUI();
+            } else {
+                // If unlocking, start idle timer
+                resetIdleTimer();
+            }
+        });
+    }
+
+    // Ghost Mode: Activity Listeners
+    setupIdleTimer();
 
     if (els.recordBtn) {
         els.recordBtn.addEventListener('click', () => {
@@ -361,13 +511,55 @@ export function setupUI() {
     if (els.atmosMasterSlider) els.atmosMasterSlider.addEventListener('input', () => { updateAtmosMaster(); saveStateToLocal(); });
     if (els.balanceSlider) els.balanceSlider.addEventListener('input', () => { updateMasterBalance(); saveStateToLocal(); });
 
+    // --- Speed Mapping Helpers (Quadratic) ---
+    // Maps 0-1 slider range to 0.1-15.0x speed with more resolution at low end
+    const mapSpeed = (p) => {
+        // v = 0.1 + p^2 * 14.9
+        const speed = 0.1 + (p * p) * 14.9;
+        return Math.round(speed * 10) / 10;
+    };
+    // Reverse mapping for setting slider from speed
+    const unmapSpeed = (v) => {
+        // p = sqrt((v - 0.1) / 14.9)
+        return Math.sqrt(Math.max(0, v - 0.1) / 14.9);
+    };
+
     // Visual Speed & Sync Controls
     if (els.visualSpeedSlider) els.visualSpeedSlider.addEventListener('input', () => {
-        const val = parseFloat(els.visualSpeedSlider.value);
+        // If user drags slider, auto-disengage sync mode
+        if (state.visualSpeedAuto) {
+            state.visualSpeedAuto = false;
+            updateSyncUI();
+        }
+        const p = parseFloat(els.visualSpeedSlider.value);
+        const val = mapSpeed(p);
         const viz = getVisualizer();
         if (viz) viz.setSpeed(val);
         if (els.speedValue) els.speedValue.textContent = val.toFixed(1) + 'x';
+        // Sync compact slider
+        const compactSlider = document.querySelector('.compact-speed-slider');
+        const compactValue = document.querySelector('.compact-speed-value');
+        if (compactSlider) compactSlider.value = p;
+        if (compactValue) compactValue.textContent = val.toFixed(1) + 'x';
     });
+
+    // Compact Speed Slider (syncs with main slider)
+    const compactSpeedSlider = document.querySelector('.compact-speed-slider');
+    if (compactSpeedSlider) {
+        compactSpeedSlider.addEventListener('input', () => {
+            const p = parseFloat(compactSpeedSlider.value);
+            const val = mapSpeed(p);
+            // Sync to main slider
+            if (els.visualSpeedSlider) els.visualSpeedSlider.value = p;
+            // Update visualizer
+            const viz = getVisualizer();
+            if (viz) viz.setSpeed(val);
+            // Update both displays
+            if (els.speedValue) els.speedValue.textContent = val.toFixed(1) + 'x';
+            const compactValue = document.querySelector('.compact-speed-value');
+            if (compactValue) compactValue.textContent = val.toFixed(1) + 'x';
+        });
+    }
 
     // Auto Sync Toggle
     if (els.visualSyncBtn) {
@@ -378,23 +570,65 @@ export function setupUI() {
         });
     }
 
+    // Compact Sync Button (mirrors main sync button)
+    const compactSyncBtn = document.querySelector('.compact-sync-btn');
+    if (compactSyncBtn) {
+        compactSyncBtn.addEventListener('click', () => {
+            state.visualSpeedAuto = !state.visualSpeedAuto;
+            updateSyncUI();
+            updateFrequencies();
+        });
+    }
+
     function updateSyncUI() {
-        if (!els.visualSyncBtn || !els.visualSpeedSlider || !els.speedSliderContainer) return;
+        console.log('[Controls] updateSyncUI. Auto:', state.visualSpeedAuto);
+        if (!els.visualSyncBtn || !els.visualSpeedSlider) {
+            console.warn('[Controls] Sync UI elements missing:', !!els.visualSyncBtn, !!els.visualSpeedSlider);
+            return;
+        }
+
+        const compactSyncBtn = document.querySelector('.compact-sync-btn');
+        const compactSpeedSlider = document.querySelector('.compact-speed-slider');
+
+        // Slider is ALWAYS enabled — dragging auto-disengages sync
+        els.visualSpeedSlider.disabled = false;
+        if (compactSpeedSlider) compactSpeedSlider.disabled = false;
 
         if (state.visualSpeedAuto) {
-            // Auto Mode: Active
-            els.visualSyncBtn.style.backgroundColor = "var(--accent)";
-            els.visualSyncBtn.style.color = "var(--bg-main)";
-            els.visualSpeedSlider.disabled = true;
-            els.speedSliderContainer.classList.add('opacity-50');
-            els.speedSliderContainer.classList.remove('opacity-100');
+            // Auto Mode: Locked (accent/active styling)
+            els.visualSyncBtn.classList.add('bg-[var(--accent)]', 'text-[var(--bg-main)]');
+            els.visualSyncBtn.classList.remove('bg-white/10', 'text-white/50');
+            els.visualSyncBtn.title = 'Speed synced to Hz (Auto) — drag slider to override';
+            if (els.speedSliderContainer) {
+                els.speedSliderContainer.classList.add('opacity-50');
+                els.speedSliderContainer.classList.remove('opacity-100');
+            }
+            if (compactSyncBtn) {
+                compactSyncBtn.classList.add('bg-[var(--accent)]', 'text-[var(--bg-main)]');
+                compactSyncBtn.classList.remove('bg-white/10', 'text-white/50');
+            }
         } else {
-            // Manual Mode: Inactive
-            els.visualSyncBtn.style.backgroundColor = "rgba(255,255,255,0.1)";
-            els.visualSyncBtn.style.color = "var(--text-muted)";
-            els.visualSpeedSlider.disabled = false;
-            els.speedSliderContainer.classList.remove('opacity-50');
-            els.speedSliderContainer.classList.add('opacity-100');
+            // Manual Mode: Unlocked (full opacity)
+            els.visualSyncBtn.classList.remove('bg-[var(--accent)]', 'text-[var(--bg-main)]');
+            els.visualSyncBtn.classList.add('bg-white/10', 'text-white/50');
+            els.visualSyncBtn.title = 'Manual speed (click to re-sync)';
+            if (els.speedSliderContainer) {
+                els.speedSliderContainer.classList.remove('opacity-50');
+                els.speedSliderContainer.classList.add('opacity-100');
+            }
+            if (compactSyncBtn) {
+                compactSyncBtn.classList.remove('bg-[var(--accent)]', 'text-[var(--bg-main)]');
+                compactSyncBtn.classList.add('bg-white/10', 'text-white/50');
+            }
+
+            // When switching to manual, ensure slider reflects current actual speed
+            const viz = getVisualizer();
+            if (viz && viz.speedMultiplier) {
+                const p = unmapSpeed(viz.speedMultiplier);
+                els.visualSpeedSlider.value = p;
+                if (compactSpeedSlider) compactSpeedSlider.value = p;
+                if (els.speedValue) els.speedValue.textContent = viz.speedMultiplier.toFixed(1) + 'x';
+            }
         }
     }
 
@@ -507,14 +741,18 @@ export function setupUI() {
 
     // Visual Modes
     if (els.sphereBtn) els.sphereBtn.addEventListener('click', () => setVisualMode('sphere'));
+    if (els.cubeBtn) els.cubeBtn.addEventListener('click', () => setVisualMode('cube'));
+    if (els.dragonBtn) els.dragonBtn.addEventListener('click', () => setVisualMode('dragon'));
+    if (els.galaxyBtn) els.galaxyBtn.addEventListener('click', () => setVisualMode('galaxy'));
     if (els.flowBtn) els.flowBtn.addEventListener('click', () => setVisualMode('particles'));
     if (els.lavaBtn) els.lavaBtn.addEventListener('click', () => setVisualMode('lava'));
     if (els.fireplaceBtn) els.fireplaceBtn.addEventListener('click', () => setVisualMode('fireplace'));
     if (els.rainBtn) els.rainBtn.addEventListener('click', () => setVisualMode('rainforest'));
     if (els.zenBtn) els.zenBtn.addEventListener('click', () => setVisualMode('zengarden'));
     if (els.oceanBtn) els.oceanBtn.addEventListener('click', () => setVisualMode('ocean'));
+    if (els.mandalaBtn) els.mandalaBtn.addEventListener('click', () => setVisualMode('mandala'));
+    if (els.cyberBtn) els.cyberBtn.addEventListener('click', () => setVisualMode('cyber'));
     if (els.matrixBtn) els.matrixBtn.addEventListener('click', (e) => {
-        // Prevent triggering if clicking the mini-toggle
         if (e.target.closest('#matrixSettingsToggle')) return;
         setVisualMode('matrix');
     });
@@ -541,17 +779,11 @@ export function setupUI() {
         });
     }
 
-    if (els.visualSpeedSlider) {
-
-        els.visualSpeedSlider.addEventListener('input', (e) => {
-            console.log("Slider Input:", e.target.value);
-            const viz = getVisualizer();
-            if (viz) viz.setSpeed(parseFloat(e.target.value));
-        });
-    }
 
     // Matrix Controls
-    setupMatrixControls();
+
+    console.log('[Controls] Calling setupMatrixControls()...');
+    setTimeout(() => setupMatrixControls(), 50);
 
     // Mobile Bottom Navigation Handlers
     if (els.mobilePresetsBtn) {
@@ -575,6 +807,9 @@ export function setupUI() {
     }
 
     initThemeModal();
+    if (els.themeBtn) {
+        els.themeBtn.addEventListener('click', showThemeGallery);
+    }
 
 
     // Color Controls
@@ -604,38 +839,7 @@ export function setupUI() {
     }
 
     // Setup Matrix specific controls
-    function setupMatrixControls() {
-        // We need to inject the toggle if it doesn't exist, or just bind it if it does.
-        // Since the HTML is likely dynamic or we can append to the specialized panel.
-
-        const panel = document.getElementById('matrixSettingsPanel');
-        if (!panel) return;
-
-        // Check if toggle already exists to avoid dupes
-        if (!document.getElementById('mindWaveModeToggle')) {
-            const toggleHtml = `
-                <div class="flex items-center gap-2 ml-4 pl-4 border-l border-white/10">
-                    <label for="mindWaveModeToggle" class="text-[8px] text-[var(--text-muted)] uppercase">Mindwave Mode</label>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="mindWaveModeToggle" class="sr-only peer" checked>
-                        <div class="w-7 h-4 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[var(--accent)]"></div>
-                    </label>
-                </div>
-            `;
-            panel.insertAdjacentHTML('beforeend', toggleHtml);
-        }
-
-        const toggle = document.getElementById('mindWaveModeToggle');
-        if (toggle) {
-            console.log('[Controls] Matrix Toggle Found - CONTROLS_V3_REAL');
-            toggle.addEventListener('change', (e) => {
-                const viz = getVisualizer();
-                if (viz && viz.setMatrixMode) {
-                    viz.setMatrixMode(e.target.checked);
-                }
-            });
-        }
-    }
+    // Legacy setupMatrixControls removed to use main function (line 3918)
 
 
     if (els.visualColorPicker) {
@@ -668,6 +872,32 @@ export function setupUI() {
             }
         });
     }
+
+    if (els.vibrationToggleBtn) {
+        els.vibrationToggleBtn.addEventListener('click', () => {
+            state.visualVibration = !state.visualVibration;
+            const viz = getVisualizer();
+            if (viz && viz.setVibrationEnabled) {
+                viz.setVibrationEnabled(state.visualVibration);
+            }
+            updateVibrationUI();
+        });
+    }
+
+    function updateVibrationUI() {
+        if (!els.vibrationToggleBtn) return;
+        if (state.visualVibration) {
+            els.vibrationToggleBtn.classList.remove('text-[var(--text-muted)]');
+            els.vibrationToggleBtn.classList.add('text-[var(--accent)]');
+            els.vibrationToggleBtn.title = "Visual Vibration: ON";
+        } else {
+            els.vibrationToggleBtn.classList.remove('text-[var(--accent)]');
+            els.vibrationToggleBtn.classList.add('text-[var(--text-muted)]');
+            els.vibrationToggleBtn.title = "Visual Vibration: OFF (Static)";
+        }
+    }
+    // Update initial UI state
+    updateVibrationUI();
 
     // Export Controls
     if (els.modalDlBtn) els.modalDlBtn.addEventListener('click', startExport);
@@ -711,12 +941,14 @@ export function setupUI() {
     // Safe Initialization Pattern
     try { initMixer(); } catch (e) { console.error("Mixer Init Failed:", e); }
     try { restoreStateFromLocal(); } catch (e) { console.error("State Restore Failed:", e); }
-    try { initVisualizer(); } catch (e) { console.error("Visualizer Init Failed:", e); }
+
+    // Initialization happened after applyVisualDefaults moved up
 
 
     // Theme - force default (emerald) if no saved theme or if it's a light theme that shouldn't be default
     const savedTheme = localStorage.getItem('mindwave_theme');
-    if (!savedTheme || savedTheme === 'cloud' || savedTheme === 'dawn') {
+    const lightThemes = ['cloud', 'dawn', 'paper', 'ash'];
+    if (!savedTheme || (savedTheme === 'cloud' || savedTheme === 'dawn') && !lightThemes.includes(savedTheme)) {
         // Clear and set to default emerald theme
         localStorage.removeItem('mindwave_theme');
         setTheme('default');
@@ -735,7 +967,38 @@ export function setupUI() {
     setupHyperGammaUI(); // NEW
     setupSweepUI(); // NEW
     setupStatsUI(); // NEW - Session Analytics
-    setupDJPads(); // NEW - DJ Sound Pads
+    setupGalaxyControls(); // RESTORED MAR 11
+    // Initialize Timer & Disclaimer UI
+    setupTimerUI();
+    setupDisclaimerUI();
+    setupModeToggle(); // NEW
+    setupHyperGammaUI(); // NEW
+    setupSweepUI(); // NEW
+    setupStatsUI(); // NEW - Session Analytics
+
+    // Mobile Bottom Navigation Handlers
+    // ... (existing code) ...
+
+    // IMMEDIATE DISPLAY: Reveal controls now, don't wait for visualizer
+    const footer = document.getElementById('bottomControlBar');
+    const header = document.getElementById('topControlBar');
+    if (footer) {
+        footer.style.opacity = '1';
+        footer.classList.remove('no-transition');
+    }
+    if (header) {
+        header.style.opacity = '1';
+        header.classList.remove('no-transition');
+    }
+
+    // DEFERRED INITIALIZATION: Unblock Main Thread for Loading Screen Removal
+    setTimeout(() => {
+        console.log('[Controls] deferred setup starting...');
+        setupDJPads(); // NEW - DJ Sound Pads
+        setupPresenceUI(); // NEW - Social Pulse
+        initGallery(); // Moved from line 219
+        console.log('[Controls] deferred setup complete');
+    }, 100);
 
     // SYNC SLIDER VALUES - Ensure displays match slider positions on load
     syncSliderDisplays();
@@ -757,6 +1020,8 @@ export function setupUI() {
     window.startSweepPreset = startSweepPresetUI; // NEW
     window.stopSweep = stopSweepUI; // NEW
     window.handleHyperGammaClick = handleHyperGammaClick; // NEW
+    window.toggleCyberSettings = toggleCyberSettings;
+    window.toggleMatrixSettings = toggleMatrixSettings;
 
     // PAYWALL HELPER: Handles Auth + Purchase
     const checkAccessAndPurchase = async (tier) => {
@@ -788,19 +1053,139 @@ export function setupUI() {
     };
 
     window.paywall = { goToCheckout, hasPurchasedApp, checkAccessAndPurchase }; // UPDATED
-    // Ensure visual mode UI is synced on load (Force ON defaults)
-    setVisualMode('particles', true); // Flow ON
-    // Delay Matrix init slightly to ensure state sync
-    setTimeout(() => setVisualMode('matrix', true), 100);
 
-    // Set Matrix Rainbow Mode ON by default
-    const viz = getVisualizer();
-    if (viz) {
-        viz.setMatrixRainbow(true);
-        viz.setMatrixMode(true); // Ensure MindWave text is on
+    // --- Visualizer Initialization & Defaults ---
+
+    // Apply visual defaults once visualizer is actually loaded (lazy loader)
+    const applyVisualDefaults = () => {
+        console.log('[Controls] Applying visual defaults starting...');
+        const viz = getVisualizer();
+        if (!viz) {
+            console.warn('[Controls] applyVisualDefaults: Visualizer not found');
+            return;
+        }
+
+        try {
+            // Ensure Flow (particles) and Matrix are BOTH active on load
+            if (!viz.activeModes.has('particles')) {
+                viz.toggleMode('particles');
+            }
+            if (!viz.activeModes.has('matrix')) {
+                viz.toggleMode('matrix');
+            }
+
+            // Force Mindwave logic mode (MW) for Matrix
+            if (viz.setMatrixMode) viz.setMatrixMode(true);
+
+            // Matrix Rainbow mode is forced to true on load per user request
+            const isRainbowEnabled = true;
+
+            if (viz.setMatrixRainbow) viz.setMatrixRainbow(isRainbowEnabled);
+            const rainbowToggle = document.getElementById('matrixRainbowToggle');
+            if (rainbowToggle) rainbowToggle.checked = isRainbowEnabled;
+
+            // Sync UI labels
+            if (setupUI.updateRainbowLabels) setupUI.updateRainbowLabels();
+
+            // Sync UI buttons to match the constructor's active modes (no toggleMode calls needed)
+            const buttons = [
+                { el: els.sphereBtn, mode: 'sphere' },
+                { el: els.flowBtn, mode: 'particles' },
+                { el: els.lavaBtn, mode: 'lava' },
+                { el: els.fireplaceBtn, mode: 'fireplace' },
+                { el: els.rainBtn, mode: 'rainforest' },
+                { el: els.zenBtn, mode: 'zengarden' },
+                { el: els.oceanBtn, mode: 'ocean' },
+                { el: els.matrixBtn, mode: 'matrix' }
+            ];
+            buttons.forEach(({ el, mode }) => {
+                if (!el) return;
+                if (viz.activeModes.has(mode)) {
+                    el.classList.add('toggle-active', 'active');
+                    el.classList.remove('toggle-inactive');
+                } else {
+                    el.classList.remove('toggle-active', 'active');
+                    el.classList.add('toggle-inactive');
+                }
+            });
+
+            // Show matrix panel if matrix is active
+            const matrixPanel = document.getElementById('matrixSettingsPanel');
+            if (matrixPanel && viz.activeModes.has('matrix')) {
+                if (typeof state.matrixPanelOpen === 'undefined') state.matrixPanelOpen = true;
+                if (state.matrixPanelOpen) {
+                    matrixPanel.classList.remove('hidden');
+                    matrixPanel.classList.add('flex', 'items-center');
+                }
+            }
+
+            // Reveal canvas and controls — everything is ready
+            const canvas = document.getElementById('visualizer');
+            if (canvas) {
+                canvas.style.opacity = '1';
+            }
+            const footer = document.getElementById('bottomControlBar');
+            const header = document.getElementById('topControlBar');
+
+            if (footer) {
+                // Ensure layout is current one last time
+                updateBottomBarWidth();
+                footer.style.opacity = '1';
+                // Remove no-transition class AFTER first paint to enable future transitions
+                setTimeout(() => footer.classList.remove('no-transition'), 100);
+            }
+            if (header) {
+                updateTopBarWidth();
+                header.style.opacity = '1';
+                setTimeout(() => header.classList.remove('no-transition'), 100);
+            }
+
+            console.log('[Controls] Visualizer and controls revealed');
+
+            console.log('[Controls] Visual defaults applied (streamlined)');
+        } catch (e) {
+            console.error('[Controls] Error in applyVisualDefaults:', e);
+            const canvas = document.getElementById('visualizer');
+            if (canvas) canvas.style.opacity = '1';
+        }
+    };
+
+    // Register Listener BEFORE preloading starts to avoid race condition
+    const vizNow = getVisualizer();
+    if (vizNow) {
+        console.log('[Controls] Visualizer already present, applying defaults immediately');
+        applyVisualDefaults();
+    } else {
+        console.log('[Controls] Visualizer not found yet. Registering "visualizerReady" listener...');
+        window.addEventListener('visualizerReady', () => {
+            console.log('[Controls] Received "visualizerReady" event. Proceeding...');
+            applyVisualDefaults();
+        }, { once: true });
     }
 
-    setVisualMode('ocean', false); // Explicitly ensure OFF
+    // Defer visualizer loading slightly to prioritize UI paint (500ms delay)
+    // Removed requestIdleCallback as it was too slow on some devices
+    setTimeout(() => {
+        console.log('[Controls] Starting visualizer preload...');
+        preloadVisualizer();
+    }, 500);
+
+    // WATCHDOG: Force reveal visualizer if it hasn't loaded after 10 seconds
+    setTimeout(() => {
+        const canvas = document.getElementById('visualizer');
+        if (canvas && canvas.style.opacity === '0') {
+            console.warn('[Watchdog] Visualizer still hidden after 10s. Forcing reveal...');
+
+            // Check if it was even dispatched
+            if (window.VIZ_READY_DISPATCHED) {
+                console.log('[Watchdog] Event was dispatched but not caught. Applying defaults manually.');
+                applyVisualDefaults();
+            } else {
+                console.log('[Watchdog] Event never dispatched. Forcing opacity 1 regardless.');
+                canvas.style.opacity = '1';
+            }
+        }
+    }, 10000);
 
     // NUCLEAR OPTION: Hijack beatSlider value setter to catch the 5.5Hz culprit
     try {
@@ -828,9 +1213,15 @@ export function setupUI() {
         }
     } catch (e) {
         console.error("Failed to install protection:", e);
+        // Pre-initialize modals for speed
+        initThemeModal();
     }
 
+    // Initialize UI State
+    updateSyncUI();
 }
+window.setupUI = setupUI; // EXPOSE GLOBALLY FOR DEBUGGING
+
 
 // --- PLAY BUTTON HANDLER ---
 let lastPlayClickTime = 0;
@@ -912,15 +1303,15 @@ async function handlePlayClick() {
             else presetName = 'Hyper-Gamma';
             startSessionTracking(presetName);
 
-            // 5. Start session timer if duration is set
+            // 5. Start session timer (0 = infinite/count-up)
             const duration = parseInt(els.sessionDuration?.value || 0);
-            if (duration > 0) {
-                startSession(duration, {
-                    onTick: updateTimerUI,
-                    onComplete: handleSessionComplete
-                });
-                showTimerUI();
-            }
+
+            startSession(duration, {
+                onTick: updateTimerUI,
+                onComplete: handleSessionComplete
+            });
+            showTimerUI();
+
         } catch (e) {
             console.error("Start Audio Failed", e);
         }
@@ -1077,6 +1468,216 @@ export function syncAllButtons() {
 
     console.log(`[Buttons] Synced - audio: ${audioPlaying}, visual: ${visualsPlaying} → main: ${isAnyPlaying ? 'PAUSE' : 'PLAY'} `);
 }
+// --- AI GOAL GENERATOR ---
+async function handleAIGenerate() {
+    const goal = els.aiGoalInput?.value.trim();
+    if (!goal) return;
+
+    // Loading State
+    els.aiBtnText?.classList.add('hidden');
+    els.aiBtnSpinner?.classList.remove('hidden');
+    els.aiGenerateBtn.disabled = true;
+
+    // Simulate "AI" processing delay
+    setTimeout(async () => {
+        // 1. Check for Story Match
+        const storyMatch = findBestStoryForGoal(goal);
+        const aiResult = calculateFrequencyFromGoal(goal);
+
+        if (storyMatch) {
+            console.log('[AI] Found Story Match:', storyMatch.title);
+
+            // Override story's recommended frequencies with AI intent if relevant
+            if (aiResult) {
+                // We'll temporarily modify the story object (or just pass the override)
+                // For now, let's just use the story's play logic but apply our frequencies after.
+                await playStory(storyMatch.id);
+
+                // Fine-tune after story starts
+                setTimeout(async () => {
+                    await applyAIPreset(aiResult);
+                    if (els.aiInsight) {
+                        els.aiInsight.textContent = `Matching Story: "${storyMatch.title}" — ${aiResult.insight}`;
+                        els.aiInsight.classList.remove('hidden');
+                    }
+                }, 500);
+            } else {
+                await playStory(storyMatch.id);
+                // Total Immersion: Stories
+                if (window.setVisualMode) window.setVisualMode(['rainforest', 'zengarden']);
+            }
+        } else {
+            // 2. Regular Multi-stage Intent
+            const sequence = parseComplexGoal(goal);
+            if (sequence.length > 0) {
+                state.sessionQueue = sequence;
+                await applyNextAIStage();
+            }
+        }
+
+        // Reset UI
+        els.aiBtnText?.classList.remove('hidden');
+        els.aiBtnSpinner?.classList.add('hidden');
+        els.aiGenerateBtn.disabled = false;
+    }, 800);
+}
+
+async function applyNextAIStage() {
+    if (!state.sessionQueue || state.sessionQueue.length === 0) {
+        showToast('All stages of your session are complete. 🧘', 'success');
+        return;
+    }
+
+    const stage = state.sessionQueue.shift();
+    console.log('[AI Stage] Applying:', stage.preset, 'Soundscapes:', stage.soundscapes, 'Duration:', stage.duration);
+
+    // Apply main frequency preset and soundscapes
+    await applyAIPreset(stage);
+
+    // Show Insight
+    if (els.aiInsight) {
+        els.aiInsight.textContent = (state.sessionQueue.length > 0 ? "[Stage 1] " : "") + stage.insight;
+        els.aiInsight.classList.remove('hidden');
+        els.aiInsight.classList.add('animate-[fade-in_0.5s_ease]');
+    }
+
+    // Handle Duration / Timer integration
+    if (stage.duration) {
+        console.log(`[AI Timer] Setting session for ${stage.duration} minutes`);
+        startSession(stage.duration, {
+            onTick: updateTimerUI,
+            onComplete: () => {
+                if (state.sessionQueue.length > 0) {
+                    showToast('Next stage starting...', 'info');
+                    applyNextAIStage();
+                } else {
+                    handleSessionComplete();
+                }
+            }
+        });
+        showTimerUI();
+    }
+}
+
+async function applyAIPreset(result) {
+    console.log('[AI] Applying Preset:', result.preset, 'Visuals:', result.visuals, 'Intensity:', result.intensity);
+
+    // Lock visuals to prevent accidental overrides during "Force Mode"
+    state.aiVisualsLocked = true;
+    showToast('AI Focus Mode Active 🔒', 'info');
+
+    // 0. Handle Intensity (Volume Scaling)
+    const baseVol = 0.5;
+    const scaledVol = Math.min(1.0, baseVol * (result.intensity || 1.0));
+    if (els.volSlider) {
+        els.volSlider.value = scaledVol;
+        if (typeof updateBeatsVolume === 'function') updateBeatsVolume(scaledVol);
+    }
+
+    // 1. Reset current soundscapes first
+    resetAllSoundscapes();
+
+    // 2. Clear current visuals
+    const viz = getVisualizer();
+    if (viz && viz.activeModes) {
+        const active = Array.from(viz.activeModes);
+        active.forEach(m => viz.toggleMode(m));
+    }
+
+    // 3. Apply Carrier Override (if present)
+    if (result.carrier && els.baseSlider) {
+        console.log('[AI] Overriding carrier frequency to:', result.carrier);
+        els.baseSlider.value = result.carrier;
+        if (els.baseValue) els.baseValue.textContent = result.carrier + ' Hz';
+    }
+
+    // 4. Apply main frequency preset
+    await applyPreset(result.preset, null, true, true);
+
+    // 5. Enable soundscapes with intensity mapping
+    result.soundscapes.forEach(id => {
+        const scVol = 0.5 * (result.intensity || 1.0);
+        updateSoundscape(id, true, Math.min(1.0, scVol));
+    });
+
+    // 6. Enable visuals if suggested (Total Immersion)
+    if (result.visuals && Array.isArray(result.visuals)) {
+        const visualMap = {
+            'flow': 'particles',
+            'zen': 'zengarden',
+            'matrix': 'matrix',
+            'rain': 'rainforest'
+        };
+
+        // Apply Speed & Brightness if available
+        if (viz && (result.speed !== undefined || result.brightness !== undefined)) {
+            console.log('[AI] Visual Parameters:', { speed: result.speed, brightness: result.brightness });
+
+            // Speed
+            if (result.speed !== undefined && viz.setGlobalSpeed) {
+                viz.setGlobalSpeed(result.speed);
+            }
+
+            // Brightness (Intensity)
+            if (result.brightness !== undefined && viz.setGlobalBrightness) {
+                viz.setGlobalBrightness(result.brightness);
+            }
+        }
+
+        result.visuals.forEach(v => {
+            const vizMode = visualMap[v] || v;
+            // Pass 'true' to forceState to bypass lock we just set
+            setVisualMode(vizMode, true);
+        });
+    }
+
+    // 7. Force UI Sync
+    initMixer();
+
+    showToast(`Total Immersion: ${result.preset.toUpperCase()}`, 'success');
+}
+
+/**
+ * Public wrapper to apply AI-derived intent.
+ * Used for auto-tuning session from survey.
+ */
+export async function applyAIIntent(intent) {
+    console.log('[AI] Applying Intent:', intent);
+    const result = calculateFrequencyFromGoal(intent);
+    if (result) {
+        await applyAIPreset(result);
+        return result.insight;
+    }
+    return null;
+}
+
+
+// --- SOCIAL PRESENCE (PULSE) ---
+function setupPresenceUI() {
+    // Start Heartbeat immediately (Anonymous tracks as 'anonymous')
+    startPresenceHeartbeat();
+
+    // Subscribe to counts
+    subscribeToPresenceCounts((data) => {
+        state.lastPresenceData = data;
+        if (!els.presenceText) return;
+
+        const count = data.total;
+        const preset = state.activePresetType || 'none';
+        const presetCount = data.byPreset[preset] || 0;
+
+        if (count > 1 && preset !== 'none') {
+            els.presenceText.textContent = `${count} Pulse (${presetCount} in ${preset.toUpperCase()})`;
+        } else {
+            els.presenceText.textContent = count === 1 ? 'You are the Pulse' : `${count} Pulse Active`;
+        }
+    });
+}
+
+function updatePresenceOnPresetChange() {
+    // Force immediate sync when preset changes
+    syncPresence();
+}
 
 
 // --- TIMER UI FUNCTIONS ---
@@ -1086,12 +1687,96 @@ function setupTimerUI() {
     if (els.sessionDuration) {
         els.sessionDuration.addEventListener('change', () => {
             const duration = parseInt(els.sessionDuration.value);
-            if (duration === 0) {
-                hideTimerUI();
-            }
+            // Don't hide for 0 anymore
         });
     }
 }
+
+function setupGalaxyControls() {
+    const rx = document.getElementById('galaxySunRX');
+    const ry = document.getElementById('galaxySunRY');
+    const rz = document.getElementById('galaxySunRZ');
+
+    const updateSun = () => {
+        const viz = getVisualizer();
+        // Check for 'galaxy' in activeModes directly via viz.activeModes
+        if (viz && viz.activeModes && viz.activeModes.has('galaxy')) {
+            if (rx) viz.sunRotationSpeedX = parseFloat(rx.value);
+            if (ry) viz.sunRotationSpeedY = parseFloat(ry.value);
+            if (rz) viz.sunRotationSpeedZ = parseFloat(rz.value);
+        }
+    };
+
+    [rx, ry, rz].forEach(el => {
+        if (el) el.addEventListener('input', updateSun);
+    });
+
+    console.log('[Controls] Galaxy Sun Controls Initialized');
+}
+
+window.toggleGalaxySettings = function(btn) {
+    state.galaxyPanelOpen = !state.galaxyPanelOpen;
+    console.log('[Controls] Toggle Galaxy Settings:', state.galaxyPanelOpen);
+    const panel = document.getElementById('galaxySettingsPanel');
+    const viz = getVisualizer();
+    const isActive = viz && viz.activeModes && viz.activeModes.has('galaxy');
+    if (panel && isActive) {
+        if (state.galaxyPanelOpen) {
+            panel.classList.remove('hidden');
+            panel.classList.add('flex', 'items-center');
+        } else {
+            panel.classList.add('hidden');
+            panel.classList.remove('flex', 'items-center');
+        }
+    } else if (panel) {
+        panel.classList.toggle('hidden');
+        panel.classList.toggle('flex');
+        panel.classList.toggle('items-center');
+    }
+};
+
+window.toggleCyberSettings = function(btn) {
+    state.cyberPanelOpen = !state.cyberPanelOpen;
+    console.log('[Controls] Toggle Cyber Settings:', state.cyberPanelOpen);
+    const panel = document.getElementById('cyberSettingsPanel');
+    const viz = getVisualizer();
+    const isActive = viz && viz.activeModes && viz.activeModes.has('matrix');
+    if (panel && isActive) {
+        if (state.cyberPanelOpen) {
+            panel.classList.remove('hidden');
+            panel.classList.add('flex', 'items-center');
+        } else {
+            panel.classList.add('hidden');
+            panel.classList.remove('flex', 'items-center');
+        }
+    } else if (panel) {
+        panel.classList.toggle('hidden');
+        panel.classList.toggle('flex');
+        panel.classList.toggle('items-center');
+    }
+};
+
+window.toggleMatrixSettings = function (btn) {
+    state.matrixPanelOpen = !state.matrixPanelOpen;
+    console.log('[Controls] Toggle Matrix Settings:', state.matrixPanelOpen);
+    const panel = document.getElementById('matrixSettingsPanel');
+    const viz = getVisualizer();
+    const active = viz && viz.activeModes && viz.activeModes.has('cyber');
+    if (panel && active) {
+        if (state.matrixPanelOpen) {
+            panel.classList.remove('hidden');
+            panel.classList.add('flex', 'items-center');
+        } else {
+            panel.classList.add('hidden');
+            panel.classList.remove('flex', 'items-center');
+        }
+    } else if (panel) {
+        panel.classList.toggle('hidden');
+        panel.classList.toggle('flex');
+        panel.classList.toggle('items-center');
+    }
+};
+
 
 function showTimerUI() {
     if (els.timerRing) els.timerRing.style.opacity = '1';
@@ -1121,7 +1806,17 @@ function updateTimerUI(data) {
     // Update progress ring (circumference = 2 * PI * 54 = 339.292)
     if (els.timerProgress) {
         const circumference = 339.292;
-        const offset = circumference - (data.progress / 100) * circumference;
+
+        let offset;
+        if (data.isInfinite) {
+            // For infinite, maybe just keep it full or pulse? 
+            // Let's keep it full (0 offset)
+            offset = 0;
+        } else {
+            // standard countdown
+            offset = circumference - (data.progress / 100) * circumference;
+        }
+
         els.timerProgress.style.strokeDashoffset = offset;
     }
 }
@@ -1136,6 +1831,13 @@ function handleSessionComplete() {
         stopAudio();
         hideTimerUI();
         showToast('Session complete! 🧘', 'success');
+
+        // Trigger Reflection Journal (Phase 5)
+        // Only trigger for sessions longer than 2 minutes to reduce friction
+        const sessionLength = parseInt(localStorage.getItem('mindwave_last_session_duration') || '0');
+        if (sessionLength > 120) {
+            setTimeout(() => showReflectionPrompt({ duration: sessionLength }), 1000);
+        }
     });
 }
 
@@ -1167,7 +1869,7 @@ function setupDisclaimerUI() {
     }
 }
 
-function showDisclaimerModal() {
+export function showDisclaimerModal() {
     if (els.disclaimerModal) {
         els.disclaimerModal.classList.remove('hidden');
         els.disclaimerModal.classList.add('active');
@@ -1257,14 +1959,25 @@ function openStatsModal() {
 
     // Get stats data
     const stats = getStats();
+    const impact = getImpactStats();
     const weeklyData = getWeeklyData();
     const maxMinutes = Math.max(...weeklyData.map(d => d.minutes), 1);
+
+    // Live Community Sync Data (Phase 5)
+    let livePresenceTotal = state.livePresenceTotal || 42; // Fallback to mock/last known
+    subscribeToPresenceCounts((counts) => {
+        state.livePresenceTotal = counts.total;
+        const liveCountLabel = document.getElementById('liveSyncCount');
+        if (liveCountLabel) {
+            liveCountLabel.textContent = `${counts.total} Users Pulsing Now`;
+        }
+    });
 
     // Find the card container inside the modal and replace its content
     const modalContent = els.statsModal.querySelector('.glass-card');
     if (modalContent) {
         modalContent.innerHTML = `
-    < !--Header -->
+            <!-- Header -->
             <div class="flex justify-between items-center mb-6">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent)] to-purple-500 flex items-center justify-center">
@@ -1283,21 +1996,18 @@ function openStatsModal() {
                 </button>
             </div>
 
-            <!--Stats Grid - Revamped with proper icon placement-- >
+            <!-- Stats Grid -->
             <div class="grid grid-cols-3 gap-3 mb-6">
-                <!-- Day Streak -->
                 <div class="rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/10 border border-orange-500/30 p-4 text-center">
                     <div class="text-2xl mb-1">🔥</div>
                     <div class="text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">${stats.currentStreak}</div>
                     <div class="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mt-1">Day Streak</div>
                 </div>
-                <!-- Hours -->
                 <div class="rounded-xl bg-gradient-to-br from-[var(--accent)]/20 to-cyan-500/10 border border-[var(--accent)]/30 p-4 text-center">
                     <div class="text-2xl mb-1">⏱️</div>
                     <div class="text-3xl font-bold bg-gradient-to-r from-[var(--accent)] to-cyan-400 bg-clip-text text-transparent">${stats.totalHours}</div>
                     <div class="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mt-1">Hours</div>
                 </div>
-                <!-- Sessions -->
                 <div class="rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/10 border border-purple-500/30 p-4 text-center">
                     <div class="text-2xl mb-1">🧘</div>
                     <div class="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">${stats.totalSessions}</div>
@@ -1305,7 +2015,7 @@ function openStatsModal() {
                 </div>
             </div>
 
-            <!--Weekly Chart-- >
+            <!-- Weekly Chart -->
             <div class="rounded-xl bg-white/5 border border-white/10 p-4 mb-4">
                 <div class="flex justify-between items-center mb-4">
                     <span class="text-xs font-semibold text-white">This Week</span>
@@ -1313,18 +2023,10 @@ function openStatsModal() {
                 </div>
                 <div class="h-32 flex items-end gap-2 px-2">
                     ${weeklyData.map((d, i) => {
-            // Calculate bar height in pixels (max 100px for chart area minus label space)
             const maxBarHeight = 100;
-            const barHeight = d.minutes > 0
-                ? Math.max(Math.round((d.minutes / maxMinutes) * maxBarHeight), 8)
-                : 8;
+            const barHeight = d.minutes > 0 ? Math.max(Math.round((d.minutes / maxMinutes) * maxBarHeight), 8) : 8;
             const isToday = i === 6;
-            // Use inline styles for background to ensure visibility
-            const barBg = d.minutes > 0
-                ? (isToday
-                    ? 'background: linear-gradient(to top, #00d4ff, #06b6d4);'
-                    : 'background: linear-gradient(to top, #a855f7, #ec4899);')
-                : 'background: rgba(255,255,255,0.15);';
+            const barBg = d.minutes > 0 ? (isToday ? 'background: linear-gradient(to top, #00d4ff, #06b6d4);' : 'background: linear-gradient(to top, #a855f7, #ec4899);') : 'background: rgba(255,255,255,0.15);';
             return `
                                 <div class="flex-1 flex flex-col items-center justify-end h-full">
                                     <div class="w-full rounded-t-lg transition-all duration-500 ease-out hover:brightness-125 cursor-pointer relative group"
@@ -1341,7 +2043,42 @@ function openStatsModal() {
                 </div>
             </div>
 
-            <!--Additional Stats-- >
+            <!-- PERSONAL IMPACT REPORT -->
+            <div class="rounded-xl bg-gradient-to-br from-[var(--accent)]/10 to-purple-500/10 border border-[var(--accent)]/20 p-4 mb-4">
+                <h4 class="text-[10px] font-bold text-[var(--accent)] uppercase tracking-widest mb-3">Personal Impact Report</h4>
+                
+                <!-- State Distribution -->
+                <div class="space-y-2 mb-4">
+                    ${Object.entries(impact.distribution).map(([state, mins]) => {
+            if (mins === 0 && impact.totalMinutes > 0) return '';
+            const percent = impact.totalMinutes > 0 ? Math.round((mins / impact.totalMinutes) * 100) : 0;
+            if (percent === 0 && impact.totalMinutes > 0) return '';
+            const colors = { delta: '#f87171', theta: '#fb923c', alpha: '#4ade80', beta: '#60a5fa', gamma: '#a78bfa' };
+            return `
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between text-[9px]">
+                                <span class="capitalize text-white/70">${state}</span>
+                                <span class="text-white/50">${mins}m (${percent}%)</span>
+                            </div>
+                            <div class="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-1000" style="width: ${percent}%; background-color: ${colors[state] || '#fff'};"></div>
+                            </div>
+                        </div>
+                    `;
+        }).join('')}
+                </div>
+
+                <!-- Community Sync -->
+                <div class="flex items-center gap-3 p-2 rounded-lg bg-black/20 border border-white/5">
+                    <div class="w-8 h-8 rounded-full bg-[var(--accent)]/20 flex items-center justify-center text-sm">✨</div>
+                    <div class="flex-1">
+                        <div id="liveSyncCount" class="text-[10px] text-white/70">${livePresenceTotal} Users Pulsing Now</div>
+                        <div class="text-xs font-bold text-[var(--accent)]">${impact.pulseHours} Pulse Hours Generated</div>
+                    </div>
+                </div>
+            </div>
+
+            <!--Additional Stats-->
             <div class="space-y-3">
                 <div class="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/5">
                     <div class="flex items-center gap-2">
@@ -1458,7 +2195,7 @@ function updateSweepStatusUI(active, activePresetKey = null) {
 function updateJourneyStyles() {
     // Check for Light Mode
     const themeAttr = document.documentElement.getAttribute('data-theme') || document.body.getAttribute('data-theme');
-    const lightThemes = ['cloud', 'dawn', 'paper', 'ash', 'light'];
+    const lightThemes = ['cloud', 'dawn', 'paper', 'ash'];
     const isLight = lightThemes.includes(themeAttr) || document.body.getAttribute('data-theme-type') === 'light';
 
     const btns = document.querySelectorAll('.sweep-btn');
@@ -1663,21 +2400,56 @@ export function resetImmersiveTimer() {
 }
 
 export function setVisualMode(mode, forceState = null) {
-    // state.visualMode = mode; // Single mode legacy. We'll rely on viz state.
     const viz = getVisualizer();
     let activeModes = new Set();
 
     if (viz) {
-        if (forceState !== null) {
-            // Force specific state (ON/OFF)
-            const isActive = viz.activeModes.has(mode);
-            if (isActive !== forceState) {
-                viz.toggleMode(mode);
-            }
+        const modes = Array.isArray(mode) ? mode : [mode];
+
+        // If applying an array (preset), clear existing modes for 'Total Immersion'
+        if (Array.isArray(mode)) {
+            viz.activeModes.clear();
         } else {
-            // Default toggle behavior
-            viz.toggleMode(mode);
+            // EXPERT REFACTOR: Define additive vs primary visuals
+            const additiveModes = ['cyber', 'matrix'];
+            const modesToApply = Array.isArray(mode) ? mode : [mode];
+            
+            // If we are activating a PRIMARY visual (not cyber/matrix), 
+            // clear other primary visuals but leave additive layers alone.
+            const isApplyingPrimary = modesToApply.some(m => !additiveModes.includes(m));
+            
+            if (isApplyingPrimary) {
+                // Clear all modes that are NOT in the additive list
+                Array.from(viz.activeModes).forEach(m => {
+                    if (!additiveModes.includes(m)) viz.activeModes.delete(m);
+                });
+            }
         }
+
+        // NEW: Check for AI Lock
+        // We reuse 'forceState' as a bypass flag if it equals true (boolean), 
+        // regarding it as "fromSystem" or "fromAI"
+        if (state.aiVisualsLocked && forceState !== true) {
+            console.log('[Visuals] Blocked by AI Lock');
+            showToast('Visuals locked by AI Focus Mode 🔒', 'info');
+            return;
+        }
+
+        modes.forEach(m => {
+            if (forceState !== null) {
+                const isActive = viz.activeModes.has(m);
+                if (isActive !== forceState) {
+                    viz.toggleMode(m);
+                }
+            } else {
+                // If applying an array, ensure it's enabled.
+                if (Array.isArray(mode)) {
+                    if (!viz.activeModes.has(m)) viz.toggleMode(m);
+                } else {
+                    viz.toggleMode(m);
+                }
+            }
+        });
         // Render a single frame so the mode is visible even when paused
         if (isVisualsPaused()) {
             viz.renderSingleFrame();
@@ -1688,13 +2460,18 @@ export function setVisualMode(mode, forceState = null) {
     // Update button states with theme-aware styling
     const buttons = [
         { el: els.sphereBtn, mode: 'sphere' },
+        { el: els.cubeBtn, mode: 'box' },
+        { el: els.dragonBtn, mode: 'dragon' },
+        { el: els.galaxyBtn, mode: 'galaxy' },
         { el: els.flowBtn, mode: 'particles' },
         { el: els.lavaBtn, mode: 'lava' },
         { el: els.fireplaceBtn, mode: 'fireplace' },
         { el: els.rainBtn, mode: 'rainforest' },
         { el: els.zenBtn, mode: 'zengarden' },
         { el: els.oceanBtn, mode: 'ocean' },
-        { el: els.matrixBtn, mode: 'matrix' }
+        { el: els.mandalaBtn, mode: 'mandala' },
+        { el: els.cyberBtn, mode: 'cyber' }, // UI "Cyber" -> Internal 2D
+        { el: els.matrixBtn, mode: 'matrix' } // UI "Matrix" -> Internal 3D
     ];
 
     buttons.forEach(({ el, mode: btnMode }) => {
@@ -1714,13 +2491,22 @@ export function setVisualMode(mode, forceState = null) {
         }
     });
 
-    // Toggle Matrix Settings Panel
+    // Panel Visibility Logic
     const matrixPanel = document.getElementById('matrixSettingsPanel');
-    if (matrixPanel) {
-        // Initialize state if undefined
-        if (typeof state.matrixPanelOpen === 'undefined') state.matrixPanelOpen = true;
+    const cyberPanel = document.getElementById('cyberSettingsPanel');
+    const galaxyPanel = document.getElementById('galaxySettingsPanel');
+    
+    const matrixActive = activeModes.has('matrix'); // 3D Matrix
+    const cyberActive = activeModes.has('cyber');   // 2D Cyber
+    const galaxyActive = activeModes.has('galaxy');
 
-        if (activeModes.has('matrix') && state.matrixPanelOpen) {
+    console.log('[Visuals] activeModes:', Array.from(activeModes));
+
+    // Matrix Panel Toggle (3D)
+    if (matrixPanel) {
+        if (typeof state.matrixPanelOpen === 'undefined') state.matrixPanelOpen = true;
+        const shouldShow = matrixActive && state.matrixPanelOpen;
+        if (shouldShow) {
             matrixPanel.classList.remove('hidden');
             matrixPanel.classList.add('flex', 'items-center');
         } else {
@@ -1728,8 +2514,52 @@ export function setVisualMode(mode, forceState = null) {
             matrixPanel.classList.remove('flex', 'items-center');
         }
     }
+    
+    // Cyber Panel Toggle (2D)
+    if (cyberPanel) {
+        if (typeof state.cyberPanelOpen === 'undefined') state.cyberPanelOpen = true;
+        const shouldShow = cyberActive && state.cyberPanelOpen;
+        if (shouldShow) {
+            cyberPanel.classList.remove('hidden');
+            cyberPanel.classList.add('flex', 'items-center');
+        } else {
+            cyberPanel.classList.add('hidden');
+            cyberPanel.classList.remove('flex', 'items-center');
+        }
+    }
+
+    // Galaxy Panel Toggle
+    if (galaxyPanel) {
+        if (typeof state.galaxyPanelOpen === 'undefined') state.galaxyPanelOpen = true;
+        const shouldShow = galaxyActive && state.galaxyPanelOpen;
+        if (shouldShow) {
+            galaxyPanel.classList.remove('hidden');
+            galaxyPanel.classList.add('flex', 'items-center');
+        } else {
+            galaxyPanel.classList.add('hidden');
+            galaxyPanel.classList.remove('flex', 'items-center');
+        }
+    }
 }
 window.setVisualMode = setVisualMode;
+
+/**
+ * Toggle mixer sections collapse/expand
+ * @param {string} sectionName 
+ */
+export function toggleMixerSection(sectionName) {
+    const section = document.querySelector(`[data-section="${sectionName}"]`);
+    if (section) {
+        section.classList.toggle('collapsed');
+        // Save state to localStorage
+        const collapsed = section.classList.contains('collapsed');
+        const states = JSON.parse(localStorage.getItem('mixerSectionStates') || '{}');
+        states[sectionName] = collapsed;
+        localStorage.setItem('mixerSectionStates', JSON.stringify(states));
+    }
+}
+window.toggleMixerSection = toggleMixerSection;
+
 
 
 export function setTheme(themeName) {
@@ -1746,6 +2576,9 @@ export function setTheme(themeName) {
     r.setProperty('--accent-glow', t.glow);
     r.setProperty('--slider-track', t.border);
 
+    // SYNC VISUALS WITH THEME
+    setVisualColor(t.accent);
+
     // CRITICAL: Set data-theme on body for CSS selectors to work
     document.body.dataset.theme = themeName;
 
@@ -1753,6 +2586,8 @@ export function setTheme(themeName) {
     const lightThemes = ['cloud', 'dawn', 'paper', 'ash'];
     const themeType = lightThemes.includes(themeName) ? 'light' : 'dark';
     document.body.dataset.themeType = themeType;
+
+    console.log(`[Theme] Setting theme to: ${themeName} (${themeType}) - CONSOLIDATED VERSION`);
 
     // Dispatch event for components that need to react (e.g. Cursor)
     window.dispatchEvent(new CustomEvent('themeChanged', {
@@ -1793,8 +2628,14 @@ export function setTheme(themeName) {
 
     if (isLightTheme) {
         const bgColor = t.panel;
-        if (leftPanel) leftPanel.style.backgroundColor = bgColor;
-        if (rightPanel) rightPanel.style.backgroundColor = bgColor;
+        if (leftPanel) {
+            leftPanel.style.backgroundColor = bgColor;
+            leftPanel.style.color = t.text;
+        }
+        if (rightPanel) {
+            rightPanel.style.backgroundColor = bgColor;
+            rightPanel.style.color = t.text;
+        }
 
         // Also fix all preset buttons text
         document.querySelectorAll('.preset-btn').forEach(btn => {
@@ -1804,21 +2645,32 @@ export function setTheme(themeName) {
             });
         });
 
-        // FIX THEME MODAL TEXT VISIBILITY
+        // FIX THEME MODAL TEXT VISIBILITY (Aggressive)
         const themeModal = document.getElementById('themeModal');
         if (themeModal) {
-            // Modal header and all text elements
-            themeModal.querySelectorAll('h2, h3, .text-lg, .text-xs, .text-sm, div').forEach(el => {
-                // Skip if element has specific color styling that should be preserved
-                if (!el.style.color || el.style.color.includes('var(--accent)')) {
+            themeModal.style.color = t.text;
+            themeModal.querySelectorAll('h2, h3, .text-lg, .text-xs, .text-sm, div, span, label').forEach(el => {
+                if (!el.style.color || el.style.color.includes('rgba(255,255,255')) {
                     el.style.color = t.text;
                 }
             });
-            // Modal background
             const modalCard = document.getElementById('themeModalCard');
-            if (modalCard) {
-                modalCard.style.backgroundColor = t.panel;
-            }
+            if (modalCard) modalCard.style.backgroundColor = t.panel;
+        }
+
+        // FIX AUTH MODAL (Sign In) visibility
+        const authModal = document.getElementById('authModal');
+        if (authModal) {
+            authModal.querySelectorAll('h3, p, label, span, button:not([type="submit"])').forEach(el => {
+                if (!el.classList.contains('text-[var(--accent)]') && !el.classList.contains('text-white')) {
+                    el.style.color = t.text;
+                }
+            });
+            // Specifically fix the subtitle and forgot password link
+            const sub = document.getElementById('authSubtitle');
+            if (sub) sub.style.color = t.muted;
+            const forgot = document.getElementById('resetPasswordBtn');
+            if (forgot) forgot.style.color = t.muted;
         }
 
         // FIX TOP CONTROL BAR VISIBILITY
@@ -1826,15 +2678,13 @@ export function setTheme(themeName) {
         if (topBar) {
             topBar.style.backgroundColor = t.panel;
             topBar.style.borderColor = t.border;
-            // Fix all text in top bar
             topBar.querySelectorAll('button, span, div').forEach(el => {
-                if (!el.classList.contains('toggle-active') && !el.style.color) {
+                if (!el.classList.contains('toggle-active')) {
                     el.style.color = t.text;
                 }
             });
         }
 
-        // Force update of Journeys UI
         if (typeof updateJourneyStyles === 'function') updateJourneyStyles();
 
     } else {
@@ -1921,10 +2771,10 @@ export function initMixer() {
         const settings = state.soundscapeSettings[s.id];
         const item = document.createElement('div');
         item.className = "soundscape-item p-2 rounded border border-[var(--border)] flex flex-col gap-1";
-        item.innerHTML = `<label class="text-[10px] font-semibold truncate mb-1 block atmos-label" title="${s.label}">${s.label}${s.bpm ? ` <span class="text-[8px] atmos-sublabel font-normal">${s.bpm} BPM</span>` : ''}</label>
-<div class="flex items-center gap-2"><span class="text-[8px] w-6 atmos-sublabel">VOL</span><input type="range" min="0" max="0.5" step="0.01" value="${settings.vol}" class="flex-1 h-1" data-id="${s.id}" data-type="vol"><span class="text-[9px] font-mono w-8 text-right tabular-nums atmos-val" data-val="vol">${Math.round(settings.vol * 200)}%</span></div>
-<div class="flex items-center gap-2"><span class="text-[8px] w-6 atmos-sublabel">TONE</span><input type="range" min="0" max="1" step="0.01" value="${settings.tone}" class="flex-1 tone-slider h-1" data-id="${s.id}" data-type="tone"><span class="text-[9px] font-mono w-8 text-right tabular-nums atmos-val" data-val="tone">${Math.round(settings.tone * 100)}%</span></div>
-<div class="flex items-center gap-2"><span class="text-[8px] w-6 atmos-sublabel">SPD</span><input type="range" min="0" max="1" step="0.01" value="${settings.speed}" class="flex-1 speed-slider h-1" data-id="${s.id}" data-type="speed"><span class="text-[9px] font-mono w-8 text-right tabular-nums atmos-val" data-val="speed">${Math.round(settings.speed * 100)}%</span></div>`;
+        item.innerHTML = `<label class="text-[10px] font-semibold truncate mb-1 block atmos-label" title="${s.label}">${s.label}${s.bpm ? ` <span class="text-[8px] fader-label font-normal">${s.bpm} BPM</span>` : ''}</label>
+<div class="flex items-center gap-2"><span class="text-[8px] w-6 fader-label">VOL</span><input type="range" min="0" max="0.5" step="0.01" value="${settings.vol}" class="flex-1 h-1" data-id="${s.id}" data-type="vol"><span class="text-[9px] font-mono w-8 text-right tabular-nums fader-value" data-val="vol">${Math.round(settings.vol * 200)}%</span></div>
+<div class="flex items-center gap-2"><span class="text-[8px] w-6 fader-label">TONE</span><input type="range" min="0" max="1" step="0.01" value="${settings.tone}" class="flex-1 tone-slider h-1" data-id="${s.id}" data-type="tone"><span class="text-[9px] font-mono w-8 text-right tabular-nums fader-value" data-val="tone">${Math.round(settings.tone * 100)}%</span></div>
+<div class="flex items-center gap-2"><span class="text-[8px] w-6 fader-label">SPD</span><input type="range" min="0" max="1" step="0.01" value="${settings.speed}" class="flex-1 speed-slider h-1" data-id="${s.id}" data-type="speed"><span class="text-[9px] font-mono w-8 text-right tabular-nums fader-value" data-val="speed">${Math.round(settings.speed * 100)}%</span></div>`;
 
         // Vol slider with value update
         const volInput = item.querySelector('input[data-type="vol"]');
@@ -2156,6 +3006,21 @@ export function openProfile() {
     if (els.profileNameInput) els.profileNameInput.value = user.displayName || "";
     if (els.profileUid) els.profileUid.textContent = `ID: ${user.uid.slice(0, 6)}...`;
     if (els.profileAvatarBig) els.profileAvatarBig.textContent = (user.displayName || "A")[0].toUpperCase();
+
+    // Fetch and display referral count
+    getReferralCount(user.uid).then(count => {
+        const tierBadge = document.getElementById('profileUserTier');
+        if (tierBadge) {
+            if (count >= 10) tierBadge.innerHTML = '🌟 Grand Ambassador';
+            else if (count >= 5) tierBadge.innerHTML = '💎 Elite Ambassador';
+            else if (count >= 3) tierBadge.innerHTML = '🥈 Ambassador';
+            else tierBadge.innerHTML = 'Free Plan';
+        }
+
+        // Optionally update a stat box for referrals if exists
+        const refStat = document.getElementById('statReferrals');
+        if (refStat) refStat.textContent = count;
+    });
 }
 
 // --- Auth Logic (Profile Button) ---
@@ -2254,7 +3119,72 @@ async function confirmSave() {
 }
 // Remove old setupLibraryListener and renderLibrary as they are handled by auth-controller now.
 
+/**
+ * Load a public preset from the gallery (Phase 7)
+ */
+window.loadPublicPreset = (preset) => {
+    if (!preset || !preset.settings) return;
+
+    console.log('[Gallery] Loading public preset data:', preset.name);
+
+    // Apply pitch and beat
+    if (els.baseSlider) {
+        els.baseSlider.value = preset.settings.base || 200;
+        els.baseValue.textContent = `${els.baseSlider.value} Hz`;
+    }
+    if (els.beatSlider) {
+        els.beatSlider.value = preset.settings.beat || 10;
+        els.beatValue.textContent = `${els.beatSlider.value} Hz`;
+    }
+
+    // Apply volumes if present
+    if (preset.settings.beatsVol && els.volSlider) {
+        els.volSlider.value = preset.settings.beatsVol;
+        els.volValue.textContent = `${Math.round(preset.settings.beatsVol * 100)}%`;
+    }
+
+    // Apply Mode
+    if (preset.settings.audioMode) {
+        setAudioMode(preset.settings.audioMode);
+    }
+
+    // Apply visuals
+    if (preset.settings.visualColor) {
+        setVisualColor(preset.settings.visualColor);
+    }
+    if (preset.settings.visualMode) {
+        toggleVisual(preset.settings.visualMode);
+    }
+
+    // Apply Soundscapes
+    if (preset.settings.soundscapes) {
+        Object.keys(preset.settings.soundscapes).forEach(id => {
+            updateSoundscape(id, preset.settings.soundscapes[id], false);
+        });
+    }
+
+    updateFrequencies();
+
+    // Toast notification
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 glass-card px-6 py-3 rounded-2xl border border-[var(--accent)]/30 text-white text-sm z-[300] animate-bounce';
+    toast.innerHTML = `🌟 Multi-user Mix Loaded: <b>${preset.name}</b>`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+
+    // Start audio if not playing
+    if (!state.isPlaying) {
+        handlePlayClick();
+    }
+};
+
 export async function applyPreset(type, btnElement, autoStart = true, skipPaywall = false) {
+    // NEW: Manual Override Check
+    // If a user clicks a preset button (btnElement exists), we unlock the AI visual lock
+    if (btnElement && state.aiVisualsLocked) {
+        state.aiVisualsLocked = false;
+        showToast('AI Focus Mode Unlocked 🔓', 'info');
+    }
     // Check paywall for presets (skip if called from combo preset)
     // EXEMPT BASIC BRAINWAVES from paywall
     // STRICT LOCKING: Only Delta (Sleep) and Beta (Focus) are free
@@ -2305,6 +3235,24 @@ export async function applyPreset(type, btnElement, autoStart = true, skipPaywal
 
     state.activePresetType = type;
 
+    // 1. Total Immersion: Apply Visuals
+    const { BRAINWAVE_VISUALS } = await import('../state.js');
+    if (BRAINWAVE_VISUALS[type]) {
+        console.log('[Controls] Total Immersion: Applying brainwave visuals', BRAINWAVE_VISUALS[type]);
+        if (window.setVisualMode) {
+            window.setVisualMode(BRAINWAVE_VISUALS[type]);
+        }
+    } else if (type.startsWith('heal-')) {
+        // Healing Frequency visual logic
+        let healingVisuals = ['matrix', 'particles']; // Default
+        const freq = parseInt(type.split('-')[1]);
+        if (freq <= 396) healingVisuals = ['lava', 'fireplace'];
+        else if (freq <= 528) healingVisuals = ['rainforest', 'ocean'];
+
+        console.log('[Controls] Total Immersion: Applying healing visuals', healingVisuals);
+        if (window.setVisualMode) window.setVisualMode(healingVisuals);
+    }
+
     // 1. Auto-Play FIRST (Critical for UX) - Only if triggered by user gesture
     // We try to start audio immediately on the click event
     // Skip auto-start if called during page load (autoStart = false)
@@ -2318,21 +3266,31 @@ export async function applyPreset(type, btnElement, autoStart = true, skipPaywal
         }
     }
 
-    // 1. Update UI Buttons
+    // 1. Update UI Buttons & Sync Presence
     if (els.presetButtons) {
         els.presetButtons.forEach(b => {
             b.classList.remove('bg-white/10', 'border-white/20');
             b.classList.add('bg-white/5', 'border-white/10');
         });
 
-        // Find button by type if not specific element passed
-        // Find button by type if not specific element passed
         const targetBtn = btnElement || document.querySelector(`.preset-btn[onclick*="'${type}'"]`);
         if (targetBtn) {
             targetBtn.classList.remove('bg-white/5', 'border-white/10');
             targetBtn.classList.add('bg-white/10', 'border-white/20');
         }
     }
+
+    // Force immediate presence update
+    updatePresenceOnPresetChange();
+
+    // Show community count if available
+    setTimeout(() => {
+        const stats = state.lastPresenceData;
+        if (stats && stats.byPreset && stats.byPreset[type] > 1) {
+            const count = stats.byPreset[type];
+            showToast(`Joined ${count - 1} others in ${type.toUpperCase()}`, 'info');
+        }
+    }, 1500); // Wait for sync/snapshot
 
     // 2. Set Frequencies & Colors
     let base = 200, beat = 10;
@@ -2399,6 +3357,7 @@ export async function applyPreset(type, btnElement, autoStart = true, skipPaywal
 
 // Expose to global scope for HTML onclick handlers
 window.applyPreset = applyPreset;
+window.applyComboPreset = applyComboPreset;
 
 // --- COMBO PRESET LOGIC (Ambient Presets) ---
 // Combines binaural frequency presets with atmospheric soundscapes
@@ -2570,7 +3529,15 @@ export async function applyComboPreset(comboId, btnElement) {
         btnElement.classList.add('bg-white/10', 'border-white/20');
     }
 
-    // 7. Save state
+    // 7. Total Immersion: Apply Visuals
+    if (combo.visuals && combo.visuals.length > 0) {
+        console.log('[Controls] Total Immersion: Applying combo visuals', combo.visuals);
+        if (window.setVisualMode) {
+            window.setVisualMode(combo.visuals);
+        }
+    }
+
+    // 8. Save state
     saveStateToLocal();
 
     console.log('[Controls] Combo preset configured:', comboId);
@@ -2597,63 +3564,195 @@ export async function applyComboPreset(comboId, btnElement) {
 
     return true;
 }
+/** LEGACY FAILSAFE - DO NOT REMOVE **/
+window.renderThemeModal = () => {
+    console.log('[Failsafe] renderThemeModal redirected to showThemeGallery');
+    if (typeof showThemeGallery === 'function') showThemeGallery();
+};
 
-// Expose to global scope for HTML onclick handlers
-window.applyComboPreset = applyComboPreset;
-
-// --- THEME MODAL LOGIC ---
+window.setCursorShape = (s) => {
+    if (typeof window._setCursorShape === 'function') {
+        window._setCursorShape(s);
+    } else {
+        console.warn('[Failsafe] _setCursorShape not ready:', s);
+    }
+};
 
 export function initThemeModal() {
+    console.log('[Theme] initThemeModal CALLED (Optimized)');
     const grid = document.getElementById('themeGrid');
-    if (!grid) return;
+    const container = document.getElementById('themeModalContent');
+    if (!grid || !container) {
+        console.warn('[Theme] target elements missing for initThemeModal');
+        return;
+    }
 
     grid.innerHTML = ''; // Clear existing
 
-    Object.keys(THEMES).forEach(key => {
-        const theme = THEMES[key];
-        const card = document.createElement('div');
-        card.className = `theme-card group ${els.themeBtn && document.body.dataset.theme === key ? 'active' : ''} `;
-        card.style.setProperty('--theme-bg', theme.bg);
+    // Non-blocking referral count fetch
+    const renderThemes = (refCount) => {
+        grid.innerHTML = ''; // Clear for fresh render or update
+        Object.keys(THEMES).forEach(key => {
+            const theme = THEMES[key];
+            const isLocked = theme.threshold && refCount < theme.threshold;
 
-        // Card HTML - use CSS classes for theme-aware text colors
-        const displayName = key === 'default' ? 'Emerald' : key;
+            const card = document.createElement('div');
+            const currentTheme = document.body.dataset.theme;
+            card.className = `theme-card group ${currentTheme === key ? 'active' : ''} ${isLocked ? 'locked opacity-60' : ''} `;
+            card.style.setProperty('--theme-bg', theme.bg);
+            card.dataset.themeId = key;
 
-        card.innerHTML = `
-    <div class="theme-preview">
-        <div class="absolute inset-0 opacity-50" style="background: radial-gradient(circle at 50% 50%, ${theme.accent}, transparent 70%);"></div>
-    </div>
-    <div class="p-3 theme-card-content">
-        <div class="theme-card-title text-sm font-bold capitalize mb-1" style="color: var(--text-main);">${displayName}</div>
-        <div class="theme-card-desc text-[10px]" style="color: var(--text-muted);">
-            ${getThemeDesc(key)}
-        </div>
-    </div>
-`;
+            // Card HTML
+            const displayName = key === 'default' ? 'Emerald' : key;
+            card.innerHTML = `
+                <div class="theme-preview">
+                    <div class="absolute inset-0 opacity-50" style="background: radial-gradient(circle at 50% 50%, ${theme.accent}, transparent 70%);"></div>
+                    ${isLocked ? `
+                        <div class="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white/80">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="p-3 theme-card-content">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="theme-card-title text-sm font-bold capitalize">${displayName}</div>
+                        ${isLocked ? `<span class="text-[9px] font-bold text-amber-500">REF: ${refCount}/${theme.threshold}</span>` : ''}
+                    </div>
+                    <div class="theme-card-desc text-[10px] opacity-70">
+                        ${isLocked ? `Refer ${theme.threshold} friends to unlock this Ambassador theme.` : getThemeDesc(key)}
+                    </div>
+                </div>
+            `;
 
-        card.onclick = () => {
-            setTheme(key);
-            // Flash "active" state
-            document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
-            card.classList.add('active');
-            // Optional: Close modal after short delay or stay open? 
-            // Let's stay open so they can browse, but maybe close if they click outside.
-        };
+            card.onclick = () => {
+                if (isLocked) {
+                    showToast(`🤝 Refer ${theme.threshold - refCount} more friends to unlock ${displayName}!`, 'warning');
+                    return;
+                }
+                setTheme(key);
+                document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                setTimeout(closeThemeModal, 300);
+            };
 
-        grid.appendChild(card);
-    });
+            grid.appendChild(card);
+        });
+    };
+
+    // Initial render with 0 (or cached if we add it)
+    renderThemes(0);
+
+    // Background update
+    if (state.currentUser) {
+        getReferralCount(state.currentUser.uid).then(count => {
+            console.log('[Theme] Async referral count update:', count);
+            renderThemes(count);
+        }).catch(err => {
+            console.error('[Theme] Failed to update referral count:', err);
+        });
+    }
+
 
     // Close Button
     const closeBtn = document.getElementById('closeThemeBtn');
     if (closeBtn) closeBtn.onclick = closeThemeModal;
-
-    // Trigger button
-    if (els.themeBtn) els.themeBtn.addEventListener('click', openThemeModal);
 
     // Click outside to close
     const modal = document.getElementById('themeModal');
     if (modal) {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) closeThemeModal();
+        });
+    }
+
+    // --- Cursor Settings UI (Inlined for robustness) ---
+    const existing = document.getElementById('cursorSettingsDefinitive');
+    if (existing) existing.remove();
+
+    const section = document.createElement('div');
+    section.id = 'cursorSettingsDefinitive';
+    section.className = 'mt-6 pt-6 border-t border-white/10';
+
+    const savedShape = localStorage.getItem('mindwave_cursor_shape') || 'default';
+    const savedColor = localStorage.getItem('mindwave_cursor_color') || null;
+    const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#60a9ff';
+    const effectiveColor = savedColor || accentColor;
+
+    const CURSOR_SHAPES_DATA = [
+        { id: 'sun', name: 'Sun', icon: '☀️' },
+        { id: 'moon', name: 'Moon', icon: '🌙' },
+        { id: 'plus', name: 'Plus', icon: '✚' },
+        { id: 'lotus', name: 'Lotus', icon: '🪷' },
+        { id: 'heart', name: 'Heart', icon: '❤️' },
+        { id: 'mindwave', name: 'MindWave', icon: '🧠' },
+        { id: 'ring', name: 'Ring', icon: '⭕' },
+        { id: 'target', name: 'Target', icon: '🎯' },
+        { id: 'default', name: 'Default', icon: '🖱️' }
+    ];
+
+    section.innerHTML = `
+        <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 rounded-lg bg-[var(--accent)]/20">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="var(--accent)" stroke="var(--accent)" stroke-width="1.5">
+                    <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="M13 13l6 6" fill="none"/>
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-sm font-bold tracking-tight">CUSTOM CURSOR</h3>
+                <div class="text-xs opacity-70">Choose shape and color</div>
+            </div>
+        </div>
+        <div class="flex items-center gap-3 mb-4 p-3 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/20">
+            <span class="text-xs font-medium">Color:</span>
+            <div class="relative group">
+                <div id="cursorColorPreview" class="w-8 h-8 rounded-full border-2 border-[var(--accent)]/40 cursor-pointer shadow-lg transition-transform hover:scale-110" style="background-color: ${effectiveColor};"></div>
+                <input type="color" id="cursorColorPicker" value="${savedColor || '#60a9ff'}" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+            </div>
+            <button id="resetCursorColor" class="px-3 py-1.5 text-[11px] font-semibold rounded-lg bg-[var(--accent)]/20 hover:bg-[var(--accent)]/30 transition-all border border-[var(--accent)]/30">Reset</button>
+        </div>
+        <div class="grid grid-cols-3 sm:grid-cols-5 gap-2" id="cursorShapeGrid">
+            ${CURSOR_SHAPES_DATA.map(s => `
+                <button class="cursor-option p-3 rounded-xl text-center transition-all border ${s.id === savedShape ? 'active bg-[var(--accent)]/20 border-[var(--accent)]' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'}" data-shape="${s.id}" title="${s.name}">
+                    <span class="text-2xl block">${s.icon}</span>
+                    <div class="text-[10px] mt-1 font-semibold">${s.name}</div>
+                </button>
+            `).join('')}
+        </div>`;
+
+    container.appendChild(section);
+
+    // Event Listeners for Cursor
+    section.querySelectorAll('.cursor-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (typeof window.setCursorShape === 'function') {
+                window.setCursorShape(btn.dataset.shape);
+                // Update UI active state
+                section.querySelectorAll('.cursor-option').forEach(b => b.classList.remove('active', 'bg-[var(--accent)]/20', 'border-[var(--accent)]'));
+                btn.classList.add('active', 'bg-[var(--accent)]/20', 'border-[var(--accent)]');
+            }
+        });
+    });
+
+    const cp = section.querySelector('#cursorColorPicker');
+    if (cp) {
+        cp.addEventListener('input', (e) => {
+            if (typeof window.setCursorColor === 'function') {
+                window.setCursorColor(e.target.value);
+                const prev = section.querySelector('#cursorColorPreview');
+                if (prev) prev.style.backgroundColor = e.target.value;
+            }
+        });
+    }
+
+    const rb = section.querySelector('#resetCursorColor');
+    if (rb) {
+        rb.addEventListener('click', () => {
+            if (typeof window.resetCursorColor === 'function') {
+                window.resetCursorColor();
+            }
         });
     }
 }
@@ -2669,6 +3768,11 @@ function getThemeDesc(key) {
         case 'nebula': return "Cosmic Depth";
         case 'quantum': return "Matrix Grid";
         case 'sunset': return "Synthwave Glow";
+
+        // Ambassador Themes
+        case 'platinum': return "Elite Silver Focus";
+        case 'titanium': return "Indigo Power State";
+        case 'supernova': return "Peak Energetic Flow";
 
         // Premium Dark Themes
         case 'aurora': return "Glacial Cyan";
@@ -2691,37 +3795,42 @@ function getThemeDesc(key) {
     }
 }
 
-export function openThemeModal() {
+/**
+ * Definitive function to show the theme gallery.
+ * Renamed from openThemeModal to bypass potential caching/reference errors.
+ */
+export function showThemeGallery() {
+    console.log('[Theme] showThemeGallery CALLED');
     const modal = document.getElementById('themeModal');
     const card = document.getElementById('themeModalCard');
-    if (modal && card) {
-        // Re-render to update 'active' state
-        initThemeModal();
+    if (!modal || !card) return;
 
-        // Add cursor settings UI to the modal
-        if (card.classList.contains('scale-95')) {
-            card.classList.remove('scale-95');
-            card.classList.add('scale-100');
+    // Simplified: Just update active state and show
+    const currentTheme = document.body.dataset.theme;
+    document.querySelectorAll('.theme-card').forEach(card => {
+        if (card.dataset.themeId === currentTheme) {
+            card.classList.add('active');
         } else {
-            renderThemeModal(getTheme()); // Initial render
-            requestAnimationFrame(() => {
-                card.classList.remove('scale-95');
-                card.classList.add('scale-100');
-            });
+            card.classList.remove('active');
         }
+    });
 
-        // Apply Layout Constraints
+    // Show modal
+    modal.classList.remove('hidden');
+    void modal.offsetWidth; // Force reflow
+    modal.classList.add('active');
+
+    // Reset scroll position on open
+    const scrollContent = document.getElementById('themeModalContent');
+    if (scrollContent) scrollContent.scrollTop = 0;
+
+    // Animation
+    card.classList.remove('opacity-0', 'scale-95');
+    card.classList.add('opacity-100', 'scale-100');
+
+    // Layout
+    if (typeof adjustModalLayout === 'function') {
         adjustModalLayout(modal);
-
-        modal.classList.remove('hidden');
-        // Force reflow
-        void modal.offsetWidth;
-        modal.classList.add('active');
-
-        setTimeout(() => {
-            card.classList.remove('scale-95', 'opacity-0');
-            card.classList.add('scale-100', 'opacity-100');
-        }, 10);
     }
 }
 
@@ -3012,7 +4121,7 @@ function updateCategoryTabs() {
 
     // Check for Light Mode
     const themeAttr = document.documentElement.getAttribute('data-theme') || document.body.getAttribute('data-theme');
-    const lightThemes = ['cloud', 'dawn', 'paper', 'ash', 'light'];
+    const lightThemes = ['cloud', 'dawn', 'paper', 'ash'];
     const isLight = lightThemes.includes(themeAttr) || document.body.getAttribute('data-theme-type') === 'light';
 
     tabs.forEach(tab => {
@@ -3024,12 +4133,12 @@ function updateCategoryTabs() {
             if (isLight) {
                 // Light Mode Active: Accent Tint BG + Category Text/Border
                 // Use color-mix for valid opacity with hex variable
-                tab.className = `dj - cat - tab px - 2.5 py - 1 rounded - lg text - [9px] font - bold uppercase tracking - wide whitespace - nowrap border shadow - sm ${colors.text} `;
+                tab.className = `dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide whitespace-nowrap border shadow-sm ${colors.text}`;
                 tab.style.borderColor = 'currentColor';
                 tab.style.backgroundColor = 'color-mix(in srgb, var(--accent), transparent 80%)';
             } else {
                 // Dark Mode Active: Legacy
-                tab.className = `dj - cat - tab px - 2.5 py - 1 rounded - lg text - [9px] font - bold uppercase tracking - wide whitespace - nowrap ${colors.bg} ${colors.text} border ${colors.border} `;
+                tab.className = `dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide whitespace-nowrap ${colors.bg} ${colors.text} border ${colors.border}`;
                 tab.style.borderColor = '';
                 tab.style.backgroundColor = '';
             }
@@ -3037,10 +4146,10 @@ function updateCategoryTabs() {
             // Inactive state
             tab.style.backgroundColor = ''; // Reset
             if (isLight) {
-                tab.className = `dj - cat - tab px - 2.5 py - 1 rounded - lg text - [9px] font - bold uppercase tracking - wide whitespace - nowrap bg - transparent hover: bg - black / 5 text - [var(--text - muted)] border border - transparent hover: border - black / 5`;
+                tab.className = `dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide whitespace-nowrap bg-transparent hover:bg-black/5 text-[var(--text-muted)] border border-transparent hover:border-black/5`;
                 tab.style.borderColor = '';
             } else {
-                tab.className = `dj - cat - tab px - 2.5 py - 1 rounded - lg text - [9px] font - bold uppercase tracking - wide whitespace - nowrap hover: bg - white / 10 ${colors.text} border border - white / 10 hover: border - white / 20`;
+                tab.className = `dj-cat-tab px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide whitespace-nowrap hover:bg-white/10 ${colors.text} border border-white/10 hover:border-white/20`;
                 tab.style.borderColor = '';
             }
         }
@@ -3051,13 +4160,15 @@ function updateCategoryTabs() {
     updateStopAllButton();
 }
 
+
+
 function updateModeButtons() {
     const modeOneShot = document.getElementById('djModeOneShot');
     const modeLoop = document.getElementById('djModeLoop');
 
     // Check for Light Mode
     const themeAttr = document.documentElement.getAttribute('data-theme') || document.body.getAttribute('data-theme');
-    const lightThemes = ['cloud', 'dawn', 'paper', 'ash', 'light'];
+    const lightThemes = ['cloud', 'dawn', 'paper', 'ash'];
     const isLight = lightThemes.includes(themeAttr) || document.body.getAttribute('data-theme-type') === 'light';
 
     if (modeOneShot) {
@@ -3119,20 +4230,20 @@ function renderDJPads(category) {
 
     // Check for Light Mode
     const themeAttr = document.documentElement.getAttribute('data-theme') || document.body.getAttribute('data-theme');
-    const lightThemes = ['cloud', 'dawn', 'paper', 'ash', 'light'];
+    const lightThemes = ['cloud', 'dawn', 'paper', 'ash'];
     const isLight = lightThemes.includes(themeAttr) || document.body.getAttribute('data-theme-type') === 'light';
 
     Object.entries(catData.sounds).forEach(([id, sound]) => {
         const isActive = isLoopActive(id);
         const canLoop = sound.canLoop;
 
-        let inactiveClasses = `bg - white / 5 border - white / 10 hover: bg - white / 10 hover: border - white / 20`;
+        let inactiveClasses = `bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20`;
         let inactiveStyle = '';
 
         if (!isActive && isLight) {
             // Light Mode Outline Style: Transparent BG, Colored Border, Colored Text
             // We use inline styles for the specific category color on border/text
-            inactiveClasses = `bg - transparent hover: bg - [var(--accent)]/5`;
+            inactiveClasses = `bg-transparent hover:bg-[var(--accent)]/5`;
             // Note: Border width is handled by 'border' class in template below
         }
 
@@ -3299,7 +4410,7 @@ renderAllDJPads = function () {
 
         // Check for Light Mode
         const themeAttr = document.documentElement.getAttribute('data-theme') || document.body.getAttribute('data-theme');
-        const lightThemes = ['cloud', 'dawn', 'paper', 'ash', 'light'];
+        const lightThemes = ['cloud', 'dawn', 'paper', 'ash'];
         const isLight = lightThemes.includes(themeAttr) || document.body.getAttribute('data-theme-type') === 'light';
 
         // Add all pads for this category
@@ -3373,7 +4484,6 @@ updateShowAllButton = function () {
     }
 }
 
-// NEW: Update Stop All button state (Light Mode Aware)
 // NEW: Update Stop All button state (Light Mode Aware)
 function updateStopAllButton() {
     const stopAllBtn = document.getElementById('djStopAll');
@@ -3716,6 +4826,8 @@ const INFO_CONTENT = {
     }
 };
 
+
+
 window.showInfoModal = function (key) {
     const data = INFO_CONTENT[key];
     if (!data) return;
@@ -3828,12 +4940,22 @@ function getSafeArea() {
 
 function adjustModalLayout(modal) {
     if (!modal) return;
+    // Profile Modal handles its own layout (bottom sheet)
+    if (modal.id === 'profileModal') return;
+
     const safe = getSafeArea();
 
-    // Apply safe area constraints to the modal container
-    // This confines the backdrop AND content to the "center stage"
+    // Apply safe area constraints correctly for vertical centering
+    // We use top/bottom for general boundaries, but for large content, 
+    // we must ensure the container height allows for flex centering.
     modal.style.top = `${safe.top}px`;
-    modal.style.bottom = `${safe.bottom}px`;
+
+    // For large footers (e.g. 410px), we limit the safe bottom to a reasonable value 
+    // for CENTERED modals to avoid pushing them too far up.
+    const maxBottomCushion = 100;
+    const effectiveBottom = Math.min(safe.bottom, maxBottomCushion);
+    modal.style.bottom = `${effectiveBottom}px`;
+
     modal.style.left = `${safe.left}px`;
     modal.style.right = `${safe.right}px`;
 
@@ -3868,36 +4990,15 @@ window.adjustActiveModal = adjustModalLayout;
 
 
 // --- MATRIX SETTINGS CONTROL ---
-window.toggleMatrixSettings = function (toggleBtn) {
-    if (!els.matrixSettingsPanel) {
-        els.matrixSettingsPanel = document.getElementById('matrixSettingsPanel');
-    }
+// DELETED: Moved to unified definition above
 
-    // Toggle state
-    if (typeof state.matrixPanelOpen === 'undefined') state.matrixPanelOpen = true;
-    state.matrixPanelOpen = !state.matrixPanelOpen;
-
-    // Update UI
-    if (state.matrixPanelOpen) {
-        if (els.matrixSettingsPanel) {
-            els.matrixSettingsPanel.classList.remove('hidden');
-            els.matrixSettingsPanel.classList.add('flex', 'items-center');
-        }
-    } else {
-        if (els.matrixSettingsPanel) {
-            els.matrixSettingsPanel.classList.add('hidden');
-            els.matrixSettingsPanel.classList.remove('flex', 'items-center');
-        }
-    }
-};
 
 function setupMatrixControls() {
+    console.log('[Controls] setupMatrixControls (Main) CALLED');
     const closeBtn = document.getElementById('matrixCloseBtn');
     const resetBtn = document.getElementById('matrixResetBtn');
 
     if (closeBtn) {
-        // Clone to replace any existing listeners to be safe, or just add new one
-        // A simple addEventListener is fine usually.
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             state.matrixPanelOpen = false;
@@ -3912,109 +5013,370 @@ function setupMatrixControls() {
     if (resetBtn) {
         resetBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            // Reset logic
             const viz = getVisualizer();
             if (viz) {
-                viz.setMatrixColor('#00FF41');
-                viz.setMatrixRainbow(false);
-                viz.setMatrixSpeed(1.0);
-                viz.setMatrixLength(1.0);
-                viz.setMatrixAngle(0);
+                if (viz.setMatrixColor) viz.setMatrixColor('#00FF41');
+                if (viz.setMatrixRainbow) viz.setMatrixRainbow(false);
+                if (viz.setMatrixSpeed) viz.setMatrixSpeed(1.0);
+                if (viz.setMatrixLength) viz.setMatrixLength(1.0);
+                if (viz.setMatrixAngle) viz.setMatrixAngle(0);
 
-                // Reset sliders/inputs if they exist
                 const colorPicker = document.getElementById('matrixColorPicker');
                 if (colorPicker) colorPicker.value = '#00FF41';
-
                 const rainbowToggle = document.getElementById('matrixRainbowToggle');
                 if (rainbowToggle) rainbowToggle.checked = false;
-
                 const speedSlider = document.getElementById('matrixSpeedSlider');
                 if (speedSlider) { speedSlider.value = 1.0; document.getElementById('matrixSpeedVal').textContent = '1.0x'; }
-
                 const lengthSlider = document.getElementById('matrixLengthSlider');
                 if (lengthSlider) { lengthSlider.value = 1.0; document.getElementById('matrixLengthVal').textContent = '1.0x'; }
-
                 const angleSlider = document.getElementById('matrixAngleSlider');
                 if (angleSlider) { angleSlider.value = 0; document.getElementById('matrixAngleVal').textContent = '0°'; }
             }
         });
     }
 
-    // --- NEW: Slider Listeners ---
-    const speedSlider = document.getElementById('matrixSpeedSlider');
-    const speedVal = document.getElementById('matrixSpeedVal');
-    if (speedSlider && speedVal) {
-        speedSlider.addEventListener('input', (e) => {
-            const val = parseFloat(e.target.value);
-            speedVal.textContent = val.toFixed(1) + 'x';
+    const colorPicker = document.getElementById('matrixColorPicker');
+    if (colorPicker) {
+        colorPicker.addEventListener('input', (e) => {
+            const val = e.target.value;
             const viz = getVisualizer();
-            if (viz && viz.setMatrixSpeed) viz.setMatrixSpeed(val);
+            if (viz && viz.setMatrixColor) {
+                viz.setMatrixColor(val);
+                const rainbowToggle = document.getElementById('matrixRainbowToggle');
+                if (rainbowToggle && rainbowToggle.checked) {
+                    rainbowToggle.checked = false;
+                    if (viz.setMatrixRainbow) viz.setMatrixRainbow(false);
+                }
+            }
         });
     }
 
-    const lengthSlider = document.getElementById('matrixLengthSlider');
-    const lengthVal = document.getElementById('matrixLengthVal');
-    if (lengthSlider && lengthVal) {
-        lengthSlider.addEventListener('input', (e) => {
-            const val = parseFloat(e.target.value);
-            lengthVal.textContent = val.toFixed(1) + 'x';
+    const rainbowToggle = document.getElementById('matrixRainbowToggle');
+    if (rainbowToggle) {
+        rainbowToggle.addEventListener('change', (e) => {
             const viz = getVisualizer();
-            if (viz && viz.setMatrixLength) viz.setMatrixLength(val);
+            if (viz && viz.setMatrixRainbow) viz.setMatrixRainbow(e.target.checked);
         });
     }
 
-    const angleSlider = document.getElementById('matrixAngleSlider');
-    const angleVal = document.getElementById('matrixAngleVal');
-    if (angleSlider && angleVal) {
-        angleSlider.addEventListener('input', (e) => {
-            const val = parseInt(e.target.value);
-            angleVal.textContent = val + '°';
-            const viz = getVisualizer();
-            if (viz && viz.setMatrixAngle) viz.setMatrixAngle(val);
-        });
-    }
+    const sliders = [
+        { id: 'matrixSpeed', method: 'setMatrixSpeed' },
+        { id: 'matrixLength', method: 'setMatrixLength' },
+        { id: 'matrixAngle', method: 'setMatrixAngle' }
+    ];
 
-    // === NEW MATRIX MODE CONTROLS ===
-    const modeSelect = document.getElementById('matrixModeSelect');
-    const customTextInput = document.getElementById('matrixCustomTextInput');
+    sliders.forEach(s => {
+        const slider = document.getElementById(`${s.id}Slider`);
+        const valDisp = document.getElementById(`${s.id}Val`);
+        if (slider) {
+            slider.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                if (valDisp) valDisp.textContent = s.id.includes('Angle') ? `${val}°` : `${val.toFixed(1)}x`;
+                const viz = getVisualizer();
+                if (viz && viz[s.method]) viz[s.method](val);
+            });
+        }
+    });
+
+    const modeBtns = document.querySelectorAll('[data-matrix-mode]');
     const textInput = document.getElementById('matrixTextInput');
-
-    if (modeSelect) {
-        modeSelect.addEventListener('change', (e) => {
-            const mode = e.target.value;
-            // Show/Hide Input based on mode
-            if (mode === 'custom') {
-                customTextInput.classList.remove('hidden');
-                setTimeout(() => textInput.focus(), 100);
-            } else {
-                customTextInput.classList.add('hidden');
-            }
-
-            const viz = getVisualizer();
-            if (viz && viz.setMatrixLogicMode) {
-                const text = textInput ? textInput.value : '';
-                viz.setMatrixLogicMode(mode, text);
-            }
-        });
-    }
 
     if (textInput) {
         textInput.addEventListener('input', (e) => {
-            const text = e.target.value.toUpperCase();
-            e.target.value = text;
             const viz = getVisualizer();
-
-            // Always treat text input as 'custom' mode override
             if (viz && viz.setMatrixLogicMode) {
-                viz.setMatrixLogicMode('custom', text);
+                // Find active mode from buttons
+                let activeMode = 'random';
+                modeBtns.forEach(b => {
+                    if (b.classList.contains('bg-[var(--accent)]')) activeMode = b.dataset.matrixMode;
+                });
+                viz.setMatrixLogicMode(activeMode, e.target.value);
             }
         });
     }
+
+    modeBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const mode = btn.dataset.matrixMode;
+            const viz = getVisualizer();
+            if (viz && viz.setMatrixLogicMode) {
+                const text = textInput ? textInput.value : 'WELCOME';
+                viz.setMatrixLogicMode(mode, text);
+                modeBtns.forEach(b => {
+                    b.classList.remove('bg-[var(--accent)]', 'text-[var(--bg-main)]', 'font-bold');
+                });
+                btn.classList.add('bg-[var(--accent)]', 'text-[var(--bg-main)]', 'font-bold');
+            }
+        });
+    });
+
+    // Initial sync for Matrix mode buttons
+    const viz = getVisualizer();
+    if (viz && viz.matrixConfig) {
+        const currentMode = viz.matrixConfig.logicMode || 'random';
+        modeBtns.forEach(b => {
+            if (b.dataset.matrixMode === currentMode) {
+                b.classList.add('bg-[var(--accent)]', 'text-[var(--bg-main)]', 'font-bold');
+            } else {
+                b.classList.remove('bg-[var(--accent)]', 'text-[var(--bg-main)]', 'font-bold');
+            }
+        });
+        if (textInput) textInput.value = viz.matrixConfig.customText || '';
+    }
 }
 
-// Initialize Matrix controls immediately if DOM is ready, or wait
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupMatrixControls);
-} else {
-    setupMatrixControls();
+function toggleMatrixSettings(btn) {
+    const panel = document.getElementById('matrixSettingsPanel');
+    if (panel) {
+        const isHidden = panel.classList.contains('hidden');
+        // Hide other panels
+        const cyberPanel = document.getElementById('cyberSettingsPanel');
+        if (cyberPanel) cyberPanel.classList.add('hidden');
+        
+        panel.classList.toggle('hidden');
+        
+        if (isHidden) { // If we just opened it
+            const viz = getVisualizer();
+            if (viz && viz.matrixConfig) {
+                // Sync Color Picker
+                const colorPicker = document.getElementById('matrixColorPicker');
+                if (colorPicker && viz.matrixConfig.color) colorPicker.value = viz.matrixConfig.color;
+                
+                // Sync Rainbow Toggle
+                const rainbowToggle = document.getElementById('matrixRainbowToggle');
+                if (rainbowToggle) rainbowToggle.checked = !!viz.matrixConfig.rainbow;
+                
+                // Sync Sliders
+                const speedSlider = document.getElementById('matrixSpeedSlider');
+                if (speedSlider) {
+                    speedSlider.value = viz.matrixConfig.speed || 1.0;
+                    const valDisp = document.getElementById('matrixSpeedVal');
+                    if (valDisp) valDisp.textContent = `${viz.matrixConfig.speed.toFixed(1)}x`;
+                }
+                const lengthSlider = document.getElementById('matrixLengthSlider');
+                if (lengthSlider) {
+                    lengthSlider.value = viz.matrixConfig.length || 1.0;
+                    const valDisp = document.getElementById('matrixLengthVal');
+                    if (valDisp) valDisp.textContent = `${viz.matrixConfig.length.toFixed(1)}x`;
+                }
+                const angleSlider = document.getElementById('matrixAngleSlider');
+                if (angleSlider) {
+                    angleSlider.value = viz.matrixConfig.angle || 0;
+                    const valDisp = document.getElementById('matrixAngleVal');
+                    if (valDisp) valDisp.textContent = `${viz.matrixConfig.angle}°`;
+                }
+            }
+        }
+    }
 }
+
+// --- GHOST MODE (Idle UI Fade-out) ---
+
+function setupIdleTimer() {
+    const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+    activityEvents.forEach(evt => {
+        window.addEventListener(evt, resetIdleTimer, { passive: true });
+    });
+    resetIdleTimer();
+}
+
+function resetIdleTimer() {
+    if (state.idleTimeout) clearTimeout(state.idleTimeout);
+    showUI();
+    if (state.uiLocked) return;
+    state.idleTimeout = setTimeout(() => {
+        hideUI();
+    }, 8000);
+}
+
+function showUI() {
+    const targets = document.querySelectorAll('.ui-fade-target');
+    targets.forEach(el => {
+        el.classList.remove('idle-hidden');
+    });
+    import('../visuals/visualizer_nuclear_v4.js').then(m => {
+        if (m.setVisualLogoOpacity) m.setVisualLogoOpacity(0.1);
+    });
+}
+
+function hideUI() {
+    if (state.uiLocked) return;
+    if (document.querySelector('.modal.active')) return;
+    const targets = document.querySelectorAll('.ui-fade-target');
+    targets.forEach(el => {
+        el.classList.add('idle-hidden');
+    });
+    import('../visuals/visualizer_nuclear_v4.js').then(m => {
+        if (m.setVisualLogoOpacity) m.setVisualLogoOpacity(0.5);
+    });
+}
+
+function updateLockUI() {
+    if (!els.lockIcon || !els.unlockIcon) return;
+    if (state.uiLocked) {
+        els.lockIcon.classList.remove('hidden');
+        els.unlockIcon.classList.add('hidden');
+        if (els.lockUIBtn) {
+            els.lockUIBtn.title = "Unlock Menus (Enable auto-fade)";
+            els.lockUIBtn.classList.add('toggle-active');
+        }
+        showUI();
+    } else {
+        els.lockIcon.classList.add('hidden');
+        els.unlockIcon.classList.remove('hidden');
+        if (els.lockUIBtn) {
+            els.lockUIBtn.title = "Lock Menus (Keep visible)";
+            els.lockUIBtn.classList.remove('toggle-active');
+        }
+        resetIdleTimer();
+    }
+}
+
+function setupCyberControls() {
+    console.log('[Controls] setupCyberControls CALLED');
+    const panel = document.getElementById('cyberSettingsPanel');
+    if (!panel) return;
+
+    // Mode Buttons
+    const modes = ['Random', 'Mindwave', 'Custom', 'Interstellar'];
+    modes.forEach(m => {
+        const btn = document.getElementById(`cyberMode${m}`);
+        if (btn) {
+            btn.addEventListener('click', () => {
+                const viz = getVisualizer();
+                const modeStr = btn.dataset.cyberMode;
+                if (viz && viz.setCyberLogicMode) {
+                    const text = document.getElementById('cyberTextInput')?.value || 'WELCOME';
+                    viz.setCyberLogicMode(modeStr, text);
+                    // Update UI state
+                    modes.forEach(mx => {
+                        const b = document.getElementById(`cyberMode${mx}`);
+                        if (b) {
+                            b.classList.remove('bg-[var(--accent)]', 'text-[var(--bg-main)]', 'font-bold');
+                        }
+                    });
+                    btn.classList.add('bg-[var(--accent)]', 'text-[var(--bg-main)]', 'font-bold');
+                }
+            });
+        }
+    });
+
+    // Custom Text
+    const textInput = document.getElementById('cyberTextInput');
+    if (textInput) {
+        textInput.addEventListener('input', (e) => {
+            const viz = getVisualizer();
+            if (viz && viz.setCyberLogicMode) {
+                viz.setCyberLogicMode(viz.cyberLogicMode || 'custom', e.target.value);
+            }
+        });
+    }
+
+    // Color Picker
+    const colorPicker = document.getElementById('cyberColorPicker');
+    if (colorPicker) {
+        colorPicker.addEventListener('input', (e) => {
+            const viz = getVisualizer();
+            if (viz) {
+                if (viz.setCyberColor) viz.setCyberColor(e.target.value);
+                const rainbow = document.getElementById('cyberRainbowToggle');
+                if (rainbow) rainbow.checked = false;
+            }
+        });
+    }
+
+    // Rainbow Toggle
+    const rainbowToggle = document.getElementById('cyberRainbowToggle');
+    if (rainbowToggle) {
+        rainbowToggle.addEventListener('change', (e) => {
+            const viz = getVisualizer();
+            if (viz && viz.setCyberRainbow) viz.setCyberRainbow(e.target.checked);
+        });
+    }
+
+    // Sliders
+    const sliders = [
+        { id: 'cyberSpeed', method: 'setCyberSpeed' },
+        { id: 'cyberLength', method: 'setCyberLength' },
+        { id: 'cyberAngle', method: 'setCyberAngle' }
+    ];
+
+    sliders.forEach(s => {
+        const slider = document.getElementById(`${s.id}Slider`);
+        const valDisp = document.getElementById(`${s.id}Val`);
+        if (slider) {
+            slider.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                if (valDisp) valDisp.textContent = s.id.includes('Angle') ? `${val}°` : `${val.toFixed(1)}x`;
+                const viz = getVisualizer();
+                if (viz && viz[s.method]) viz[s.method](val);
+            });
+        }
+    });
+
+    // Initial sync for Cyber mode buttons
+    const viz = getVisualizer();
+    if (viz && viz.cyberConfig) {
+        const currentMode = viz.cyberConfig.logicMode || 'random';
+        const cyberModes = ['Random', 'Mindwave', 'Custom', 'Interstellar'];
+        cyberModes.forEach(m => {
+            const b = document.getElementById(`cyberMode${m}`);
+            if (b) {
+                if (b.dataset.cyberMode === currentMode) {
+                    b.classList.add('bg-[var(--accent)]', 'text-[var(--bg-main)]', 'font-bold');
+                } else {
+                    b.classList.remove('bg-[var(--accent)]', 'text-[var(--bg-main)]', 'font-bold');
+                }
+            }
+        });
+        const textInput = document.getElementById('cyberTextInput');
+        if (textInput) textInput.value = viz.cyberConfig.customText || '';
+    }
+}
+
+function toggleCyberSettings(btn) {
+    const panel = document.getElementById('cyberSettingsPanel');
+    if (panel) {
+        const isHidden = panel.classList.contains('hidden');
+        // Hide other panels
+        const matrixPanel = document.getElementById('matrixSettingsPanel');
+        if (matrixPanel) matrixPanel.classList.add('hidden');
+        
+        panel.classList.toggle('hidden');
+        
+        if (isHidden) { // If we just opened it
+            const viz = getVisualizer();
+            if (viz && viz.cyberConfig) {
+                // Sync Color Picker
+                const colorPicker = document.getElementById('cyberColorPicker');
+                if (colorPicker && viz.cyberConfig.color) colorPicker.value = viz.cyberConfig.color;
+                
+                // Sync Rainbow Toggle
+                const rainbowToggle = document.getElementById('cyberRainbowToggle');
+                if (rainbowToggle) rainbowToggle.checked = !!viz.cyberConfig.rainbow;
+                
+                // Sync Sliders
+                const speedSlider = document.getElementById('cyberSpeedSlider');
+                if (speedSlider) {
+                    speedSlider.value = viz.cyberConfig.speed || 1.0;
+                    const valDisp = document.getElementById('cyberSpeedVal');
+                    if (valDisp) valDisp.textContent = `${viz.cyberConfig.speed.toFixed(1)}x`;
+                }
+                const lengthSlider = document.getElementById('cyberLengthSlider');
+                if (lengthSlider) {
+                    lengthSlider.value = viz.cyberConfig.length || 1.0;
+                    const valDisp = document.getElementById('cyberLengthVal');
+                    if (valDisp) valDisp.textContent = `${viz.cyberConfig.length.toFixed(1)}x`;
+                }
+                const angleSlider = document.getElementById('cyberAngleSlider');
+                if (angleSlider) {
+                    angleSlider.value = viz.cyberConfig.angle || 0;
+                    const valDisp = document.getElementById('cyberAngleVal');
+                    if (valDisp) valDisp.textContent = `${viz.cyberConfig.angle}°`;
+                }
+            }
+        }
+    }
+}
+
+// Ensure init calls are handled within setupUI()

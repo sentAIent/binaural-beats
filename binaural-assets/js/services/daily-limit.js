@@ -34,15 +34,18 @@ export const DailyLimitService = {
 
     /**
      * Increment usage by seconds
-     * Returns true if limit reached
+     * Returns true if limit reached (and user is not premium)
      */
-    increment(seconds = 1) {
+    increment(seconds = 1, isPremium = false) {
         // Checking premium status is async, so we assume caller handles that
         // OR we just track everyone and only ENFORCE for free users
 
         const current = this.getUsage();
         const verifiedNew = current + seconds;
         localStorage.setItem(KEY_USAGE, verifiedNew);
+
+        // If premium, we never return true (limit reached)
+        if (isPremium) return false;
 
         return verifiedNew >= LIMIT_SECONDS;
     },

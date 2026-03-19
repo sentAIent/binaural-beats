@@ -46,46 +46,47 @@ export function showFeedbackSurvey(triggerType = TRIGGER_CONDITIONS.MANUAL) {
 function createSurveyModal(triggerType) {
     const modal = document.createElement('div');
     modal.id = 'feedbackSurveyModal';
-    modal.className = 'fixed inset-0 z-[500] flex items-center justify-center p-4';
-    modal.style.background = 'rgba(0, 0, 0, 0.95)';
-    modal.style.backdropFilter = 'blur(20px)';
-    modal.style.animation = 'fadeIn 0.3s ease-out';
+    // Use consistent overlay styles
+    modal.className = 'fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm opacity-0 transition-opacity duration-300';
+
+    // We'll animate opacity in after append
+    setTimeout(() => modal.classList.remove('opacity-0'), 10);
 
     modal.innerHTML = `
-        <div style="max-width: 600px; width: 100%; background: linear-gradient(180deg, rgba(25, 25, 40, 0.98) 0%, rgba(15, 15, 26, 0.98) 100%); border: 2px solid rgba(96, 169, 255, 0.2); border-radius: 24px; padding: 40px; padding-bottom: 140px; position: relative; max-height: 90vh; overflow-y: auto;">
+        <div class="glass-card w-full max-w-xl max-h-[90vh] overflow-y-auto custom-scrollbar p-6 md:p-10 rounded-3xl relative flex flex-col gap-6 shadow-2xl border border-white/10">
             
             <!-- Close Button -->
-            <button id="closeSurveyBtn" style="position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 50%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-muted); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
-                ×
+            <button id="closeSurveyBtn" class="absolute top-4 right-4 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all z-10">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
 
             <!-- Header -->
-            <div style="text-align: center; margin-bottom: 32px;">
-                <div style="font-size: 48px; margin-bottom: 16px;">💫</div>
-                <h2 style="font-size: 28px; font-weight: 700; color: var(--accent); margin-bottom: 8px;">
-                    Help Us Improve MindWave
+            <div class="text-center space-y-2 mt-2">
+                <div class="text-5xl mb-4 animate-bounce-subtle">💫</div>
+                <h2 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+                    Help Us Improve
                 </h2>
-                <p style="font-size: 14px; color: rgba(255, 255, 255, 0.6);">
-                    Your feedback shapes the future of meditation technology
+                <p class="text-sm text-[var(--text-muted)]">
+                    Your feedback shapes the future of MindWave
                 </p>
             </div>
 
             <!-- Survey Form -->
-            <form id="feedbackSurveyForm" style="display: flex; flex-direction: column; gap: 24px;">
+            <form id="feedbackSurveyForm" class="flex flex-col gap-8">
                 
                 <!-- Question 1: NPS Score -->
-                <div class="survey-question">
-                    <label style="display: block; color: var(--text-main); font-weight: 600; margin-bottom: 12px; font-size: 15px;">
-                        How likely are you to recommend MindWave to a friend? *
+                <div class="space-y-3">
+                    <label class="block text-sm font-bold text-white">
+                        How likely are you to recommend MindWave? *
                     </label>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
+                    <div class="flex flex-wrap gap-2 justify-center">
                         ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(score => `
-                            <button type="button" class="nps-btn" data-score="${score}" style="width: 44px; height: 44px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.1); color: var(--text-muted); font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                            <button type="button" class="nps-btn w-10 h-10 rounded-xl bg-white/5 border border-white/10 text-[var(--text-muted)] font-bold hover:bg-white/10 hover:border-[var(--accent)] hover:text-white transition-all focus:outline-none" data-score="${score}">
                                 ${score}
                             </button>
                         `).join('')}
                     </div>
-                    <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: rgba(255, 255, 255, 0.4);">
+                    <div class="flex justify-between text-[10px] uppercase tracking-wider text-[var(--text-muted)] px-2">
                         <span>Not likely</span>
                         <span>Extremely likely</span>
                     </div>
@@ -93,163 +94,68 @@ function createSurveyModal(triggerType) {
                 </div>
 
                 <!-- Question 2: Experience -->
-                <div class="survey-question">
-                    <label style="display: block; color: var(--text-main); font-weight: 600; margin-bottom: 12px; font-size: 15px;">
-                        How would you describe your experience with MindWave? *
+                <div class="space-y-3">
+                    <label class="block text-sm font-bold text-white">
+                        How would you describe your experience? *
                     </label>
-                    <select name="experience" required style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--text-main); font-size: 14px;">
-                        <option value="">Select...</option>
-                        <option value="life_changing">Life-changing 🌟</option>
-                        <option value="very_helpful">Very helpful 😊</option>
-                        <option value="somewhat_helpful">Somewhat helpful 👍</option>
-                        <option value="neutral">Neutral 😐</option>
-                        <option value="disappointing">Disappointing 😞</option>
-                    </select>
-                </div>
-
-                <!-- Question 3: Most Valuable Feature -->
-                <div class="survey-question">
-                    <label style="display: block; color: var(--text-main); font-weight: 600; margin-bottom: 12px; font-size: 15px;">
-                        What feature creates the most value for you? *
-                    </label>
-                    <select name="best_feature" required style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--text-main); font-size: 14px;">
-                        <option value="">Select...</option>
-                        <option value="binaural_beats">🎵 Binaural Beats Technology</option>
-                        <option value="visualizer">✨ Visual Meditations</option>
-                        <option value="sleep_stories">😴 Sleep Stories</option>
-                        <option value="journey_program">🧘 Journey Program</option>
-                        <option value="custom_mixes">🎛️ Custom Mix Creation</option>
-                        <option value="ambient_sounds">🌊 Ambient Soundscapes</option>
-                        <option value="ease_of_use">⚡ Ease of Use</option>
-                        <option value="design">🎨 Beautiful Design</option>
-                    </select>
-                </div>
-
-                <!-- Question 4: Use Case -->
-                <div class="survey-question">
-                    <label style="display: block; color: var(--text-main); font-weight: 600; margin-bottom: 12px; font-size: 15px;">
-                        What do you primarily use MindWave for? *
-                    </label>
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        ${[
-            { value: 'sleep', label: '😴 Better Sleep' },
-            { value: 'focus', label: '🎯 Focus & Productivity' },
-            { value: 'anxiety', label: '😌 Reduce Anxiety/Stress' },
-            { value: 'meditation', label: '🧘 Meditation Practice' },
-            { value: 'creativity', label: '🎨 Boost Creativity' },
-            { value: 'relaxation', label: '🌊 General Relaxation' },
-            { value: 'other', label: '🌟 Other' }
-        ].map(option => `
-                            <label style="display: flex; align-items: center; padding: 12px; background: rgba(255, 255, 255, 0.03); border: 2px solid rgba(255, 255, 255, 0.05); border-radius: 12px; cursor: pointer; transition: all 0.2s;" class="use-case-option">
-                                <input type="radio" name="use_case" value="${option.value}" required style="margin-right: 12px; width: 20px; height: 20px;">
-                                <span style="color: white; font-size: 14px;">${option.label}</span>
-                            </label>
-                        `).join('')}
+                    <div class="relative">
+                        <select name="experience" required class="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-[var(--accent)] outline-none appearance-none cursor-pointer hover:bg-black/30 transition-all">
+                            <option value="">Select an option...</option>
+                            <option value="life_changing">🌟 Life-changing</option>
+                            <option value="very_helpful">😊 Very helpful</option>
+                            <option value="somewhat_helpful">👍 Somewhat helpful</option>
+                            <option value="neutral">😐 Neutral</option>
+                            <option value="disappointing">😞 Disappointing</option>
+                        </select>
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/50">▼</div>
                     </div>
                 </div>
 
-                <!-- Question 5: Emotional Impact -->
-                <div class="survey-question">
-                    <label style="display: block; color: var(--text-main); font-weight: 600; margin-bottom: 12px; font-size: 15px;">
-                        How does MindWave make you feel? (Select all that apply)
+                <!-- Question 3: Features -->
+                <div class="space-y-3">
+                    <label class="block text-sm font-bold text-white">
+                        What feature creates the most value? *
                     </label>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-                        ${[
-            'Calm', 'Focused', 'Peaceful', 'Energized',
-            'Creative', 'Inspired', 'Relaxed', 'Happy'
-        ].map(feeling => `
-                            <label style="display: flex; align-items: center; padding: 10px; background: rgba(255, 255, 255, 0.03); border: 2px solid rgba(255, 255, 255, 0.05); border-radius: 8px; cursor: pointer; transition: all 0.2s;" class="feeling-option">
-                                <input type="checkbox" name="feelings" value="${feeling.toLowerCase()}" style="margin-right: 8px; width: 18px; height: 18px;">
-                                <span style="color: white; font-size: 13px;">${feeling}</span>
-                            </label>
-                        `).join('')}
+                    <div class="relative">
+                        <select name="best_feature" required class="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-[var(--accent)] outline-none appearance-none cursor-pointer hover:bg-black/30 transition-all">
+                            <option value="">Select a feature...</option>
+                            <option value="binaural_beats">🎵 Binaural Beats</option>
+                            <option value="visualizer">✨ Visual Meditations</option>
+                            <option value="sleep_stories">😴 Sleep Stories</option>
+                            <option value="journey_program">🧘 Journey Program</option>
+                            <option value="custom_mixes">🎛️ Custom Mixes</option>
+                            <option value="ambient_sounds">🌊 Ambient Soundscapes</option>
+                        </select>
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/50">▼</div>
                     </div>
                 </div>
 
-                <!-- Question 6: Improvement Suggestions -->
-                <div class="survey-question">
-                    <label style="display: block; color: var(--text-main); font-weight: 600; margin-bottom: 12px; font-size: 15px;">
-                        What would make MindWave even better?
+                <!-- Improvements -->
+                <div class="space-y-3">
+                    <label class="block text-sm font-bold text-white">
+                        What would make MindWave better?
                     </label>
-                    <textarea name="improvements" rows="3" placeholder="Share your ideas..." style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--text-main); font-size: 14px; resize: vertical; font-family: inherit;"></textarea>
-                </div>
-
-                <!-- Question 7: Comparison (for context) -->
-                <div class="survey-question">
-                    <label style="display: block; color: var(--text-main); font-weight: 600; margin-bottom: 12px; font-size: 15px;">
-                        Have you tried other meditation/wellness apps?
-                    </label>
-                    <select name="competitors_used" style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--text-main); font-size: 14px;">
-                        <option value="">Select...</option>
-                        <option value="none">No, MindWave is my first</option>
-                        <option value="calm">Calm</option>
-                        <option value="headspace">Headspace</option>
-                        <option value="insight_timer">Insight Timer</option>
-                        <option value="brain_fm">Brain.fm</option>
-                        <option value="other">Other apps</option>
-                        <option value="multiple">Multiple apps</option>
-                    </select>
+                    <textarea name="improvements" rows="3" placeholder="Share your ideas..." class="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-[var(--accent)] outline-none resize-none placeholder:text-white/20"></textarea>
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit" id="submitSurveyBtn" style="width: 100%; padding: 16px; background: var(--accent); border: none; border-radius: 12px; color: var(--bg-main); font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-top: 8px;">
+                <button type="submit" id="submitSurveyBtn" class="w-full py-4 rounded-xl font-bold text-base uppercase tracking-wide bg-[var(--accent)] text-[var(--bg-main)] hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[var(--accent-glow)]">
                     ✨ Submit Feedback
                 </button>
-
-                <p style="text-align: center; font-size: 12px; color: rgba(255, 255, 255, 0.4); margin-top: -8px;">
-                    Thank you for helping us improve! 🙏
+                
+                <p class="text-center text-xs text-[var(--text-muted)] opacity-60">
+                    Thank you for your support! 🙏
                 </p>
             </form>
         </div>
 
         <style>
-            @keyframes fadeIn {
-                from { opacity: 0; }
-                to { opacity: 1; }
-            }
-
             .nps-btn.selected {
                 background: var(--accent) !important;
                 border-color: var(--accent) !important;
                 color: var(--bg-main) !important;
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px var(--accent-glow);
-            }
-            .nps-btn:hover {
-                background: rgba(255, 255, 255, 0.1);
-                border-color: var(--accent);
-                color: var(--accent);
-            }
-
-            .use-case-option:hover,
-            .feeling-option:hover {
-                background: rgba(255, 255, 255, 0.08);
-                border-color: rgba(96, 169, 255, 0.3);
-            }
-
-            #submitSurveyBtn:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 10px 30px rgba(96, 169, 255, 0.3);
-            }
-
-            #closeSurveyBtn:hover {
-                background: rgba(255, 255, 255, 0.1);
-                transform: scale(1.1);
-            }
-
-            /* Custom scrollbar */
-            #feedbackSurveyModal > div::-webkit-scrollbar {
-                width: 8px;
-            }
-
-            #feedbackSurveyModal > div::-webkit-scrollbar-track {
-                background: rgba(255, 255, 255, 0.05);
-                border-radius: 4px;
-            }
-
-            #feedbackSurveyModal > div::-webkit-scrollbar-thumb {
-                background: rgba(96, 169, 255, 0.3);
-                border-radius: 4px;
+                box-shadow: 0 0 15px var(--accent-glow);
+                transform: scale(1.05);
             }
         </style>
     `;
@@ -259,6 +165,8 @@ function createSurveyModal(triggerType) {
 
     return modal;
 }
+
+
 
 /**
  * Set up survey event handlers

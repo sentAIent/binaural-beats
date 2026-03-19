@@ -43,8 +43,8 @@ export const PRICING_TIERS = {
     yogi: {
         name: 'Yogi',
         description: 'Committed practitioner',
-        monthlyPrice: 14,
-        annualPrice: 119, // Save 30%
+        monthlyPrice: 9.99,
+        annualPrice: 79, // Save 33%
         stripe: {
             monthly: ENV.VITE_STRIPE_YOGI_MONTHLY_LINK || 'https://buy.stripe.com/test/demo',
             annual: ENV.VITE_STRIPE_YOGI_ANNUAL_LINK || 'https://buy.stripe.com/test/demo'
@@ -92,6 +92,35 @@ export const PRICING_TIERS = {
             community: true,
             pricelock: true
         }
+    },
+    lifetime: {
+        name: 'Lifetime',
+        description: 'One-time payment for forever access',
+        oneTimePrice: 199,
+        stripe: {
+            oneTime: ENV.VITE_STRIPE_LIFETIME_LINK || 'https://buy.stripe.com/test/demo'
+        },
+        features: {
+            presets: null,
+            sessionLimit: null,
+            dailySessions: null,
+            journeyLessons: null,
+            sleepStories: null,
+            visualizer: 'premium',
+            customMixes: true,
+            analytics: true,
+            ads: false,
+            offline: true,
+            aiRecommendations: true,
+            breathingExercises: true,
+            videoBackgrounds: true,
+            prioritySupport: true,
+            earlyAccess: true,
+            exportMp3: true,
+            healthIntegrations: true,
+            community: true,
+            pricelock: true
+        }
     }
 };
 
@@ -120,7 +149,9 @@ export function goToCheckout(tier, billingPeriod = 'monthly', discountCode = nul
         throw new Error(`Invalid tier: ${tier}`);
     }
 
-    const price = billingPeriod === 'monthly' ? tierConfig.monthlyPrice : tierConfig.annualPrice;
+    const price = billingPeriod === 'oneTime'
+        ? tierConfig.oneTimePrice
+        : (billingPeriod === 'monthly' ? tierConfig.monthlyPrice : tierConfig.annualPrice);
 
     // Track checkout initiation
     if (window.trackBeginCheckout) {
@@ -128,7 +159,9 @@ export function goToCheckout(tier, billingPeriod = 'monthly', discountCode = nul
     }
 
     // Get Payment Link URL
-    let checkoutUrl = tierConfig.stripe[billingPeriod];
+    let checkoutUrl = billingPeriod === 'oneTime'
+        ? tierConfig.stripe.oneTime
+        : tierConfig.stripe[billingPeriod];
 
     // Add user email as prefill
     checkoutUrl += `?prefilled_email=${encodeURIComponent(user.email)}`;
@@ -176,6 +209,12 @@ export async function isPremiumUser() {
     const user = auth.currentUser;
 
     if (!user) return false;
+
+    // MOCK OVERRIDE (for testing without DB)
+    if (window.__MOCK_PREMIUM === true) {
+        console.log('[Stripe] Mock premium active');
+        return true;
+    }
 
     const db = getFirestore();
     const subDoc = await getDoc(doc(db, 'subscriptions', user.uid));
@@ -255,7 +294,7 @@ export async function getUserTier() {
     // Map old plans to new tiers
     if (tier === 'buddha' || subscription.monthlyPrice >= 29) {
         return 'buddha';
-    } else if (tier === 'yogi' || subscription.monthlyPrice >= 14) {
+    } else if (tier === 'yogi' || subscription.monthlyPrice >= 9) {
         return 'yogi';
     }
 
