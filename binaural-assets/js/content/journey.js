@@ -1,5 +1,6 @@
-// User Journey Program Module
 // Structured learning path for meditation consistency
+import { state, VISUALIZER_VERSION } from '../state.js';
+import { db, doc, setDoc, getDoc, serverTimestamp } from '../services/firebase.js';
 
 // Journey stages and lessons
 export const JOURNEY_STAGES = [
@@ -302,9 +303,77 @@ window.isJourneyActive = isJourneyActive;
 window.getActiveJourneySession = getActiveJourneySession;
 
 // Initialize journey
-export function initJourney() {
+export async function initJourney() {
     loadProgress();
-    console.log('[Journey] Initialized, completed lessons:', journeyState.completedLessons.length);
+
+    // Register auth listener for seamless sync
+    import('../services/firebase.js').then(({ registerAuthCallback }) => {
+        registerAuthCallback(async (user) => {
+            if (user && !user.isAnonymous) {
+                await syncWithCloud();
+                // Re-render UI if container exists
+                const container = document.getElementById('journeyContainer');
+                if (container) renderJourneyUI(container);
+            }
+        });
+    });
+}
+
+// Cloud Sync logic
+async function syncWithCloud() {
+    if (!db || !state.currentUser) return;
+
+    try {
+        const uid = state.currentUser.uid;
+        const docRef = doc(db, 'users', uid, 'progress', 'journey');
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            const cloudState = docSnap.data();
+            console.log('[Journey] Cloud state found, merging...');
+
+            // Merge logic: Combine completed lessons and take latest timestamps
+            const combinedCompleted = Array.from(new Set([
+                ...journeyState.completedLessons,
+                ...(cloudState.completedLessons || [])
+            ]));
+
+            const combinedBadges = Array.from(new Set([
+                ...journeyState.earnedBadges,
+                ...(cloudState.earnedBadges || [])
+            ]));
+
+            journeyState = {
+                ...journeyState,
+                ...cloudState,
+                completedLessons: combinedCompleted,
+                earnedBadges: combinedBadges
+            };
+
+            saveProgress(); // Save merged state locally
+        } else {
+            console.log('[Journey] No cloud state, uploading local progress...');
+            await saveToCloud();
+        }
+    } catch (e) {
+        console.warn('[Journey] Cloud sync failed:', e);
+    }
+}
+
+async function saveToCloud() {
+    if (!db || !state.currentUser || state.currentUser.isAnonymous) return;
+
+    try {
+        const uid = state.currentUser.uid;
+        const docRef = doc(db, 'users', uid, 'progress', 'journey');
+        await setDoc(docRef, {
+            ...journeyState,
+            updatedAt: serverTimestamp()
+        }, { merge: true });
+        console.log('[Journey] Progress saved to cloud');
+    } catch (e) {
+        console.warn('[Journey] Cloud save failed:', e);
+    }
 }
 
 // Load progress from localStorage
@@ -343,6 +412,7 @@ export function completeLesson(lessonId) {
         }
 
         saveProgress();
+        saveToCloud(); // Fire and forget cloud sync
         console.log('[Journey] Completed lesson:', lessonId);
         return true;
     }
@@ -422,31 +492,31 @@ export function renderJourneyUI(container) {
         <div class="mb-6">
             <div class="flex justify-between items-center mb-2">
                 <span class="text-sm font-medium text-white">Your Progress</span>
-                <span class="text-sm font-bold text-purple-400">${progress.completed} / ${progress.total} lessons</span>
+                <span class="text-sm font-bold text-[var(--primary)]">${progress.completed} / ${progress.total} lessons</span>
             </div>
             <div class="h-2.5 bg-white/10 rounded-full overflow-hidden">
-                <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500" 
+                <div class="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] transition-all duration-500" 
                     style="width: ${progress.percentage}%"></div>
             </div>
-            <div class="text-xs text-[var(--text-muted)] mt-2">${progress.percentage}% complete</div>
+            <div class="text-xs text-[var(--text-secondary)] mt-2">${progress.percentage}% complete</div>
         </div>
         
         <!-- Next Lesson Card -->
         ${nextLesson ? `
-        <div class="mb-6 p-4 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/40">
-            <div class="text-[10px] uppercase tracking-wider text-purple-400 font-bold mb-1">Up Next</div>
+        <div class="mb-6 p-4 rounded-xl bg-gradient-to-br from-[var(--primary)]/20 to-[var(--accent)]/20 border border-[var(--primary)]/40">
+            <div class="text-[10px] uppercase tracking-wider text-[var(--primary)] font-bold mb-1">Up Next</div>
             <div class="text-base font-bold text-white mb-1">Day ${nextLesson.day}: ${nextLesson.title}</div>
-            <div class="text-sm text-[var(--text-muted)] mb-3">${nextLesson.description}</div>
+            <div class="text-sm text-[var(--text-secondary)] mb-3">${nextLesson.description}</div>
             <button onclick="window.openLesson('${nextLesson.id}')" 
-                class="w-full py-2.5 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-bold uppercase tracking-wide hover:brightness-110 transition-all shadow-lg">
+                class="w-full py-2.5 rounded-lg bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-[var(--primary-foreground)] text-sm font-bold uppercase tracking-wide hover:brightness-110 transition-all shadow-lg">
                 Start Lesson →
             </button>
         </div>
         ` : `
-        <div class="mb-6 p-4 rounded-xl bg-gradient-to-br from-green-500/20 to-teal-500/20 border border-green-500/40 text-center">
+        <div class="mb-6 p-4 rounded-xl bg-gradient-to-br from-[var(--success)]/20 to-[var(--accent)]/20 border border-[var(--success)]/40 text-center">
             <div class="text-3xl mb-2">🎉</div>
-            <div class="text-base font-bold text-green-400">Journey Complete!</div>
-            <div class="text-sm text-[var(--text-muted)]">You've mastered binaural beats meditation</div>
+            <div class="text-base font-bold text-[var(--success)]">Journey Complete!</div>
+            <div class="text-sm text-[var(--text-secondary)]">You've mastered binaural beats meditation</div>
         </div>
         `}
         
@@ -465,8 +535,8 @@ export function renderJourneyUI(container) {
                     <div class="flex-1">
                         <span class="text-sm font-bold text-white">${stage.name}</span>
                         <div class="flex items-center gap-2 mt-0.5">
-                            <span class="text-[10px] text-purple-400 bg-purple-500/20 px-2 py-0.5 rounded-full font-medium">${stageLessonsCompleted}/${stage.lessons.length}</span>
-                            ${stageCompleted ? '<span class="text-green-400 text-xs font-bold">✓ Complete</span>' : ''}
+                            <span class="text-[10px] text-[var(--primary)] bg-[var(--primary)]/20 px-2 py-0.5 rounded-full font-medium">${stageLessonsCompleted}/${stage.lessons.length}</span>
+                            ${stageCompleted ? '<span class="text-[var(--success)] text-xs font-bold">✓ Complete</span>' : ''}
                         </div>
                     </div>
                 </div>
@@ -476,6 +546,7 @@ export function renderJourneyUI(container) {
             const isMilestone = lesson.type === 'milestone';
             const isAvailable = isLessonAvailable(lesson.id);
             const isActive = activeJourneySession && activeJourneySession.lessonId === lesson.id;
+            const isNext = nextLesson && nextLesson.id === lesson.id;
 
             // Determine button styling based on state
             let btnClasses = '';
@@ -483,7 +554,7 @@ export function renderJourneyUI(container) {
             let clickable = true;
 
             if (completed) {
-                btnClasses = 'bg-green-500/30 text-green-300 border-green-500/50';
+                btnClasses = 'bg-[var(--success)]/30 text-[var(--success)] border-[var(--success)]/50';
                 clickable = true;
             } else if (!isAvailable) {
                 // Locked lesson
@@ -492,13 +563,17 @@ export function renderJourneyUI(container) {
                 clickable = false;
             } else if (isActive) {
                 // Currently active session
-                btnClasses = 'bg-purple-500/30 text-purple-300 border-purple-500 ring-2 ring-purple-400 animate-pulse';
+                btnClasses = 'bg-[var(--primary)]/30 text-[var(--primary)] border-[var(--primary)] ring-2 ring-[var(--primary)]/40 animate-pulse';
+                clickable = true;
+            } else if (isNext) {
+                // Next suggested lesson
+                btnClasses = 'bg-[var(--primary)]/20 text-white border-[var(--primary)]/60 shadow-[0_0_15px_rgba(96,169,255,0.3)] scale-105 z-10';
                 clickable = true;
             } else if (isMilestone) {
                 btnClasses = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
                 clickable = isAvailable;
             } else {
-                btnClasses = 'bg-white/10 text-white border-white/20 hover:bg-white/20 hover:border-purple-400/50';
+                btnClasses = 'bg-white/10 text-white border-white/20 hover:bg-white/20 hover:border-[var(--primary)]/50';
                 clickable = true;
             }
 
@@ -528,11 +603,11 @@ export function renderJourneyUI(container) {
         const earned = journeyState.earnedBadges.includes(id);
         return `
                     <div class="flex items-center gap-2 px-3 py-1.5 rounded-full ${earned
-                ? 'bg-purple-500/20 border border-purple-500/40'
+                ? 'bg-[var(--accent)]/20 border border-[var(--accent)]/40'
                 : 'bg-white/5 border border-white/10'
             }" title="${badge.description}">
                         <span class="text-base ${earned ? '' : 'opacity-70'}">${badge.emoji}</span>
-                        <span class="text-xs font-medium ${earned ? 'text-purple-300' : 'text-white/80'}">${badge.name}</span>
+                        <span class="text-xs font-medium ${earned ? 'text-[var(--accent)]' : 'text-white/80'}">${badge.name}</span>
                     </div>
                     `;
     }).join('')}
@@ -590,7 +665,7 @@ function showLessonModal(lesson) {
                 <div class="text-sm text-[var(--text-muted)] whitespace-pre-line mb-6">${lesson.content}</div>
                 ${lesson.action ? `
                 <button onclick="window.startLessonAction('${lesson.id}')" 
-                    class="w-full py-3 rounded-xl bg-gradient-to-r from-[var(--accent)] to-purple-500 text-gray-900 text-sm font-bold uppercase tracking-wide hover:opacity-90 transition-all">
+                    class="w-full py-3 rounded-xl bg-gradient-to-r from-[var(--accent)] to-[var(--primary)] text-gray-900 text-sm font-bold uppercase tracking-wide hover:opacity-90 transition-all">
                     ${lesson.action.preset ? `Start ${lesson.action.duration} Min Session` : 'Begin Journey'}
                 </button>
                 ` : `
@@ -654,9 +729,19 @@ window.startLessonAction = async (lessonId) => {
     // Apply preset or start journey sweep
     if (lesson.action.preset) {
         console.log('[Journey] Attempting to apply preset:', lesson.action.preset);
-        if (typeof window.applyPreset === 'function') {
+        // Initialize lesson action but don't close modal yet
+        if (window.applyMixState) { // Check if applyMixState is available
             try {
-                window.applyPreset(lesson.action.preset);
+                // Track feature usage
+                if (window.trackFeatureUse) {
+                    window.trackFeatureUse('journey_lesson_start', {
+                        lesson_id: lessonId,
+                        preset: lesson.action.preset
+                    });
+                }
+
+                // Apply preset and duration
+                window.applyMixState(lesson.action.preset);
                 console.log('[Journey] Preset applied successfully');
             } catch (e) {
                 console.error('[Journey] Failed to apply preset:', e);
@@ -694,7 +779,7 @@ window.startLessonAction = async (lessonId) => {
         const [sessionTimer, { startAudio, fadeIn, fadeOut, stopAudio }, { toggleVisual }, { syncAllButtons }] = await Promise.all([
             import('../audio/session-timer.js'),
             import('../audio/engine.js'),
-            import('../visuals/visualizer_nuclear_v4.js'),
+            import(`../visuals/visualizer_nuclear_v4.js?v=${VISUALIZER_VERSION}`),
             import('../ui/controls_v3.js')
         ]);
 

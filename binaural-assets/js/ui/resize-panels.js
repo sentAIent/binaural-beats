@@ -282,72 +282,62 @@ export function updateBottomBarWidth() {
     const leftPanel = document.getElementById('leftPanel');
     const rightPanel = document.getElementById('rightPanel');
 
-    // Check if panels are open using their actual position on screen
-    // Panel is "open" if it's visible on screen (not translated off-screen)
     const leftRect = leftPanel ? leftPanel.getBoundingClientRect() : null;
     const rightRect = rightPanel ? rightPanel.getBoundingClientRect() : null;
 
-    // Left panel is open if its right edge is > 0 (visible)
-    const leftOpen = leftRect && leftRect.right > 0;
-    // Right panel is open if its left edge is < window width (visible)
-    const rightOpen = rightRect && rightRect.left < window.innerWidth;
+    const leftOpen = leftRect && leftRect.right > 10;
+    const rightOpen = rightRect && rightRect.left < (window.innerWidth - 10);
 
     const windowWidth = window.innerWidth;
-
-    // Get widths - use actual visible width on screen
     const leftWidth = leftOpen ? Math.max(0, leftRect.right) : 0;
     const rightWidth = rightOpen ? Math.max(0, windowWidth - rightRect.left) : 0;
-
     const availableWidth = windowWidth - leftWidth - rightWidth;
 
-    // RESPONSIVE LOGIC CHANGE:
-    // If available space is too small (e.g. tablet with both panels open), 
-    // trying to squeeze the footer between panels results in a broken layout.
-    // Instead, if width < 768px (or constrained), let the footer float OVER the panels (z-100).
-    const isConstrained = availableWidth < 600;
+    // Keep footer at full viewport width — content is centered via CSS flex
+    // Pointer events pass through to allow sidebar interaction
+    bottomBar.style.left = '0';
+    bottomBar.style.right = '0';
+    bottomBar.style.width = '100%';
+    bottomBar.style.marginLeft = '0';
+    bottomBar.style.marginRight = '0';
+    bottomBar.style.pointerEvents = 'none';
 
-    if (isConstrained) {
-        // Full width overlay mode
-        bottomBar.style.left = '0px';
-        bottomBar.style.right = '0px';
-        bottomBar.style.width = '100%';
-        bottomBar.style.marginLeft = '0';
-        bottomBar.style.marginRight = '0';
-        // Ensure pointer events pass through empty space so we don't block sidebar clicks
-        bottomBar.style.pointerEvents = 'none';
-        // Re-enable pointer events on children
-        Array.from(bottomBar.children).forEach(child => {
-            child.style.pointerEvents = 'auto';
-        });
-        console.log(`[Footer] OVERLAY MODE - Available: ${availableWidth}px (constrained)`);
-    } else {
-        // Docked mode (sit between panels)
-        bottomBar.style.left = `${leftWidth}px`;
-        bottomBar.style.right = `${rightWidth}px`;
-        // Explicitly set width so flex children know the container size
-        bottomBar.style.width = `${availableWidth}px`;
-        bottomBar.style.marginLeft = '0';
-        bottomBar.style.marginRight = '0';
-        bottomBar.style.pointerEvents = 'auto';
-        console.log(`[Footer] DOCKED MODE - Left: ${leftWidth}px, Right: ${rightWidth}px, Available: ${availableWidth}px`);
-    }
+    // Re-enable pointer events on direct children only
+    Array.from(bottomBar.children).forEach(child => {
+        child.style.pointerEvents = 'auto';
+    });
 
-    // Set a CSS variable so children can reference the available width
+    // Set CSS variables for children to reference
     bottomBar.style.setProperty('--footer-width', `${availableWidth}px`);
+    bottomBar.style.setProperty('--left-sidebar-width', `${leftWidth}px`);
+    bottomBar.style.setProperty('--right-sidebar-width', `${rightWidth}px`);
 
-    // Force a reflow to ensure flex children recalculate
-    void bottomBar.offsetWidth;
-
-    // Manage responsive classes for footer content
-    // We still use availableWidth logic to determine compactness
-    if (availableWidth < 600 || windowWidth < 768) {
-        bottomBar.classList.add('footer-compact');
-        bottomBar.classList.remove('footer-medium');
-    } else if (availableWidth < 900) {
-        bottomBar.classList.add('footer-medium');
-        bottomBar.classList.remove('footer-compact');
+    // Manage responsive classes and CSS variables for footer content
+    // We use availableWidth logic to determine precise vertical padding thinning
+    if (availableWidth <= 450) {
+        bottomBar.classList.add('footer-ultra');
+        bottomBar.classList.remove('footer-slim', 'footer-normal');
+        bottomBar.style.setProperty('--footer-gap', '4px');
+        bottomBar.style.setProperty('--footer-py', '0.5rem');
+        bottomBar.style.setProperty('--dock-py', '0.25rem');
+    } else if (availableWidth <= 800) {
+        bottomBar.classList.add('footer-slim');
+        bottomBar.classList.remove('footer-ultra', 'footer-normal');
+        bottomBar.style.setProperty('--footer-gap', '12px');
+        bottomBar.style.setProperty('--footer-py', '1rem');
+        bottomBar.style.setProperty('--dock-py', '0.5rem');
+    } else if (availableWidth <= 1200) {
+        bottomBar.classList.add('footer-normal');
+        bottomBar.classList.remove('footer-ultra', 'footer-slim');
+        bottomBar.style.setProperty('--footer-gap', '24px');
+        bottomBar.style.setProperty('--footer-py', '1.5rem');
+        bottomBar.style.setProperty('--dock-py', '1rem');
     } else {
-        bottomBar.classList.remove('footer-compact', 'footer-medium');
+        // Breathe state
+        bottomBar.classList.remove('footer-ultra', 'footer-slim', 'footer-normal');
+        bottomBar.style.setProperty('--footer-gap', '32px');
+        bottomBar.style.setProperty('--footer-py', '2rem');
+        bottomBar.style.setProperty('--dock-py', '1.5rem');
     }
 }
 

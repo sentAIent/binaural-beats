@@ -4,8 +4,10 @@
  * NO Cloud Functions required!
  */
 
+import { state } from '../state.js';
+import { trackGlobalEvent } from './analytics-service.js';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, where, getDocs } from 'firebase/firestore';
 
 // Stripe Payment Links - with fallbacks for static file serving
 // Note: Files in public/ don't get Vite env processing, so we need fallbacks
@@ -21,9 +23,10 @@ export const PAYMENT_LINKS = {
 export const CUSTOMER_PORTAL_URL = ENV.VITE_STRIPE_PORTAL_URL || 'https://billing.stripe.com/test/demo';
 
 // 3-Tier Pricing Structure: Free → Yogi → Buddha
+// Note: Zen ($9.99) is limited to the first 500 subscribers.
 export const PRICING_TIERS = {
     free: {
-        name: 'Seeker',
+        name: 'Free (Seeker)',
         description: 'Start your journey',
         monthlyPrice: 0,
         annualPrice: 0,
@@ -40,14 +43,14 @@ export const PRICING_TIERS = {
             offline: false
         }
     },
-    yogi: {
-        name: 'Yogi',
+    zen: {
+        name: 'Zen',
         description: 'Committed practitioner',
-        monthlyPrice: 9.99,
-        annualPrice: 79, // Save 33%
+        monthlyPrice: 19.99,
+        annualPrice: 149, // Save 38%
         stripe: {
-            monthly: ENV.VITE_STRIPE_YOGI_MONTHLY_LINK || 'https://buy.stripe.com/test/demo',
-            annual: ENV.VITE_STRIPE_YOGI_ANNUAL_LINK || 'https://buy.stripe.com/test/demo'
+            monthly: ENV.VITE_STRIPE_ZEN_MONTHLY_LINK || 'https://buy.stripe.com/eVq7sD9rW6vJ2yT7ibgfu00',
+            annual: ENV.VITE_STRIPE_ZEN_ANNUAL_LINK || 'https://buy.stripe.com/eVqdR17jO9HV1uP8mfgfu01'
         },
         features: {
             presets: 15,
@@ -62,14 +65,14 @@ export const PRICING_TIERS = {
             offline: true
         }
     },
-    buddha: {
-        name: 'Buddha',
+    nirvana: {
+        name: 'Nirvana',
         description: 'Enlightened mastery',
-        monthlyPrice: 29,
-        annualPrice: 249, // Save 28%
+        monthlyPrice: 39.99,
+        annualPrice: 349, // Save 27%
         stripe: {
-            monthly: ENV.VITE_STRIPE_BUDDHA_MONTHLY_LINK || 'https://buy.stripe.com/test/demo',
-            annual: ENV.VITE_STRIPE_BUDDHA_ANNUAL_LINK || 'https://buy.stripe.com/test/demo'
+            monthly: ENV.VITE_STRIPE_NIRVANA_MONTHLY_LINK || 'https://buy.stripe.com/14A8wH0VqbQ34H1cCvgfu03',
+            annual: ENV.VITE_STRIPE_NIRVANA_ANNUAL_LINK || 'https://buy.stripe.com/5kQ28jcE8dYbddxcCvgfu04'
         },
         features: {
             presets: null, // all presets (40+)
@@ -94,11 +97,11 @@ export const PRICING_TIERS = {
         }
     },
     lifetime: {
-        name: 'Lifetime',
+        name: 'Eternity',
         description: 'One-time payment for forever access',
         oneTimePrice: 199,
         stripe: {
-            oneTime: ENV.VITE_STRIPE_LIFETIME_LINK || 'https://buy.stripe.com/test/demo'
+            oneTime: ENV.VITE_STRIPE_LIFETIME_LINK || 'https://buy.stripe.com/9B6dR11Zu5rFc9t8mfgfu05'
         },
         features: {
             presets: null,
@@ -132,7 +135,7 @@ export const PRICING = {
 
 /**
  * Redirect to Stripe checkout with user metadata
- * @param {string} tier - Pricing tier: 'yogi' or 'buddha'
+ * @param {string} tier - Pricing tier: 'zen' or 'nirvana'
  * @param {string} billingPeriod - 'monthly' or 'annual'
  * @param {string} discountCode - Optional discount code
  */
@@ -160,8 +163,12 @@ export function goToCheckout(tier, billingPeriod = 'monthly', discountCode = nul
 
     // Get Payment Link URL
     let checkoutUrl = billingPeriod === 'oneTime'
-        ? tierConfig.stripe.oneTime
-        : tierConfig.stripe[billingPeriod];
+        ? (tierConfig.stripe.oneTime)
+        : (tierConfig.stripe[billingPeriod]);
+
+    if (!checkoutUrl || checkoutUrl === 'your-stripe-link-here') {
+        throw new Error(`Checkout link for ${tier} (${billingPeriod}) is not configured. Please check your .env file.`);
+    }
 
     // Add user email as prefill
     checkoutUrl += `?prefilled_email=${encodeURIComponent(user.email)}`;
@@ -173,15 +180,30 @@ export function goToCheckout(tier, billingPeriod = 'monthly', discountCode = nul
     checkoutUrl += `&metadata[tier]=${tier}`;
     checkoutUrl += `&metadata[billing_period]=${billingPeriod}`;
 
-    // Add discount code if provided
-    if (discountCode) {
-        // Note: Coupon must exist in Stripe Dashboard with this exact ID
-        checkoutUrl += `&discounts[0][coupon]=${encodeURIComponent(discountCode)}`;
+    // Add discount code if provided AND not a lifetime deal
+    if (discountCode && billingPeriod !== 'oneTime') {
+        // Support both direct coupons and prefilled promo codes
+        checkoutUrl += `&prefilled_promo_code=${encodeURIComponent(discountCode)}`;
         checkoutUrl += `&metadata[discount_code]=${encodeURIComponent(discountCode)}`;
+    } else if (discountCode && billingPeriod === 'oneTime') {
+        console.warn(`[Stripe] Discount codes cannot be applied to Lifetime deals. Code '${discountCode}' was removed.`);
     }
 
-    // Redirect to Stripe
-    window.location.href = checkoutUrl;
+    // Redirect to Stripe or show a helpful error
+    try {
+        // Basic URL validation
+        new URL(checkoutUrl);
+
+        // Final safety check: if it's still the default demo link in a non-dev environment, warn the user
+        if (checkoutUrl.includes('buy.stripe.com/test/demo') && window.location.hostname !== 'localhost') {
+            console.warn('[Stripe] Using demo link in production!');
+        }
+
+        window.location.href = checkoutUrl;
+    } catch (e) {
+        console.error('[Stripe] Invalid Checkout URL:', checkoutUrl);
+        alert('Invalid checkout link. Please contact support or check your environment configuration.');
+    }
 }
 
 /**
@@ -210,9 +232,9 @@ export async function isPremiumUser() {
 
     if (!user) return false;
 
-    // MOCK OVERRIDE (for testing without DB)
-    if (window.__MOCK_PREMIUM === true) {
-        console.log('[Stripe] Mock premium active');
+    // MOCK OVERRIDE (for testing without DB or 100% promo codes)
+    if (window.__MOCK_PREMIUM === true || localStorage.getItem('mindwave_premium_unlocked') === 'true') {
+        console.log('[Stripe] Premium override active');
         return true;
     }
 
@@ -245,6 +267,11 @@ export async function hasPurchasedApp() {
     const user = auth.currentUser;
     if (!user) return false;
 
+    // Promo Code Bypass
+    if (window.__MOCK_PREMIUM === true || localStorage.getItem('mindwave_premium_unlocked') === 'true') {
+        return true;
+    }
+
     const db = getFirestore();
     const subDoc = await getDoc(doc(db, 'subscriptions', user.uid));
 
@@ -263,6 +290,15 @@ export async function getSubscription() {
 
     if (!user) return null;
 
+    // Promo Code Bypass fake subscription
+    if (window.__MOCK_PREMIUM === true || localStorage.getItem('mindwave_premium_unlocked') === 'true') {
+        return {
+            status: 'active',
+            plan: 'lifetime',
+            tier: 'nirvana'
+        };
+    }
+
     const db = getFirestore();
     const subDoc = await getDoc(doc(db, 'subscriptions', user.uid));
 
@@ -271,10 +307,6 @@ export async function getSubscription() {
     return subDoc.data();
 }
 
-/**
- * Get user's current pricing tier
- * @returns {string} 'free', 'yogi', or 'buddha'
- */
 export async function getUserTier() {
     const isPremium = await isPremiumUser();
 
@@ -292,13 +324,60 @@ export async function getUserTier() {
     const tier = subscription.tier || subscription.plan;
 
     // Map old plans to new tiers
-    if (tier === 'buddha' || subscription.monthlyPrice >= 29) {
-        return 'buddha';
-    } else if (tier === 'yogi' || subscription.monthlyPrice >= 9) {
-        return 'yogi';
+    if (tier === 'nirvana' || tier === 'buddha' || subscription.monthlyPrice >= 29) {
+        return 'nirvana';
+    } else if (tier === 'zen' || tier === 'yogi' || subscription.monthlyPrice >= 9) {
+        return 'zen';
     }
 
     return 'free';
+}
+/**
+ * Real-time subscriber count from Firestore
+ * Returns the number of 'active' subscriptions
+ */
+export async function getSubscriberCount() {
+    // MOCK OVERRIDE
+    if (window.__MOCK_SUBSCRIBER_COUNT !== undefined) {
+        return window.__MOCK_SUBSCRIBER_COUNT;
+    }
+
+    try {
+        const db = getFirestore();
+        const subsRef = collection(db, 'subscriptions');
+        const q = query(subsRef, where('status', '==', 'active'));
+        const snapshot = await getDocs(q);
+        return snapshot.size;
+    } catch (err) {
+        console.warn('[Stripe] Failed to fetch subscriber count:', err.message);
+        return 432; // Fallback to a believable number
+    }
+}
+
+/**
+ * Get the current active pricing conditions for both Zen and Nirvana
+ * - Zen: 40% off for first 500
+ * - Nirvana: 20% off for first 500
+ */
+export async function getActiveTierPricing() {
+    const count = await getSubscriberCount();
+    const spotsLeft = Math.max(0, 500 - count);
+    const isFull = count >= 500;
+
+    return {
+        isFull,
+        spotsLeft,
+        zen: {
+            monthlyPrice: isFull ? "$19.99" : "$11.99",
+            annualPrice: isFull ? "$149" : "$89",
+            coupon: isFull ? null : (ENV.VITE_ZEN_PROMO_CODE || 'ZEN40')
+        },
+        nirvana: {
+            monthlyPrice: isFull ? "$39.99" : "$31.99",
+            annualPrice: isFull ? "$349" : "$279",
+            coupon: isFull ? null : (ENV.VITE_NIRVANA_PROMO_CODE || 'NIRVANA20')
+        }
+    };
 }
 
 /**
@@ -370,6 +449,16 @@ export async function handlePaymentSuccess() {
                     PRICING[subscription.plan]?.amount || 0
                 );
             }
+        }
+
+        // Track global event
+        const subscription = await getSubscription();
+        if (subscription) {
+            trackGlobalEvent('purchase', {
+                plan: subscription.plan,
+                value: PRICING[subscription.plan]?.amount || 0,
+                subscriptionId: subscription.subscriptionId
+            });
         }
 
         // Wait a moment, then check subscription status

@@ -13,6 +13,7 @@ import {
     setDoc
 } from '../services/firebase.js';
 import { openAuthModal } from '../ui/auth-controller.js';
+import { getCachedAudioUrl } from '../utils/audio-offline-manager.js';
 
 // IndexedDB database name and store
 const DB_NAME = 'MindWaveAudioLibrary';
@@ -210,7 +211,7 @@ export async function deleteTrack(trackId) {
 }
 
 // Play a track (Handles both Blob URL from Cloud and Base64 from Local)
-export function playCustomAudio(trackId) {
+export async function playCustomAudio(trackId) {
     const track = audioLibraryState.tracks.find(t => t.id === trackId);
     if (!track) {
         console.error('[AudioLibrary] Track not found:', trackId);
@@ -227,7 +228,20 @@ export function playCustomAudio(trackId) {
     audioLibraryState.currentTrack = track;
 
     // Usage: Cloud uses downloadUrl, Local uses audioData
-    const src = track.downloadUrl || track.audioData;
+    let src = track.downloadUrl || track.audioData;
+
+    // Offline Cache Intercept
+    try {
+        const cachedUrl = await getCachedAudioUrl(src);
+        if (cachedUrl) {
+            console.log(`[AudioLibrary] Serving ${trackId} from Offline Cache`);
+            src = cachedUrl;
+        } else {
+            console.log(`[AudioLibrary] Serving ${trackId} from Network (${track.isLocal ? 'Local' : 'Cloud'})`);
+        }
+    } catch (e) {
+        console.warn('[AudioLibrary] Failed to check offline cache, defaulting to network:', e);
+    }
 
     audioLibraryState.audioElement = new Audio(src);
     audioLibraryState.audioElement.volume = audioLibraryState.volume;
@@ -399,7 +413,7 @@ function renderLibraryUI() {
         container.innerHTML = `
             <div class="text-xs text-center py-6 text-[var(--text-muted)] opacity-60 flex flex-col items-center gap-3">
                 <p>Upload audio files to layer with your session</p>
-                ${isGuest ? `<button onclick="window.openAuthTrigger()" class="text-[var(--accent)] hover:underline">Sign in to sync across devices</button>` : ''}
+                ${isGuest ? `<button onclick="window.openAuthTrigger()" class="text-[var(--primary)] hover:underline">Sign in to sync across devices</button>` : ''}
             </div>
         `;
         return;
@@ -410,10 +424,10 @@ function renderLibraryUI() {
         const icon = isCloud ? '☁️' : '💾';
         const isCurrentTrack = audioLibraryState.currentTrack?.id === track.id;
         return `
-        <div class="audio-track-card flex flex-col gap-2 p-2 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-all ${isCurrentTrack ? 'playing border-[var(--accent)]' : ''}"
+        <div class="audio-track-card flex flex-col gap-2 p-2 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 hover:border-[var(--accent)] active:border-[var(--accent)] transition-all ${isCurrentTrack ? 'playing border-[var(--primary)]' : ''}"
             data-track-id="${track.id}">
             <div class="flex items-center gap-3">
-                <button class="play-track-btn w-8 h-8 flex items-center justify-center rounded-full bg-[var(--accent)]/20 text-[var(--accent)] hover:bg-[var(--accent)]/30 transition-all shrink-0"
+                <button class="play-track-btn w-8 h-8 flex items-center justify-center rounded-full bg-[var(--primary)]/20 text-[var(--primary)] hover:bg-[var(--primary)]/30 transition-all shrink-0"
                     onclick="window.toggleCustomAudio('${track.id}')">
                     ${isCurrentTrack && audioLibraryState.isPlaying
                 ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
@@ -430,7 +444,7 @@ function renderLibraryUI() {
                 
                 <!-- Actions -->
                 <div class="flex items-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
-                     <button class="rename-track-btn p-1.5 rounded-full hover:bg-white/10 hover:text-[var(--accent)] transition-all"
+                     <button class="rename-track-btn p-1.5 rounded-full hover:bg-white/10 hover:text-[var(--primary)] transition-all"
                         onclick="window.renameCustomTrack('${track.id}', '${track.name.replace(/'/g, "\\'")}')" title="Rename">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -451,7 +465,7 @@ function renderLibraryUI() {
             <div class="flex items-center gap-2">
                 <span class="custom-audio-current-time text-[9px] font-mono text-[var(--text-muted)] w-8" data-track="${track.id}">0:00</span>
                 <div class="custom-audio-progress-bar flex-1 h-1.5 bg-white/10 rounded-full cursor-pointer relative" data-track="${track.id}">
-                    <div class="custom-audio-progress-fill h-full bg-[var(--accent)] rounded-full transition-all" style="width: 0%"></div>
+                    <div class="custom-audio-progress-fill h-full bg-[var(--primary)] rounded-full transition-all" style="width: 0%"></div>
                 </div>
                 <span class="custom-audio-total-time text-[9px] font-mono text-[var(--text-muted)] w-8 text-right" data-track="${track.id}">0:00</span>
             </div>
@@ -519,7 +533,7 @@ function updateLibraryUI() {
         const isPlaying = isCurrentTrack && audioLibraryState.isPlaying;
 
         card.classList.toggle('playing', isCurrentTrack);
-        card.classList.toggle('border-[var(--accent)]', isCurrentTrack);
+        card.classList.toggle('border-[var(--primary)]', isCurrentTrack);
 
         const playBtn = card.querySelector('.play-track-btn');
         if (playBtn) {
@@ -533,13 +547,13 @@ function updateLibraryUI() {
 // Toast helper
 function showToast(message, type = 'info') {
     const colors = {
-        success: 'bg-green-500/90 text-black',
-        error: 'bg-red-500/90 text-white',
-        info: 'bg-[var(--accent)]/90 text-black'
+        success: 'bg-[var(--success)] text-[var(--success-foreground)] shadow-lg',
+        error: 'bg-[var(--error)] text-[var(--error-foreground)] shadow-lg',
+        info: 'bg-[var(--primary)] text-[var(--primary-foreground)]'
     };
 
     const toast = document.createElement('div');
-    toast.className = `fixed bottom-24 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl text-sm font-medium z-50 transition-all ${colors[type] || colors.info}`;
+    toast.className = `fixed bottom-24 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl text-sm font-bold z-50 transition-all ${colors[type] || colors.info} animate-in fade-in slide-in-from-bottom-2`;
     toast.textContent = message;
     document.body.appendChild(toast);
     setTimeout(() => {

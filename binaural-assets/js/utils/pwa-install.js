@@ -1,3 +1,6 @@
+import { state } from '../state.js';
+import { hasPurchasedApp } from '../services/stripe-simple.js';
+
 /**
  * PWA Install Prompt
  * Shows a custom install banner when the app is installable
@@ -8,7 +11,50 @@ let installBannerShown = false;
 const INSTALL_DECLINED_KEY = 'mindwave_install_declined';
 const INSTALL_COMPLETED_KEY = 'mindwave_installed';
 
-export function initPWAInstall() {
+export async function initPWAInstall() {
+    // Wait for auth to settle to check access
+    const { registerAuthCallback } = await import('../services/firebase.js');
+
+    registerAuthCallback(async (user) => {
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        let hasAccess = false;
+
+        try {
+            if (user) {
+                hasAccess = await hasPurchasedApp();
+            }
+        } catch (e) {
+            console.warn('[PWA] Error checking app purchase access:', e);
+        }
+
+        // --- 1. RUNTIME STANDALONE LOCK ---
+        if (isStandalone) {
+            if (!hasAccess) {
+                console.warn('[PWA] Unauthorized Standalone Access. Blocking UI.');
+                showPWALockScreen();
+                return; // Stop execution
+            } else {
+                // If they logged in and have access, remove lock
+                const lockScreen = document.getElementById('pwaLockScreen');
+                if (lockScreen) lockScreen.remove();
+            }
+        }
+
+        // --- 2. MANIFEST INJECTION ---
+        // Ensure manifest is only injected for Lifetime members to prevent browser bypass
+        if (hasAccess && !isStandalone) {
+            if (!document.querySelector('link[rel="manifest"]')) {
+                console.log('[PWA] Verified Eternity Access: Injecting manifest.json');
+                const manifestLink = document.createElement('link');
+                manifestLink.rel = 'manifest';
+                manifestLink.href = 'manifest.json';
+                document.head.appendChild(manifestLink);
+            }
+        } else if (!hasAccess && !isStandalone) {
+            console.log('[PWA] Standard User: Skipping manifest injection to enforce app download paywall.');
+        }
+    });
+
     // Skip if already installed or declined
     if (localStorage.getItem(INSTALL_COMPLETED_KEY)) return;
 
@@ -37,6 +83,12 @@ export function initPWAInstall() {
 }
 
 function showInstallBanner() {
+    // LOCK: Only show install banner to lifetime members
+    if (!state.isLifetime) {
+        console.log('[PWA] skipping install banner - not a lifetime member');
+        return;
+    }
+
     if (!deferredPrompt || installBannerShown) return;
     installBannerShown = true;
 
@@ -105,6 +157,20 @@ function showInstallBanner() {
 
     // Event listeners
     document.getElementById('pwaInstallBtn').addEventListener('click', async () => {
+        // STRICT PAYWALL CHECK: Source Code / App Download ($350)
+        // We also check here just in case, but the prompt shouldn't even exist otherwise
+        try {
+            const hasAccess = await hasPurchasedApp();
+            if (!hasAccess) {
+                if (confirm("The Downloadable App is exclusive to Eternity Members ($488.88 Zen Gear). \n\nClick OK to upgrade and unlock.")) {
+                    if (window.showPricingModal) window.showPricingModal();
+                }
+                return;
+            }
+        } catch (e) {
+            console.warn('[PWA] Error checking purchase on install button:', e);
+        }
+
         if (!deferredPrompt) return;
 
         deferredPrompt.prompt();
@@ -148,14 +214,62 @@ function showToast(message, type) {
         bottom: 24px;
         left: 50%;
         transform: translateX(-50%);
-        background: #10b981;
+        background: ${type === 'success' ? '#10b981' : '#334155'};
         color: white;
         padding: 12px 24px;
-        border-radius: 12px;
+        border-radius: 100px;
         font-size: 14px;
-        z-index: 9999;
+        font-weight: 500;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     `;
     toast.textContent = message;
     document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+function showPWALockScreen() {
+    if (document.getElementById('pwaLockScreen')) return;
+
+    const blockScreen = document.createElement('div');
+    blockScreen.id = 'pwaLockScreen';
+    blockScreen.style.cssText = `
+        position: fixed; inset: 0; z-index: 999999; 
+        background: #0f172a; display: flex; flex-direction: column; 
+        align-items: center; justify-content: center; padding: 24px; text-align: center;
+    `;
+    blockScreen.innerHTML = `
+        <div style="font-size: 64px; margin-bottom: 24px;">🔒</div>
+        <h2 style="color: white; font-size: 28px; margin-bottom: 16px; font-weight: 700;">App Lock Enabled</h2>
+        <p style="color: #94a3b8; font-size: 16px; margin-bottom: 32px; max-width: 400px; line-height: 1.6;">
+            The MindWave Downloadable App is exclusive to <b>Lifetime Members</b>.<br><br>
+            Your current subscription does not include app access. Please return to the web version or upgrade to unlock.
+        </p>
+        <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;">
+            <button onclick="window.location.href='https://mindwave.com'" style="background: rgba(255,255,255,0.1); color: white; border: none; padding: 14px 28px; border-radius: 12px; font-weight: 600; cursor: pointer;">Open Web Version</button>
+            <button onclick="
+                const lock = document.getElementById('pwaLockScreen');
+                if (lock) lock.style.display = 'none'; // Temporarily hide to show modal
+                if(window.showPricingModal) window.showPricingModal();
+            " style="background: #10b981; color: white; border: none; padding: 14px 28px; border-radius: 12px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">Upgrade to Unlock</button>
+        </div>
+        <div style="margin-top: 24px;">
+            <button onclick="
+                const lock = document.getElementById('pwaLockScreen');
+                if (lock) lock.style.display = 'none'; // Temporarily hide lock
+                if (window.openAuthModal) {
+                    window.openAuthModal();
+                } else {
+                    alert('Login module initializing...');
+                    if (lock) lock.style.display = 'flex';
+                }
+            " style="background: none; border: none; color: #38bdf8; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: underline;">Already upgraded? Log In</button>
+        </div>
+    `;
+    document.body.appendChild(blockScreen);
 }

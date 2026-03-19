@@ -119,9 +119,21 @@ export function validatePassword(password) {
  * @param {Error} error
  * @param {string} context
  */
+const _errorCounts = {};
 export function logErrorToAnalytics(error, context) {
-    // TODO: Implement analytics logging
-    console.log(`[Analytics] Error in ${context}:`, error.code || error.message);
+    const key = `${context}:${error?.code || error?.message || 'unknown'}`;
+    _errorCounts[key] = (_errorCounts[key] || 0) + 1;
+
+    // Debounce: only send the first 3 of each unique error to analytics
+    if (_errorCounts[key] > 3) return;
+
+    if (window.gtag) {
+        window.gtag('event', 'exception', {
+            description: `[${context}] ${error?.code || error?.message || 'Unknown error'}`,
+            fatal: false
+        });
+    }
+    console.warn(`[ErrorHandler] ${context}:`, error?.code || error?.message);
 }
 
 // ✅ FIX Issue #5: Centralized error handling

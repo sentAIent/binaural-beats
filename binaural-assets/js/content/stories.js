@@ -2,8 +2,10 @@
 // Plays narrated stories layered with binaural frequencies
 
 import { state, els } from '../state.js';
+import { db, doc, setDoc, getDoc, serverTimestamp } from '../services/firebase.js';
 import { isPremiumUser } from '../services/stripe-simple.js';
 import { showPricingModal } from '../ui/pricing-3tier.js';
+import { getCachedAudioUrl } from '../utils/audio-offline-manager.js';
 
 // Built-in sleep stories with recommended soundscapes
 export const SLEEP_STORIES = [
@@ -104,8 +106,8 @@ export const SLEEP_STORIES = [
         title: 'Peaceful Night',
         description: 'A gentle journey through a moonlit garden',
         duration: '10 min',
-        narrator: 'Demo',
-        audioUrl: null,
+        narrator: 'Classical',
+        audioUrl: '/binaural-assets/audio/classical/debussy_clair.ogg',
         thumbnail: null,
         recommendedFreq: { base: 200, beat: 2 },
         recommendedSoundscape: 'ocean',
@@ -118,8 +120,8 @@ export const SLEEP_STORIES = [
         title: 'Ocean Dreams',
         description: 'Drift away on gentle waves under starry skies',
         duration: '15 min',
-        narrator: 'Demo',
-        audioUrl: null,
+        narrator: 'Classical',
+        audioUrl: '/binaural-assets/audio/classical/satie_gymnopedie.ogg',
         thumbnail: null,
         recommendedFreq: { base: 180, beat: 3 },
         recommendedSoundscape: 'ocean',
@@ -132,8 +134,8 @@ export const SLEEP_STORIES = [
         title: 'Enchanted Forest',
         description: 'Walk through an ancient forest at twilight',
         duration: '12 min',
-        narrator: 'Demo',
-        audioUrl: null,
+        narrator: 'Classical',
+        audioUrl: '/binaural-assets/audio/classical/chopin_nocturne.ogg',
         thumbnail: null,
         recommendedFreq: { base: 220, beat: 4 },
         recommendedSoundscape: 'rain',
@@ -146,8 +148,8 @@ export const SLEEP_STORIES = [
         title: 'Cosmic Journey',
         description: 'Float through galaxies and nebulae',
         duration: '20 min',
-        narrator: 'Demo',
-        audioUrl: null,
+        narrator: 'Classical',
+        audioUrl: '/binaural-assets/audio/classical/beethoven_moonlight.ogg',
         thumbnail: null,
         recommendedFreq: { base: 200, beat: 6 },
         recommendedSoundscape: 'strings',
@@ -180,6 +182,18 @@ export function initStoryPlayer() {
     }
     console.log('[Stories] Story player initialized');
 
+    // Register auth listener for seamless sync
+    import('../services/firebase.js').then(({ registerAuthCallback }) => {
+        registerAuthCallback(async (user) => {
+            if (user && !user.isAnonymous) {
+                await syncStoriesWithCloud();
+                // Re-render UI if container exists
+                const container = document.getElementById('storyContainer');
+                if (container) renderStoryCards(container);
+            }
+        });
+    });
+
     // Subscribe to theme changes to re-render UI
     if (!window._storyThemeListenerAttached) {
         window.addEventListener('themeChanged', () => {
@@ -190,8 +204,44 @@ export function initStoryPlayer() {
     }
 }
 
+/**
+ * Cloud Sync for story mappings
+ */
+async function syncStoriesWithCloud() {
+    if (!db || !state.currentUser) return;
+    try {
+        const uid = state.currentUser.uid;
+        const docRef = doc(db, 'users', uid, 'progress', 'stories');
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            const cloudMappings = docSnap.data().customAudioTracks || {};
+            console.log('[Stories] Merging cloud audio mappings...');
+            storyState.customAudioTracks = { ...storyState.customAudioTracks, ...cloudMappings };
+            localStorage.setItem('mindwave_story_audio', JSON.stringify(storyState.customAudioTracks));
+        }
+    } catch (e) {
+        console.warn('[Stories] Cloud sync failed:', e);
+    }
+}
+
+async function saveStoriesToCloud() {
+    if (!db || !state.currentUser || state.currentUser.isAnonymous) return;
+    try {
+        const uid = state.currentUser.uid;
+        const docRef = doc(db, 'users', uid, 'progress', 'stories');
+        await setDoc(docRef, {
+            customAudioTracks: storyState.customAudioTracks,
+            updatedAt: serverTimestamp()
+        }, { merge: true });
+        console.log('[Stories] Saved audio mappings to cloud');
+    } catch (e) {
+        console.warn('[Stories] Cloud save failed:', e);
+    }
+}
+
 // Play a story layered with frequencies and soundscapes
-export async function playStory(storyId) {
+export async function playStory(storyId, intentOnly = false) {
     const story = SLEEP_STORIES.find(s => s.id === storyId);
     if (!story) {
         console.error('[Stories] Story not found:', storyId);
@@ -200,7 +250,7 @@ export async function playStory(storyId) {
 
     // Check premium status
     const isPremium = await isPremiumUser();
-    if (story.premium && !isPremium) {
+    if (story.premium && !isPremium && !intentOnly) {
         showPricingModal();
         return false;
     }
@@ -282,13 +332,33 @@ export async function playStory(storyId) {
 
     // 4. Check for custom audio (uploaded by user)
     const customAudioUrl = storyState.customAudioTracks[storyId];
-    const audioUrl = customAudioUrl || story.audioUrl;
+    let audioUrl = customAudioUrl || story.audioUrl;
 
-    if (audioUrl) {
+    if (audioUrl && (!story.premium || isPremium || !intentOnly)) {
+        // Offline Cache Intercept
+        try {
+            const cachedUrl = await getCachedAudioUrl(audioUrl);
+            if (cachedUrl) {
+                console.log(`[Stories] Serving ${storyId} from Offline Cache`);
+                audioUrl = cachedUrl;
+            } else {
+                console.log(`[Stories] Serving ${storyId} from Network`);
+            }
+        } catch (e) {
+            console.warn('[Stories] Failed to check offline cache, defaulting to network:', e);
+        }
+
         // Play the actual narration audio
         storyState.audioElement = new Audio(audioUrl);
         storyState.audioElement.volume = storyState.volume;
         storyState.audioElement.loop = false;
+
+        // NEW: Graceful error handling for missing/broken audio assets
+        storyState.audioElement.addEventListener('error', (e) => {
+            console.error('[Stories] Audio load error:', e);
+            showToast('Narration failed to load. Continuing in Binaural-Hz Mode.', 'warning');
+            storyState.audioElement = null;
+        });
 
         storyState.audioElement.addEventListener('ended', () => {
             console.log('[Stories] Audio playback ended');
@@ -315,7 +385,26 @@ export async function playStory(storyId) {
     const soundscapeName = story.recommendedSoundscape
         ? story.recommendedSoundscape.charAt(0).toUpperCase() + story.recommendedSoundscape.slice(1)
         : 'ambient';
-    showToast(`🌙 "${story.title}" — ${story.recommendedFreq.beat}Hz + ${soundscapeName}`);
+
+    if (story.premium && !isPremium && intentOnly) {
+        showToast(`✨ Intent Match: ${story.recommendedFreq.beat}Hz + ${soundscapeName}`);
+        showToast(`Upgrade to hear the full story meditation!`, 'info');
+    } else if (isDraft) {
+        showToast(`🌙 "${story.title}" — Playing Frequency + ${soundscapeName}`);
+        showToast(`Voice track coming soon!`, 'info');
+    } else {
+        showToast(`🌙 "${story.title}" — ${story.recommendedFreq.beat}Hz + ${soundscapeName}`);
+    }
+
+    // Track feature usage
+    if (window.trackFeatureUse) {
+        window.trackFeatureUse('story_play', { story_id: storyId });
+    }
+
+    // 6. Total Immersion: Apply Story Visuals
+    if (window.setVisualMode) {
+        window.setVisualMode(['rainforest', 'zengarden']);
+    }
 
     console.log('[Stories] Playing:', story.title);
     return true;
@@ -378,6 +467,7 @@ export async function uploadStoryAudio(storyId, file) {
             // Save to localStorage
             try {
                 localStorage.setItem('mindwave_story_audio', JSON.stringify(storyState.customAudioTracks));
+                saveStoriesToCloud(); // Sync to cloud
             } catch (e) {
                 console.warn('[Stories] Failed to save to localStorage:', e);
             }
@@ -532,14 +622,14 @@ function showStopButton(show) {
 // Toast helper
 function showToast(message, type = 'info') {
     const colors = {
-        info: 'bg-[var(--accent)]/90 text-black',
-        success: 'bg-green-500/90 text-black',
-        warning: 'bg-amber-500/90 text-black',
-        error: 'bg-red-500/90 text-white'
+        info: 'bg-[var(--primary)] text-[var(--primary-foreground)]',
+        success: 'bg-[var(--success)] text-[var(--success-foreground)] shadow-lg',
+        warning: 'bg-[var(--warning)] text-[var(--warning-foreground)] shadow-lg',
+        error: 'bg-[var(--error)] text-[var(--error-foreground)] shadow-lg'
     };
 
     const toast = document.createElement('div');
-    toast.className = `fixed bottom-24 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl text-sm font-medium z-50 transition-all ${colors[type] || colors.info}`;
+    toast.className = `fixed bottom-24 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl text-sm font-bold z-50 transition-all ${colors[type] || colors.info} animate-in fade-in slide-in-from-bottom-2`;
     toast.textContent = message;
     document.body.appendChild(toast);
     setTimeout(() => {
@@ -560,9 +650,10 @@ export function renderStoryCards(container) {
     container.innerHTML = SLEEP_STORIES.map(story => {
         const hasAudio = hasCustomAudio(story.id);
         const isPlaying = storyState.currentStory?.id === story.id && storyState.isPlaying;
+        const isDraft = !story.audioUrl && !hasAudio;
 
         // Determine styling base on theme and state
-        let cardClasses = `bg-white/5 border border-white/10 hover:bg-white/10 hover:border-purple-500/50`;
+        let cardClasses = `bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[var(--accent)] active:border-[var(--accent)]`;
         let cardStyle = '';
 
         if (!isPlaying && isLight) {
@@ -573,35 +664,36 @@ export function renderStoryCards(container) {
         }
 
         return `
-        <div class="story-card group relative flex flex-col items-center justify-center p-3 rounded-xl transition-all ${story.premium ? 'premium-content' : ''} ${isPlaying ? 'playing border-purple-500 bg-purple-500/10' : cardClasses}"
+        <div class="story-card group relative flex flex-col items-center justify-center p-3 rounded-xl transition-all ${story.premium ? 'premium-content' : ''} ${isPlaying ? 'playing border-[var(--primary)] bg-[var(--primary)]/10' : cardClasses} ${isDraft ? 'opacity-80' : ''}"
             style="${isPlaying ? '' : cardStyle}"
             data-story-id="${story.id}">
             
             <!-- Premium badge -->
             <div class="absolute top-1 right-1 flex gap-1">
                 ${hasAudio ? '<span class="text-[8px] px-1 py-0.5 rounded-full bg-green-500/20 text-green-400">🎵</span>' : ''}
+                ${isDraft ? '<span class="text-[8px] px-1 py-0.5 rounded-full bg-slate-500/20 text-slate-400 font-bold">VOICE COMING SOON</span>' : ''}
                 ${story.premium ? '<span class="text-[8px] px-1 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-bold">PRO</span>' : ''}
             </div>
             
             <!-- Icon with play indicator -->
-            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center mb-2 ${isPlaying ? 'animate-pulse' : ''}">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--primary)]/30 to-[var(--accent)]/30 flex items-center justify-center mb-2 ${isPlaying ? 'animate-pulse' : ''}">
                 ${isPlaying
-                ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="text-purple-300"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
-                : '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="text-purple-300"><polygon points="5,3 19,12 5,21"/></svg>'
+                ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="text-[var(--primary)]"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
+                : '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="text-[var(--primary)]"><polygon points="5,3 19,12 5,21"/></svg>'
             }
             </div>
             
             <!-- Title and duration -->
-            <span class="text-[10px] font-bold text-purple-300 text-center leading-tight">${story.title}</span>
+            <span class="text-[10px] font-bold text-[var(--primary)] text-center leading-tight">${story.title}</span>
             <span class="text-[8px] text-[var(--text-muted)] mt-0.5">${story.duration}${story.bpm ? ` • ${story.bpm} BPM` : ''}</span>
             
             <!-- Action buttons - styled like other right menu buttons -->
             <div class="flex justify-center gap-1 mt-2 w-full">
-                <button class="story-play-btn flex-1 px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-purple-300 text-[9px] font-bold hover:bg-purple-500/20 hover:border-purple-500/30 transition-all"
+                <button class="story-play-btn flex-1 px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-[var(--primary)] text-[9px] font-bold hover:bg-[var(--primary)]/20 hover:border-[var(--accent)] active:border-[var(--accent)] transition-all"
                     onclick="event.stopPropagation(); window.playStoryById('${story.id}')">
-                    ${isPlaying ? '⏹ Stop' : '▶ Play'}
+                    ${isPlaying ? '⏹ Stop' : (isDraft ? '▶ Listen (Hz)' : '▶ Play')}
                 </button>
-                <label class="story-upload-btn px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-[var(--text-muted)] text-[9px] font-bold hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer"
+                <label class="story-upload-btn px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-[var(--text-muted)] text-[9px] font-bold hover:bg-white/10 hover:border-[var(--accent)] active:border-[var(--accent)] transition-all cursor-pointer"
                     onclick="event.stopPropagation()" title="${hasAudio ? 'Replace audio' : 'Upload audio'}">
                     ${hasAudio ? '🔄' : '📤'}
                     <input type="file" accept="audio/*" class="hidden" onchange="window.uploadStoryAudioHandler(event, '${story.id}')">

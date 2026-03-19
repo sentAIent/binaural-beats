@@ -4,7 +4,7 @@
  */
 
 import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 
 const REFERRAL_PARAM = 'ref';
 const STORAGE_KEY = 'mindwave_referrer';
@@ -97,5 +97,24 @@ export async function shareReferral() {
         }
     } catch (e) {
         return { success: false, error: e.message };
+    }
+}
+
+/**
+ * Get total referral count for a user
+ */
+export async function getReferralCount(userId) {
+    if (!userId) return 0;
+
+    const db = getFirestore();
+    const referralsRef = collection(db, 'referrals');
+    const q = query(referralsRef, where('referrerId', '==', userId));
+
+    try {
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.size;
+    } catch (e) {
+        console.error('[Referral] Error getting count:', e);
+        return 0;
     }
 }

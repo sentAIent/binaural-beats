@@ -1,6 +1,99 @@
 /* Google Fonts removed for offline performance. Using System UI Stack. */
 /* @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap'); */
 
+/* --- DJ Studio Button Fallback Colors (Bypassing Tailwind Purge) --- */
+.bg-red-500\/20 {
+    background-color: rgb(239 68 68 / 0.2);
+}
+
+.border-red-500\/30 {
+    border-color: rgb(239 68 68 / 0.3);
+}
+
+.shadow-red-500\/30 {
+    box-shadow: 0 4px 6px -1px rgb(239 68 68 / 0.3);
+}
+
+.bg-blue-500\/20 {
+    background-color: rgb(59 130 246 / 0.2);
+}
+
+.border-blue-500\/30 {
+    border-color: rgb(59 130 246 / 0.3);
+}
+
+.shadow-blue-500\/30 {
+    box-shadow: 0 4px 6px -1px rgb(59 130 246 / 0.3);
+}
+
+.bg-amber-500\/20 {
+    background-color: rgb(245 158 11 / 0.2);
+}
+
+.border-amber-500\/30 {
+    border-color: rgb(245 158 11 / 0.3);
+}
+
+.shadow-amber-500\/30 {
+    box-shadow: 0 4px 6px -1px rgb(245 158 11 / 0.3);
+}
+
+.bg-emerald-500\/20 {
+    background-color: rgb(16 185 129 / 0.2);
+}
+
+.border-emerald-500\/30 {
+    border-color: rgb(16 185 129 / 0.3);
+}
+
+.shadow-emerald-500\/30 {
+    box-shadow: 0 4px 6px -1px rgb(16 185 129 / 0.3);
+}
+
+.bg-purple-500\/20 {
+    background-color: rgb(168 85 247 / 0.2);
+}
+
+.border-purple-500\/30 {
+    border-color: rgb(168 85 247 / 0.3);
+}
+
+.shadow-purple-500\/30 {
+    box-shadow: 0 4px 6px -1px rgb(168 85 247 / 0.3);
+}
+
+.bg-indigo-500\/20 {
+    background-color: rgb(99 102 241 / 0.2);
+}
+
+.border-indigo-500\/30 {
+    border-color: rgb(99 102 241 / 0.3);
+}
+
+.shadow-indigo-500\/30 {
+    box-shadow: 0 4px 6px -1px rgb(99 102 241 / 0.3);
+}
+
+.bg-pink-500\/20 {
+    background-color: rgb(236 72 153 / 0.2);
+}
+
+.border-pink-500\/30 {
+    border-color: rgb(236 72 153 / 0.3);
+}
+
+.bg-cyan-500\/20 {
+    background-color: rgb(6 182 212 / 0.2);
+}
+
+.bg-cyan-500\/30 {
+    background-color: rgb(6 182 212 / 0.3);
+}
+
+.border-cyan-500\/30 {
+    border-color: rgb(6 182 212 / 0.3);
+}
+
 :root {
     --bg-main: #0f172a;
     --bg-panel: #1e293b;
@@ -14,6 +107,81 @@
     --glass-border: rgba(255, 255, 255, 0.1);
     --volume-accent: #d42d48;
     --volume-glow: rgba(212, 45, 72, 0.4);
+}
+
+/* AI Goal Input - Accent placeholder & Input Text */
+#aiGoalInput {
+    color: var(--accent) !important;
+    text-shadow: 0 0 5px var(--accent-glow);
+}
+
+#aiGoalInput::placeholder {
+    color: var(--accent) !important;
+    opacity: 0.9 !important;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-shadow: 0 0 12px var(--accent-glow);
+}
+
+/* Vendor specific placeholder styling */
+#aiGoalInput::-webkit-input-placeholder {
+    color: var(--accent) !important;
+    opacity: 0.9 !important;
+    text-shadow: 0 0 12px var(--accent-glow);
+    font-weight: 700;
+}
+
+#aiGoalInput::-moz-placeholder {
+    color: var(--accent) !important;
+    opacity: 0.9 !important;
+    text-shadow: 0 0 12px var(--accent-glow);
+    font-weight: 700;
+}
+
+#aiGoalInput:-ms-input-placeholder {
+    color: var(--accent) !important;
+    opacity: 0.9 !important;
+    text-shadow: 0 0 12px var(--accent-glow);
+    font-weight: 700;
+}
+
+#aiGoalInput:-moz-placeholder {
+    color: var(--accent) !important;
+    opacity: 0.9 !important;
+    text-shadow: 0 0 12px var(--accent-glow);
+    font-weight: 700;
+}
+
+
+/* Vibrant Logo Utility for Branding Consistency */
+.vibrant-logo {
+    filter: drop-shadow(0 0 15px rgba(45, 212, 191, 0.4)) brightness(1.1);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vibrant-logo:hover {
+    filter: drop-shadow(0 0 25px rgba(45, 212, 191, 0.6)) brightness(1.2);
+    transform: scale(1.02);
+}
+
+/* Light Theme Contrast Fixes for Logo and Inputs */
+[data-theme-type="light"] .vibrant-logo {
+    filter: invert(1) hue-rotate(180deg) drop-shadow(0 0 10px rgba(0, 0, 0, 0.1)) brightness(0.8) !important;
+}
+
+[data-theme-type="light"] .vibrant-logo:hover {
+    filter: invert(1) hue-rotate(180deg) drop-shadow(0 0 15px rgba(0, 0, 0, 0.2)) brightness(0.6) !important;
+    transform: scale(1.02);
+}
+
+[data-theme-type="light"] input.bg-black\/40 {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    color: var(--text-main) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme-type="light"] input.bg-black\/40::placeholder {
+    color: var(--text-muted) !important;
 }
 
 * {
@@ -80,37 +248,228 @@ input[type='range']::-webkit-slider-thumb {
 }
 
 
-/* Enhanced Glassmorphic Cards with stronger blur and glow */
+/* Enhanced Glassmorphic Cards with ultimate luxury (frosted depth) */
 .glass-card {
-    background: rgba(30, 41, 59, 0.7);
-    backdrop-filter: blur(32px) saturate(180%);
-    -webkit-backdrop-filter: blur(32px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: linear-gradient(135deg,
+            rgba(30, 41, 59, 0.7) 0%,
+            rgba(15, 23, 42, 0.8) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-top: 1px solid rgba(255, 255, 255, 0.24);
+    /* Glass edge highlight */
     box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.4),
+        0 20px 50px rgba(0, 0, 0, 0.5),
+        inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.glass-card:hover {
+    background: linear-gradient(135deg,
+            rgba(30, 41, 59, 0.8) 0%,
+            rgba(15, 23, 42, 0.9) 100%);
+    border-color: rgba(255, 255, 255, 0.2);
+    border-top-color: rgba(255, 255, 255, 0.35);
+    box-shadow:
+        0 30px 60px rgba(0, 0, 0, 0.6),
+        inset 0 1px 2px rgba(255, 255, 255, 0.15);
+}
+
+/* Luxurious Glass (Maximum Frost) */
+.glass-lux {
+    background: linear-gradient(165deg,
+            rgba(15, 23, 42, 0.85) 0%,
+            rgba(2, 6, 23, 0.95) 100%);
+    backdrop-filter: blur(32px) saturate(200%);
+    -webkit-backdrop-filter: blur(32px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.7),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Light Mode Overrides for Glass */
+[data-theme-type="light"] .glass-lux {
+    background: linear-gradient(165deg,
+            rgba(255, 255, 255, 0.85) 0%,
+            rgba(240, 249, 255, 0.95) 100%) !important;
+    backdrop-filter: blur(24px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.8) !important;
+    box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+
+[data-theme-type="light"] .glass-pill {
+    background: rgba(255, 255, 255, 0.6) !important;
+    backdrop-filter: blur(12px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(140%) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+.glass-pill {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 9999px;
+    color: var(--text-muted);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.glass-card:hover {
-    background: rgba(30, 41, 59, 0.75);
-    border-color: rgba(255, 255, 255, 0.22);
-    box-shadow:
-        0 12px 40px rgba(0, 0, 0, 0.5),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+/* --- CRASH MITIGATION: Disable backdrop-filter for macOS 12 Monterey --- */
+/* Broad safeguard to disable ANY backdrop-filter when stability mode is on */
+.no-backdrop-filter *,
+.no-backdrop-filter .glass-card,
+.no-backdrop-filter .glass-lux,
+.no-backdrop-filter .glass-pill,
+.no-backdrop-filter .glass-card:hover,
+.no-backdrop-filter .glass-lux:hover,
+.no-backdrop-filter .glass-pill:hover {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
 }
 
-.glass-pill {
+/* Specifically target Tailwind-like classes that might be used */
+.no-backdrop-filter .backdrop-blur-sm,
+.no-backdrop-filter .backdrop-blur-md,
+.no-backdrop-filter .backdrop-blur-lg,
+.no-backdrop-filter .backdrop-blur-xl {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Compensate for loss of blur with higher opacity backgrounds */
+.no-backdrop-filter .glass-card {
+    background: rgba(15, 23, 42, 1.0) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+.no-backdrop-filter .glass-lux {
+    background: rgba(2, 6, 23, 1.0) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+.no-backdrop-filter .glass-pill {
+    background: rgba(30, 41, 59, 1.0) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Redundant but safe: Ensure any Tailwind shadows with blur are controlled */
+.no-backdrop-filter .shadow-2xl,
+.no-backdrop-filter .shadow-3xl,
+.no-backdrop-filter #matrixSettingsPanel {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme-type="light"].no-backdrop-filter .glass-lux {
+    background: rgba(240, 249, 255, 1.0) !important;
+}
+
+[data-theme-type="light"].no-backdrop-filter .glass-pill {
+    background: rgba(255, 255, 255, 1.0) !important;
+}
+
+/* ==========================================
+   PREMIUM CONTROL COMPONENTS
+   Standardized Sliders & Typography
+   ========================================== */
+
+.premium-label {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0.9;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.premium-value {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-main);
+    opacity: 0.85;
+}
+
+/* Custom Premium Slider Styling */
+.premium-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    outline: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    margin: 8px 0;
+}
+
+.premium-slider:hover {
     background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(16px) saturate(150%);
-    -webkit-backdrop-filter: blur(16px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 9999px;
-    color: var(--text-muted);
-    box-shadow:
-        0 4px 16px rgba(0, 0, 0, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Webkit (Chrome, Safari, Opera, Edge) */
+.premium-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--bg-main);
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px var(--accent), 0 0 5px rgba(0, 0, 0, 0.5);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-slider:hover::-webkit-slider-thumb {
+    transform: scale(1.2);
+    box-shadow: 0 0 15px var(--accent), 0 0 8px rgba(0, 0, 0, 0.6);
+}
+
+.premium-slider::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 2px;
+}
+
+/* Firefox */
+.premium-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: var(--bg-main);
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px var(--accent), 0 0 5px rgba(0, 0, 0, 0.5);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-slider:hover::-moz-range-thumb {
+    transform: scale(1.2);
+    box-shadow: 0 0 15px var(--accent), 0 0 8px rgba(0, 0, 0, 0.6);
+}
+
+.premium-slider::-moz-range-track {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+}
+
+.premium-slider::-moz-range-progress {
+    height: 4px;
+    background: var(--accent);
+    border-radius: 2px;
 }
 
 .active-mode {
@@ -149,6 +508,30 @@ input[type='range']::-webkit-slider-thumb {
     color: var(--text-main) !important;
 }
 
+/* Mode toggle buttons (Binaural/Isochronic/Monaural) - accent text when inactive */
+#modeToggle .mode-btn.toggle-inactive {
+    color: var(--accent) !important;
+    opacity: 0.85;
+}
+
+#modeToggle .mode-btn.toggle-inactive:hover {
+    color: var(--accent) !important;
+    opacity: 1;
+}
+
+/* Light themes: stronger accent text for inactive mode buttons */
+[data-theme-type="light"] #modeToggle .mode-btn.toggle-inactive {
+    color: var(--accent) !important;
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Light themes: active mode button uses white text for contrast against accent bg */
+[data-theme-type="light"] #modeToggle .mode-btn.toggle-active {
+    color: white !important;
+}
+
 /* ==========================================
    CUSTOM CURSOR - Theme-Aware Design
    Cursor color is set dynamically via JavaScript
@@ -185,6 +568,16 @@ a:active,
 .sweep-btn:active,
 .dj-pad:active {
     animation: cursorClickPulse 0.15s ease-out;
+}
+
+/* Cursor description contrast */
+.cursor-option div {
+    color: var(--text-main) !important;
+    opacity: 1 !important;
+}
+
+.cursor-option.active div {
+    color: white !important;
 }
 
 .glass-pill:hover,
@@ -271,7 +664,8 @@ a:active,
 [data-theme-type="light"] [data-section="uploads"] .text-white,
 [data-theme-type="light"] [data-section="uploads"] .text-white\/70,
 [data-theme-type="light"] [data-section="classical"] .text-white,
-[data-theme-type="light"] [data-section="classical"] .text-white\/70 {
+[data-theme-type="light"] [data-section="classical"] .text-white\/70,
+[data-theme-type="light"] #aiGoalSection .text-white {
     color: var(--accent) !important;
 }
 
@@ -369,25 +763,28 @@ body[data-theme="sentaient"] #leftPanel .section-label {
     color: rgb(52, 211, 153) !important;
 }
 
-/* Force Atmosphere descriptions and percentage values to Blue as requested */
+/* Force Atmosphere descriptions and percentage values to Theme Accent */
 body[data-theme="sentaient"] #soundscapeContainer .text-white,
 body[data-theme="sentaient"] #soundscapeContainer .text-white\/70,
 body[data-theme="sentaient"] #soundscapeContainer .atmos-sublabel,
 body[data-theme="sentaient"] #soundscapeContainer .text-\[var\(--accent\)\] {
-    color: #60a9ff !important;
+    color: var(--accent) !important;
 }
 
 /* Ensure active button text is consistent and has high contrast in sentAIent theme */
 body[data-theme="sentaient"] .toggle-active,
 body[data-theme="sentaient"] .active-mode,
 body[data-theme="sentaient"] .glass-pill.active {
-    color: #202733 !important;
+    color: #0f172a !important;
+    /* Dark text on bright Teal accent */
+    background-color: var(--accent) !important;
 }
 
-/* Force blue text for inactive toggle buttons in sentAIent theme */
+/* Force theme accent text for inactive toggle buttons in sentAIent theme */
 body[data-theme="sentaient"] .toggle-inactive,
 body[data-theme="sentaient"] .glass-pill:not(.active) {
-    color: #60a9ff !important;
+    color: var(--accent) !important;
+    opacity: 0.7;
 }
 
 /* Fix visual mode button text */
@@ -395,9 +792,27 @@ body[data-theme="sentaient"] .glass-pill:not(.active) {
     color: var(--text-main) !important;
 }
 
-/* Active visual buttons keep white text for contrast */
-[data-theme-type="light"] .visual-btn[style*="background"] {
+/* Active visual buttons keep white text for contrast in dark mode, but switch in light mode */
+.visual-btn.toggle-active span,
+.visual-btn.toggle-active label {
+    color: var(--bg-main) !important;
+    opacity: 1 !important;
+}
+
+[data-theme-type="light"] .visual-btn.toggle-active span,
+[data-theme-type="light"] .visual-btn.toggle-active label {
     color: #ffffff !important;
+}
+
+/* Fix premium labels in light mode */
+[data-theme-type="light"] .premium-label {
+    color: var(--text-main) !important;
+    text-shadow: none !important;
+}
+
+[data-theme-type="light"] .premium-value {
+    color: var(--text-main) !important;
+    opacity: 1 !important;
 }
 
 /* RIGHT MENU VISIBILITY FIXES (Button Outlines) */
@@ -473,6 +888,10 @@ body[data-theme="sentaient"] .glass-pill:not(.active) {
 #themeBtn {
     color: var(--accent) !important;
     opacity: 1;
+}
+
+#lockUIBtn:not(.toggle-active) {
+    color: var(--accent) !important;
 }
 
 /* VISIBILITY FIXES (User Feedback) */
@@ -594,6 +1013,15 @@ input[type=range]::-webkit-slider-runnable-track {
 }
 
 /* Larger sliders for mobile */
+@media (max-width: 768px) {
+    input[type=range]::-webkit-slider-thumb {
+        height: 24px;
+        width: 24px;
+        margin-top: -8px;
+        /* (8 - 24) / 2 = -8 */
+    }
+}
+
 .slider-large::-webkit-slider-thumb {
     height: 24px;
     width: 24px;
@@ -656,6 +1084,12 @@ input[type=range]::-webkit-slider-runnable-track {
     background: rgba(45, 212, 191, 0.15) !important;
     box-shadow: 0 0 20px var(--accent-glow), inset 0 0 10px rgba(45, 212, 191, 0.1);
     transform: scale(1.02);
+}
+
+/* Active Soundscape item (volume > 0) */
+.soundscape-active {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 10px var(--accent-glow);
 }
 
 .journey-active::before {
@@ -800,6 +1234,19 @@ input[type=range]::-webkit-slider-runnable-track {
         padding-top: 1rem;
         padding-bottom: 80px;
         /* Balanced space for mobile nav */
+    }
+
+    /* Adaptive Header for ultra-narrow screens */
+    #presenceText,
+    #offlineIndicator span {
+        display: none;
+    }
+
+    #presenceCounter,
+    #offlineIndicator {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        gap: 0;
     }
 }
 
@@ -1102,7 +1549,7 @@ select {
 
 /* Canvas full screen */
 #visualizer {
-    background: var(--bg-main);
+    background: transparent;
     transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
 }
 
@@ -1157,12 +1604,12 @@ select {
 
 .toggle-inactive {
     background: transparent !important;
-    color: rgba(255, 255, 255, 0.7) !important;
+    color: var(--text-muted) !important;
 }
 
 .toggle-inactive:hover {
     background: rgba(255, 255, 255, 0.1) !important;
-    color: rgba(255, 255, 255, 0.9) !important;
+    color: var(--text-main) !important;
 }
 
 /* Prevent text selection on buttons */
@@ -1236,6 +1683,60 @@ button,
     #leftPanel .grid.grid-cols-2 .preset-btn {
         min-height: 44px;
     }
+}
+
+/* FOOTER CHILD OVERFLOW FIX */
+#bottomControlBar>div {
+    min-width: 0;
+    /* Allow flex children to shrink below content size */
+    overflow: hidden;
+    /* Prevent spillover */
+}
+
+#bottomControlBar .flex-1 {
+    min-width: 0;
+}
+
+/* ==========================================
+   FOOTER RESPONSIVE ADAPTATION (Dynamic Width)
+   ========================================== */
+
+/* Medium Footer (Width < 900px) */
+.footer-medium .range-label {
+    display: none;
+    /* Hide labels like "PITCH", "BEAT" */
+}
+
+.footer-medium {
+    gap: 1rem !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+}
+
+/* Compact Footer (Width < 600px OR Mobile) */
+.footer-compact .range-label,
+.footer-compact .value-display,
+.footer-compact .control-divider {
+    display: none !important;
+    /* Hide labels, values, and dividers */
+}
+
+.footer-compact {
+    gap: 0.5rem !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    justify-content: space-around !important;
+}
+
+.footer-compact .control-group {
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Make sliders smaller in compact mode */
+.footer-compact input[type=range] {
+    width: 60px !important;
+    height: 4px !important;
 }
 
 /* ==========================================
@@ -1664,9 +2165,13 @@ button,
 
 /* Cloud theme - use blue accent color for all text */
 body[data-theme="cloud"] {
+    --bg-main: #f0f9ff;
+    --bg-panel: #e0f2fe;
+    --border: #bae6fd;
     --text-main: #0369a1;
-    /* Sky blue */
     --text-muted: #0284c7;
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(3, 105, 161, 0.1);
 }
 
 body[data-theme="cloud"] .text-white,
@@ -1698,9 +2203,13 @@ body[data-theme="cloud"] #rightPanel {
 
 /* Dawn theme - use red accent color for all text */
 body[data-theme="dawn"] {
+    --bg-main: #fdf2f8;
+    --bg-panel: #fce7f3;
+    --border: #fbcfe8;
     --text-main: #be123c;
-    /* Rose red */
     --text-muted: #e11d48;
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(190, 18, 60, 0.1);
 }
 
 body[data-theme="dawn"] .text-white,
@@ -1747,16 +2256,7 @@ body[data-theme="dawn"] .preset-btn.active {
 /* TOP BAR BUTTONS FOR LIGHT THEMES */
 /* ================================ */
 
-/* Mode toggle buttons (Binaural/Isochronic/Monaural) - dark text on light bar */
-body[data-theme="cloud"] #modeToggle .mode-btn,
-body[data-theme="dawn"] #modeToggle .mode-btn {
-    color: var(--text-muted) !important;
-}
-
-body[data-theme="cloud"] #modeToggle .mode-btn.toggle-active,
-body[data-theme="dawn"] #modeToggle .mode-btn.toggle-active {
-    color: white !important;
-}
+/* Mode toggle buttons for light themes - handled by generic [data-theme-type="light"] rules above */
 
 /* Visual mode buttons (Sphere/Flow/Lava) - dark text for light themes */
 body[data-theme="cloud"] #topControlBar button[id$="Btn"],
@@ -2265,6 +2765,30 @@ body[data-theme="dawn"] .cursor-option.active {
 body[data-theme="cloud"] .cursor-option div,
 body[data-theme="dawn"] .cursor-option div {
     color: var(--text-main) !important;
+}
+
+/* ==========================================
+   DJ PADS - Hover & Active Highlight (Dark Mode)
+   ========================================== */
+
+.dj-pad:hover {
+    border-color: var(--accent) !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 0 8px var(--accent-glow);
+    transform: translateY(-1px);
+}
+
+.dj-pad:active {
+    transform: scale(0.95) !important;
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 12px var(--accent-glow) !important;
+}
+
+/* Active/playing pad - persistent glow */
+.dj-pad[data-playing="true"],
+.dj-pad.dj-pad-playing {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 15px var(--accent-glow), inset 0 0 8px rgba(255, 255, 255, 0.05) !important;
 }
 
 /* ==========================================
@@ -2853,4 +3377,130 @@ body[data-theme="dawn"] .custom-scrollbar::-webkit-scrollbar-track {
 
 #djStopAll.dj-playing:hover {
     background: rgba(239, 68, 68, 0.3) !important;
+}
+
+/* ==========================================
+   FEEDBACK SURVEY FIXES
+   Ensures the survey modal is always on top
+   and remains readable in all themes.
+   ========================================== */
+body #feedbackSurveyModal.survey-contrast-fix {
+    z-index: 10000 !important;
+}
+
+body #feedbackSurveyModal.survey-contrast-fix .glass-card {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    backdrop-filter: blur(40px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+}
+
+body #feedbackSurveyModal.survey-contrast-fix .text-white,
+body #feedbackSurveyModal.survey-contrast-fix label,
+body #feedbackSurveyModal.survey-contrast-fix h2,
+body #feedbackSurveyModal.survey-contrast-fix p:not(.text-center) {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Special fix for gradient headers to ensure contrast */
+body #feedbackSurveyModal.survey-contrast-fix h2 {
+    background: none !important;
+    background-clip: initial !important;
+    -webkit-background-clip: initial !important;
+}
+
+body #feedbackSurveyModal.survey-contrast-fix .text-\[var\(--text-muted\)\] {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+body #feedbackSurveyModal.survey-contrast-fix select,
+body #feedbackSurveyModal.survey-contrast-fix textarea {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+}
+
+body #feedbackSurveyModal.survey-contrast-fix select option {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+}
+
+/* --- RESPONSIVE FOOTER STYLES (DYNAMISM) --- */
+#bottomControlBar {
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Medium Footer (< 900px wide available) */
+.footer-medium .premium-label {
+    display: none;
+    /* Hide text labels but keep values */
+}
+
+.footer-medium #speedSliderContainer {
+    width: 80px !important;
+    /* Shrink sliders */
+}
+
+.footer-medium .gap-4 {
+    gap: 0.75rem !important;
+    /* gap-3 */
+}
+
+/* Compact Footer (< 600px wide available) */
+.footer-compact .premium-label {
+    display: none;
+}
+
+.footer-compact .premium-value {
+    display: none;
+    /* Hide values to save space */
+}
+
+.footer-compact #speedSliderContainer {
+    width: 60px !important;
+}
+
+.footer-compact #leftToggle,
+.footer-compact #rightToggle {
+    padding: 0.5rem !important;
+    /* p-2 */
+}
+
+.footer-compact #recordBtn {
+    width: 2.5rem !important;
+    /* w-10 */
+    height: 2.5rem !important;
+    /* h-10 */
+}
+
+.footer-compact .gap-6 {
+    gap: 0.5rem !important;
+    /* Shrink main central gap */
+}
+
+/* Shrink Play Buttons */
+.footer-compact #audioPlayBtn,
+.footer-compact #visualPlayBtn {
+    width: 28px !important;
+    height: 28px !important;
+}
+
+.footer-compact #playBtn {
+    width: 44px !important;
+    height: 44px !important;
+}
+
+.footer-compact #timerRing {
+    width: 56px !important;
+    height: 56px !important;
+    margin: -1px !important;
+}
+
+.footer-compact #timerDisplay {
+    font-size: 0.75rem !important;
+    /* xs */
 }

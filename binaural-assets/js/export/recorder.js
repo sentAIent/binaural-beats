@@ -1,5 +1,6 @@
 // Simplified recorder using only MediaRecorder (no worklet complexity)
 import { state, els } from '../state.js';
+import { saveMedia } from '../services/storage-manager.js';
 
 export function startRecording() {
     console.log('[Recording] Starting (simplified MediaRecorder mode)');
@@ -129,6 +130,19 @@ export function startRecording() {
                 console.log('📥 Click "Export High-Res" or "Quick Save" to download');
                 console.log('🔊 Use audio controls to preview before downloading');
                 console.log('══════════════════════════════════════════════════');
+
+                // Persist to IndexedDB vault (non-blocking)
+                const recordingType = isVideo ? 'video' : 'audio-export';
+                saveMedia(recordingType, blob, {
+                    mimeType: blob.type,
+                    isVideo,
+                    name: state.currentModalName,
+                    source: 'session-recorder'
+                }).then(record => {
+                    console.log(`[Recording] ✅ Persisted to vault: ${record.id}`);
+                }).catch(e => {
+                    console.warn('[Recording] Vault save failed:', e);
+                });
 
                 // Final verification
                 setTimeout(() => {

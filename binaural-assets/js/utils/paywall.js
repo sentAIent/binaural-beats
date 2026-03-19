@@ -86,18 +86,18 @@ export function showUpgradePrompt(reason, onContinue = null) {
 
     const messages = {
         'premium_preset': {
-            title: '🔒 Unlock Founders Club',
-            description: 'This wave is reserved for Founders Club members. Join the first 500 to lock in $9.99/mo forever.',
+            title: '🔒 Unlock Zen',
+            description: 'This wave is reserved for Zen members. Join the first 500 to lock in $19.99/mo forever.',
             cta: 'Join & Unlock'
         },
         'premium_lesson': {
             title: '🧘 Continue Your Journey',
-            description: 'Unlock the full 30-day program with the Founders Club.',
+            description: 'Unlock the full 30-day program with Zen.',
             cta: 'Join & Unlock'
         },
         'premium_feature': {
             title: '✨ Premium Feature',
-            description: 'Upgrade to the Founders Club to access advanced tools.',
+            description: 'Upgrade to Zen to access advanced tools.',
             cta: 'Go Premium'
         },
         'not_logged_in': {

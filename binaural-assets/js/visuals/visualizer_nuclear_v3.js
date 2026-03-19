@@ -1,4 +1,5 @@
-import { state, els } from '../state.js';
+import { state, THEMES, els } from '../state.js';
+import { getUserPreferences } from '../services/firebase.js'; // Import Prefs
 import * as THREE from '../vendor/three.module.js';
 
 export class Visualizer3D {
@@ -53,20 +54,8 @@ export class Visualizer3D {
             this.initOcean();
             this.initMatrix();
             this.camera.position.z = 5;
-            this.initMatrix();
-            this.camera.position.z = 5;
-
-            // Dynamic Layout Handling
-            this.handleLayoutChange = this.handleLayoutChange.bind(this);
-            window.addEventListener('resize', () => {
-                this.resize();
-                this.handleLayoutChange();
-            });
-            window.addEventListener('mindwave:layout-change', this.handleLayoutChange);
-
-            // Initial sizing
+            window.addEventListener('resize', () => this.resize());
             this.resize();
-            setTimeout(this.handleLayoutChange, 100); // Delay slightly for DOM to settle
             this.speedMultiplier = 1.0;
 
             // Time Simulation
@@ -93,48 +82,6 @@ export class Visualizer3D {
         this.canvas.height = height * window.devicePixelRatio;
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
-
-        // Ensure layout is updated after standard resize
-        this.handleLayoutChange();
-    }
-
-    handleLayoutChange() {
-        if (!this.renderer || !this.camera) return;
-
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-
-        // Get sidebar states
-        const leftPanel = document.getElementById('leftPanel');
-        const rightPanel = document.getElementById('rightPanel');
-
-        let leftOffset = 0;
-        let rightOffset = 0;
-
-        if (leftPanel && !leftPanel.classList.contains('-translate-x-full')) {
-            leftOffset = leftPanel.offsetWidth;
-        }
-
-        if (rightPanel && !rightPanel.classList.contains('translate-x-full')) {
-            rightOffset = rightPanel.offsetWidth;
-        }
-
-        // Calculate available viewport
-        const visibleWidth = width - leftOffset - rightOffset;
-
-        // Center the camera in the visible area using setViewOffset
-        // setViewOffset(fullWidth, fullHeight, x, y, width, height)
-        // x is the offset from left
-
-        if (visibleWidth > 0) {
-            this.camera.setViewOffset(width, height, leftOffset, 0, visibleWidth, height);
-            // We do NOT update aspect ratio here because setViewOffset handles the sub-frame mapping
-        } else {
-            // Safety fallback
-            this.camera.clearViewOffset();
-        }
-
-        console.log(`[Visualizer] Layout update: L=${leftOffset} R=${rightOffset} Visible=${visibleWidth}`);
     }
 
     initSphere() {
@@ -608,7 +555,7 @@ export class Visualizer3D {
     }
 
     createMatrixTexture() {
-        const size = 512;
+        const size = 1024; // High Res
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
@@ -618,117 +565,108 @@ export class Visualizer3D {
         ctx.fillStyle = 'rgba(0,0,0,0)';
         ctx.fillRect(0, 0, size, size);
 
-        // Glyphs: Authentic Matrix (Half-width Katakana + Coptic + Latin + Numerals)
-        // 0x30A0 - 0x30FF is Katakana
-        // We want specific "Matrix-y" characters
+        // Glyphs: Authentic Matrix
         const katakana = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ";
-        const charPool = "MINDWAVE"; // Restricted to brand characters only to prevent random glyphs
-        const special = ":・.\"=*+<>";
 
-        // CRT GLOW EFFECT
-        ctx.shadowBlur = 4;
-        ctx.shadowColor = '#4bff4b'; // Phosphor green glow
-
-        // Font: Monospace for alignment - using a font stack that likely has Japanese support
-        ctx.font = 'bold 44px "Courier New", "MS Gothic", "Hiragino Kaku Gothic ProN", monospace';
-        ctx.fillStyle = '#ccffcc'; // Brighter center
+        // Font Configuration
+        // Use a heavy monospace font for maximum impact
+        ctx.font = 'bold 52px "Courier New", "MS Gothic", monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        const cols = 8;
-        const rows = 8;
+        const cols = 16;
+        const rows = 16;
         const cellW = size / cols;
         const cellH = size / rows;
+        const totalCells = cols * rows;
 
-        // Determine Sequence
+        // Determine Sequence (Logo + Text)
+        // Determine Sequence (Logo + Text)
         let textToSpell = "MINDWAVE";
-        if (this.matrixLogicMode === 'custom' && this.matrixCustomText && this.matrixCustomText.length > 0) {
-            textToSpell = this.matrixCustomText;
+        if (this.matrixLogicMode === 'mindwave') {
+            // Use User Input if present, otherwise Default
+            if (this.matrixCustomText && this.matrixCustomText.length > 0) {
+                textToSpell = this.matrixCustomText.toUpperCase();
+            } else {
+                textToSpell = "MINDWAVE";
+            }
         }
 
-        // Build Sequence: LOGO + Text Characters
-        // manualSequence will be ["LOGO", "H", "E", "L", "L", "O", ...]
+        // Build "Special" Sequence: ["LOGO", "M", "I", "N", ...]
         const manualSequence = ["LOGO", ...textToSpell.split('')];
-        const specialCount = manualSequence.length;
+        // Limit custom text to avoid overwriting entire texture (max 64 chars)
+        const safeSequence = manualSequence.slice(0, 64);
+        const specialCount = safeSequence.length;
 
-        for (let i = 0; i < 64; i++) {
-            // Calculate grid position
-            const col = i % 8;
-            const row = Math.floor(i / 8);
+        // Draw Cells
+        for (let i = 0; i < totalCells; i++) {
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            const x = col * cellW + cellW / 2;
+            const y = row * cellH + cellH / 2;
 
             // Draw background (clear)
-            ctx.fillStyle = 'rgba(0,0,0,0)';
-            ctx.fillRect(col * cellW, row * cellH, cellW, cellH);
+            ctx.clearRect(col * cellW, row * cellH, cellW, cellH);
 
-            // Save state
             ctx.save();
-            ctx.translate(col * cellW + cellW / 2, row * cellH + cellH / 2);
+            ctx.translate(x, y);
 
+            // Determine what to draw
             let char = '';
             let isLogo = false;
-            let allowFlip = true;
+            let isSpecialIdx = (i < specialCount);
 
-            if (i < specialCount) {
-                // Special Sequence (Indices 0 to specialCount-1)
-                const item = manualSequence[i];
+            if (isSpecialIdx) {
+                // It's part of the custom message / logo
+                const item = safeSequence[i];
                 if (item === "LOGO") {
                     isLogo = true;
                 } else {
                     char = item;
                 }
-                allowFlip = false;
             } else {
-                // CLASSIC MODE SUPPORT:
-                // Indices 10-63 should be random Katakana for when MindWave mode is OFF.
-                if (i === 10) console.log("NUCLEAR TEXTURE GENERATING: HYBRID MODE (Legacy Katakana Restored)");
-
+                // Random Filler (Katakana or Numbers) -> Indices 64+
+                // Start randoms after safe zone to ensure no overlap
                 const randomChar = katakana.charAt(Math.floor(Math.random() * katakana.length));
                 char = randomChar;
-                allowFlip = true; // Allow flipping for authentic matrix feel
+                // Occasional flip for authenticity
+                if (Math.random() > 0.8) {
+                    ctx.scale(-1, 1);
+                }
             }
 
-            // Draw Character or Logo
-            ctx.fillStyle = '#00FF41'; // Standard Matrix Green
-            ctx.font = 'bold 44px monospace';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.shadowBlur = 4;
-            ctx.shadowColor = '#00FF41';
+            // --- STYLING (100x Improvement) ---
+            // Main Text Color
+            ctx.fillStyle = '#00FF41';
+
+            // Glow Effect
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = 'rgba(0, 255, 65, 0.8)'; // Strong Green Glow
 
             if (isLogo) {
+                // Draw "MW" Glyph if image not ready, or image
                 if (this.logoImage) {
-                    // Draw Real Logo
-                    const size = 44;
-                    const offset = -size / 2;
-                    ctx.drawImage(this.logoImage, offset, offset, size, size);
+                    ctx.drawImage(this.logoImage, -26, -26, 52, 52);
                 } else {
-                    // Fallback while loading or if failed
-                    if (!this.logoLoading && !this.logoFailed) {
-                        this.logoLoading = true;
-                        const loader = new THREE.ImageLoader();
-                        loader.load(
-                            '/mindwave-logo.png',
-                            (image) => {
-                                console.log('[Visualizer] Logo loaded');
-                                this.logoImage = image;
-                                this.logoLoading = false;
-                                if (this.matrixMaterial) {
-                                    const newTexture = this.createMatrixTexture();
-                                    this.matrixMaterial.uniforms.uTexture.value = newTexture;
-                                }
-                            },
-                            undefined,
-                            (err) => {
-                                console.error('[Visualizer] Logo load failed', err);
-                                this.logoFailed = true;
-                                this.logoLoading = false;
-                            }
-                        );
-                    }
-                    // Draw placeholder if not loaded yet
-                    ctx.fillText("MW", 0, 0);
+                    // Cool Geometric Glyph Placeholder
+                    ctx.strokeStyle = '#00FF41';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.rect(-15, -15, 30, 30);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(-15, -15); ctx.lineTo(15, 15);
+                    ctx.stroke();
                 }
             } else {
+                // Draw Text
+                // Double draw for extra brightness core
+                ctx.fillStyle = '#00FF41'; // Base
+                ctx.fillText(char, 0, 0);
+
+                // White core for "hot" look
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
                 ctx.fillText(char, 0, 0);
             }
 
@@ -736,8 +674,10 @@ export class Visualizer3D {
         }
 
         const texture = new THREE.CanvasTexture(canvas);
-        texture.magFilter = THREE.NearestFilter;
-        texture.minFilter = THREE.NearestFilter;
+        // Use LINEAR for slightly softer glow, or NEAREST for crisp pixel art?
+        // User wants "100x" better -> typically means smoother/glowier.
+        texture.magFilter = THREE.LinearFilter;
+        texture.minFilter = THREE.LinearMipMapLinearFilter;
         return texture;
     }
 
@@ -792,7 +732,7 @@ export class Visualizer3D {
                     float dist = columnHeadY - position.y;
                     
                     // Trail length - Dynamic based on uniform
-                    float trailLen = 80.0 * uTailLength;
+                    float trailLen = 12.0 * uTailLength;
                     if (dist >= 0.0 && dist < trailLen) {
                          // Fade out along trail
                          vAlpha = 1.0 - (dist / trailLen);
@@ -850,20 +790,7 @@ export class Visualizer3D {
 
                 void main() {
                     // UV Calc - Snap index to integer to prevent float drift artifacts
-                    float rawIndex = floor(vCharIndex + 0.5);
-                    
-                    // "Movie-like" GLITCH EFFECT:
-                    // If index is > 8 (Random/Classic range), animate it to cycle through glyphs
-                    // If index <= 8 (Logo/Special Text), keep it static for readability
-                    
-                    if (rawIndex > 8.5) {
-                        float timeStep = floor(uTime * 5.0); // Change 5 times/sec (Slower/Smoother)
-                        // Map index into 9..63 range cyclically
-                        // (64 total - 9 reserved = 55 random slots)
-                        rawIndex = 9.0 + mod((rawIndex - 9.0) + timeStep, 55.0);
-                    }
-
-                    float index = floor(rawIndex + 0.5);
+                    float index = floor(vCharIndex + 0.5);
                     
                     float col = mod(index, 8.0);
                     float row = floor(index / 8.0);
@@ -947,9 +874,6 @@ export class Visualizer3D {
             // Random depth for parallax
             const z = -(depthLayer * 5) - (Math.random() * 2);
 
-            // Define column speed
-            const speed = 0.5 + Math.random() * 0.5;
-
             // Column properties
             // SEQUENCE GENERATION LOGIC
             let isSpecial = false;
@@ -957,10 +881,7 @@ export class Visualizer3D {
 
             if (this.matrixLogicMode === 'mindwave') {
                 isSpecial = true;
-                specialText = "MINDWAVE"; // Logo-MindWave
-            } else if (this.matrixLogicMode === 'custom') {
-                isSpecial = true;
-                // Use custom text, fallback to MINDWAVE if empty
+                // Use input or default
                 specialText = (this.matrixCustomText && this.matrixCustomText.length > 0) ? this.matrixCustomText : "MINDWAVE";
             } else {
                 // Classic / Random
@@ -973,7 +894,10 @@ export class Visualizer3D {
             // WE NEED TO UPDATE createMatrixTexture TO SUPPORT CUSTOM TEXT RENDER.
             // But for now, let's just make the LOOP work with the mode switching.
             // If the text is "HELLO", and the texture only has "MINDWAVE", it will look wrong.
-            // I will add a FIXME comment about texture generation.
+            // FIXME: Texture generation only supports standard characters + LOGO. Custom strings might map incorrectly if font missing? 
+            // For now assuming texture atlas handles standard ASCII.
+
+            const speed = 1.0 + Math.random() * 1.5; // Base speed variance
 
             for (let r = 0; r < rowCount; r++) {
                 const y = (viewHeight / 2) - (r * rowHeight);
@@ -990,8 +914,8 @@ export class Visualizer3D {
                     // specialLen is defined in outer scope: specialText.length + 1 (for Logo)
                     charIndices.push(r % (specialLen + 1));
                 } else {
-                    // Random glyphs (indices 9 to 63)
-                    charIndices.push(9 + Math.floor(Math.random() * 55));
+                    // Random glyphs (indices 64 to 255)
+                    charIndices.push(64 + Math.floor(Math.random() * (256 - 64)));
                 }
 
                 spawnTimes.push(spawnTime);
@@ -1036,9 +960,7 @@ export class Visualizer3D {
     setMatrixMode(enabled) {
         if (this.mindWaveMode === enabled) return;
         this.mindWaveMode = enabled;
-        // SYNC LOGIC MODE
-        this.matrixLogicMode = enabled ? 'mindwave' : 'classic';
-        console.log('[Visualizer] Matrix MindWave Mode:', enabled, 'Logic Mode:', this.matrixLogicMode, 'VERSION: NUCLEAR_PHASE_3_CRISIS_FIX');
+        console.log('[Visualizer] Matrix MindWave Mode:', enabled, 'VERSION: NUCLEAR_PHASE_3_CRISIS_FIX');
 
         // Force Texture Regeneration to ensure correct sequence
         if (enabled && this.matrixMaterial) {
@@ -1601,7 +1523,9 @@ export class Visualizer3D {
 
         // Regenerate everything (Texture + Geometry)
         // We need to regenerate texture if text changed.
-        if (mode === 'custom' || mode === 'mindwave') {
+        // Regenerate everything (Texture + Geometry)
+        // We need to regenerate texture if text changed.
+        if (mode === 'mindwave') {
             const newTexture = this.createMatrixTexture();
             if (this.matrixMaterial) {
                 this.matrixMaterial.uniforms.uTexture.value = newTexture;
@@ -1610,18 +1534,51 @@ export class Visualizer3D {
         }
 
         this.initMatrix();
+
+        // Load User Preferences for Matrix Text
+        this.loadPreferences();
+    }
+
+    async loadPreferences() {
+        try {
+            const prefs = await getUserPreferences();
+            if (prefs && prefs.defaultMatrixText) {
+                console.log('[Visualizer] Applying User Default Matrix Text:', prefs.defaultMatrixText);
+                this.setMatrixLogicMode('mindwave', prefs.defaultMatrixText);
+
+                // Update UI Input if it exists
+                const input = document.getElementById('matrixTextInput');
+                if (input) input.value = prefs.defaultMatrixText;
+
+                // Update Button State
+                const modeContainer = document.getElementById('matrixModeContainer');
+                if (modeContainer) {
+                    const mwBtn = modeContainer.querySelector('[data-value="mindwave"]');
+                    const clBtn = modeContainer.querySelector('[data-value="classic"]');
+                    if (mwBtn) {
+                        mwBtn.classList.remove('text-white/50', 'hover:bg-white/10');
+                        mwBtn.classList.add('bg-[var(--accent)]', 'text-black', 'shadow-lg');
+                    }
+                    if (clBtn) {
+                        clBtn.classList.remove('bg-[var(--accent)]', 'text-black', 'shadow-lg');
+                        clBtn.classList.add('text-white/50', 'hover:bg-white/10');
+                    }
+                }
+                // Ensure input is visible
+                const customTextInput = document.getElementById('matrixCustomTextInput');
+                if (customTextInput) customTextInput.classList.remove('hidden');
+            }
+        } catch (e) {
+            console.warn('[Visualizer] Failed to load preferences:', e);
+        }
     }
 
     setMatrixAngle(degrees) {
-        console.log(`[Visualizer] setMatrixAngle: ${degrees}°`);
         this.currentMatrixAngle = degrees; // PERSIST STATE
         if (this.matrixRotationGroup) {
             // Convert to radians. 0 degrees = upright.
             // Rotating around Z-axis (viewing axis)
             this.matrixRotationGroup.rotation.z = THREE.MathUtils.degToRad(-degrees);
-            console.log(`[Visualizer] matrixRotationGroup.rotation.z set to ${this.matrixRotationGroup.rotation.z}`);
-        } else {
-            console.warn('[Visualizer] matrixRotationGroup missing inside setMatrixAngle');
         }
     }
     dispose() {
@@ -1650,11 +1607,23 @@ export function initVisualizer() {
         state.animationId = null;
     }
 
+    if (!els.canvas) {
+        console.warn('[Visualizer] No canvas element found in els.canvas!');
+        els.canvas = document.getElementById('visualizer-canvas'); // Fallback
+    }
+
     if (!viz3D && els.canvas) {
+        console.log('[Visualizer] Creating new Visualizer3D instance on canvas:', els.canvas.id);
         viz3D = new Visualizer3D(els.canvas);
         els.canvas.activeVisualizer = viz3D; // Verify tag
+
+        // Expose globally for debugging
+        window.visualizer = viz3D;
+
         // Auto-start visuals on load for immediate feedback
         resumeVisuals();
+    } else {
+        console.error('[Visualizer] Failed to init: viz3D exists or no canvas.', { viz3D: !!viz3D, canvas: !!els.canvas });
     }
 }
 

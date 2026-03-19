@@ -119,4 +119,47 @@ export function initModalManager() {
     console.log('[ModalManager] Initialized');
 }
 
-// ✅ FIX Issue #4: Centralized modal management
+/**
+ * Modal Flow Manager
+ * Sequences high-priority UI flows to prevent overlapping modals.
+ */
+class ModalFlowManager {
+    constructor() {
+        this.queue = [];
+        this.isProcessing = false;
+        this.currentFlow = null;
+    }
+
+    /**
+     * Add a modal flow to the queue.
+     * @param {string} id - Unique ID for the flow
+     * @param {Function} fn - Function that returns a Promise (resolves when flow DONE)
+     * @param {number} priority - Higher priority runs first
+     */
+    enqueue(id, fn, priority = 10) {
+        if (this.queue.some(item => item.id === id)) return;
+        this.queue.push({ id, fn, priority });
+        this.queue.sort((a, b) => b.priority - a.priority);
+        console.log(`[ModalManager] Enqueued flow: ${id} (priority: ${priority})`);
+        this.process();
+    }
+
+    async process() {
+        if (this.isProcessing || this.queue.length === 0) return;
+        this.isProcessing = true;
+        const next = this.queue.shift();
+        this.currentFlow = next.id;
+        console.log(`[ModalManager] Processing flow: ${next.id}`);
+        try {
+            await next.fn();
+        } catch (e) {
+            console.error(`[ModalManager] Error in flow ${next.id}:`, e);
+        }
+        this.isProcessing = false;
+        this.currentFlow = null;
+        setTimeout(() => this.process(), 500); // Small gap between flows
+    }
+}
+
+export const flowManager = new ModalFlowManager();
+window.modalFlowManager = flowManager; 

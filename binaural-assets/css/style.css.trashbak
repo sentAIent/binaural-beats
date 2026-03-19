@@ -1,0 +1,2726 @@
+/* Google Fonts removed for offline performance. Using System UI Stack. */
+/* @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap'); */
+
+:root {
+    --bg-main: #0f172a;
+    --bg-panel: #1e293b;
+    --border: #334155;
+    --text-main: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent: #2dd4bf;
+    --accent-glow: rgba(45, 212, 191, 0.4);
+    --slider-track: #334155;
+    --glass-bg: rgba(30, 41, 59, 0.8);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --volume-accent: #d42d48;
+    --volume-glow: rgba(212, 45, 72, 0.4);
+}
+
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Text selection styling - uses accent color for visibility */
+::selection {
+    background-color: var(--accent);
+    color: var(--bg-main);
+}
+
+::-moz-selection {
+    background-color: var(--accent);
+    color: var(--bg-main);
+}
+
+
+/* Custom MindWave Cursor - uses MW logo (51x51) */
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    transition: background-color 0.5s, color 0.5s;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    cursor: url('/mindwave-logo.png') 8 8, auto;
+}
+
+/* Interactive elements - pointer cursor with MW logo */
+a,
+button,
+[role='button'],
+.preset-btn,
+.mode-btn,
+.visual-btn,
+.glass-pill,
+.theme-card,
+.combo-preset-btn,
+.sweep-btn,
+.dj-pad,
+[onclick],
+.cursor-pointer {
+    cursor: url('/mindwave-logo.png') 8 8, auto !important;
+}
+
+/* Text input elements - standard text cursor */
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='search'],
+textarea {
+    cursor: text !important;
+}
+
+/* Range sliders - inherit cursor */
+input[type='range'] {
+    cursor: url('/mindwave-logo.png') 8 8, auto !important;
+}
+
+input[type='range']::-webkit-slider-thumb {
+    cursor: url('/mindwave-logo.png') 8 8, auto !important;
+}
+
+
+/* Enhanced Glassmorphic Cards with stronger blur and glow */
+.glass-card {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(32px) saturate(180%);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+    background: rgba(30, 41, 59, 0.75);
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.glass-pill {
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 9999px;
+    color: var(--text-muted);
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.active-mode {
+    background-color: rgba(255, 255, 255, 0.2);
+    box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* ==========================================
+   THEME-AWARE TOGGLE BUTTONS
+   Active: accent background + dark text (high contrast)
+   Inactive: subtle bg + muted text
+   ========================================== */
+
+/* Active toggle button - uses theme accent color */
+.toggle-active {
+    background-color: var(--accent) !important;
+    color: var(--bg-main) !important;
+    box-shadow: 0 0 15px var(--accent-glow), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.toggle-active:hover {
+    filter: brightness(1.1);
+}
+
+/* Inactive toggle button - subtle, theme-aware */
+.toggle-inactive {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: var(--text-muted) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.toggle-inactive:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    color: var(--text-main) !important;
+}
+
+/* ==========================================
+   CUSTOM CURSOR - Theme-Aware Design
+   Cursor color is set dynamically via JavaScript
+   Uses accent color from current theme
+   ========================================== */
+
+/* Cursor styles are injected via #dynamic-cursor-styles in JS */
+
+/* Cursor click animation - subtle scale pulse on active state */
+@keyframes cursorClickPulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(0.95);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+button:active,
+a:active,
+[role="button"]:active,
+.preset-btn:active,
+.mode-btn:active,
+.visual-btn:active,
+.glass-pill:active,
+.theme-card:active,
+.combo-preset-btn:active,
+.cursor-option:active,
+.sweep-btn:active,
+.dj-pad:active {
+    animation: cursorClickPulse 0.15s ease-out;
+}
+
+.glass-pill:hover,
+.glass-pill.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-main);
+}
+
+/* Touch Targets - minimum 44px for mobile */
+.touch-target {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* ==========================================
+   LIGHT THEME TEXT VISIBILITY FIXES
+   Overrides hardcoded Tailwind classes
+   ========================================== */
+
+/* Force dark text for hardcoded white text classes on light themes */
+[data-theme-type="light"] .text-white,
+[data-theme-type="light"] .text-white\/30,
+[data-theme-type="light"] .text-white\/70,
+[data-theme-type="light"] .text-white\/80,
+[data-theme-type="light"] .text-white\/90,
+[data-theme-type="light"] .text-slate-200,
+[data-theme-type="light"] .text-slate-300,
+[data-theme-type="light"] .text-slate-400 {
+    color: var(--text-main) !important;
+}
+
+/* Light Mode: DJ Studio Visibility Fixes (Darker shades for contrast) */
+[data-theme-type="light"] .text-pink-400 {
+    color: #db2777 !important;
+}
+
+/* pink-600 */
+[data-theme-type="light"] .text-cyan-400 {
+    color: #0891b2 !important;
+}
+
+/* cyan-600 */
+[data-theme-type="light"] .text-emerald-400 {
+    color: #059669 !important;
+}
+
+/* emerald-600 */
+[data-theme-type="light"] .text-orange-400 {
+    color: #ea580c !important;
+}
+
+/* orange-600 */
+[data-theme-type="light"] .text-purple-400 {
+    color: #9333ea !important;
+}
+
+/* purple-600 */
+[data-theme-type="light"] .text-red-400 {
+    color: #dc2626 !important;
+}
+
+/* red-600 */
+[data-theme-type="light"] .text-blue-400 {
+    color: #2563eb !important;
+}
+
+/* blue-600 */
+[data-theme-type="light"] .text-yellow-400 {
+    color: #ca8a04 !important;
+}
+
+/* yellow-600 */
+
+/* Light Mode: Atmosphere Safety Net */
+/* Light Mode: Atmosphere & Mixer Safety Net */
+[data-theme-type="light"] [data-section="atmosphere"] .text-white,
+[data-theme-type="light"] [data-section="atmosphere"] .text-white\/70,
+[data-theme-type="light"] [data-section="journeys"] .text-white,
+[data-theme-type="light"] [data-section="journeys"] .text-white\/70,
+[data-theme-type="light"] [data-section="djpads"] .text-white,
+[data-theme-type="light"] [data-section="djpads"] .text-white\/70,
+[data-theme-type="light"] [data-section="stories"] .text-white,
+[data-theme-type="light"] [data-section="stories"] .text-white\/70,
+[data-theme-type="light"] [data-section="uploads"] .text-white,
+[data-theme-type="light"] [data-section="uploads"] .text-white\/70,
+[data-theme-type="light"] [data-section="classical"] .text-white,
+[data-theme-type="light"] [data-section="classical"] .text-white\/70 {
+    color: var(--accent) !important;
+}
+
+/* Ensure hover states also use proper dark text */
+[data-theme-type="light"] .hover\:text-white:hover {
+    color: var(--text-main) !important;
+}
+
+/* Fix text-slate classes for light backgrounds */
+[data-theme-type="light"] .text-slate-200,
+[data-theme-type="light"] .text-slate-300,
+[data-theme-type="light"] .text-slate-400 {
+    color: var(--text-main) !important;
+}
+
+/* Ensure proper icon visibility on light themes */
+[data-theme-type="light"] svg:not([class*="text-"]):not([fill]):not([stroke]) {
+    color: var(--text-main);
+}
+
+[data-theme-type="light"] .group-hover\:text-white {
+    color: var(--accent);
+}
+
+[data-theme-type="light"] .group:hover .group-hover\:text-white {
+    color: var(--text-main) !important;
+}
+
+/* Custom utility to bypass enforcement rules and match theme muted color */
+.text-theme-muted {
+    color: var(--text-muted) !important;
+    opacity: 0.5;
+    transition: all 0.2s ease-in-out;
+}
+
+.text-theme-muted:hover {
+    color: var(--accent) !important;
+    opacity: 1;
+}
+
+/* sentAIent Theme: Force Headers to Orange, everything else follows base theme (Blue) */
+body[data-theme="sentaient"] .mixer-section h3,
+body[data-theme="sentaient"] [data-section="atmosphere"] h3,
+body[data-theme="sentaient"] [data-section="journeys"] h3,
+body[data-theme="sentaient"] #rightPanel h3,
+body[data-theme="sentaient"] #leftPanel .section-label {
+    color: #fc9c36 !important;
+}
+
+/* 
+   DJ Studio Category Color Fix (v3)
+   Ensure category identity colors persist even when theme-level overrides exist.
+   Scoping to the container covers both tabs and dynamically generated group headers.
+*/
+[data-section="djpads"] .text-yellow-400,
+[data-section="djpads"] .text-yellow-500,
+[data-section="djpads"] .text-amber-500 {
+    color: #facc15 !important;
+}
+
+[data-section="djpads"] .bg-yellow-500\/20 {
+    background-color: rgba(234, 179, 8, 0.2) !important;
+}
+
+[data-section="djpads"] .border-yellow-500\/30 {
+    border-color: rgba(234, 179, 8, 0.3) !important;
+}
+
+[data-section="djpads"] .text-blue-400 {
+    color: rgb(96, 165, 250) !important;
+}
+
+[data-section="djpads"] .bg-blue-500\/20 {
+    background-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+[data-section="djpads"] .border-blue-500\/30 {
+    border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+[data-section="djpads"] .text-purple-400 {
+    color: rgb(192, 132, 252) !important;
+}
+
+[data-section="djpads"] .text-red-400 {
+    color: rgb(248, 113, 113) !important;
+}
+
+[data-section="djpads"] .text-emerald-400 {
+    color: rgb(52, 211, 153) !important;
+}
+
+/* Force Atmosphere descriptions and percentage values to Blue as requested */
+body[data-theme="sentaient"] #soundscapeContainer .text-white,
+body[data-theme="sentaient"] #soundscapeContainer .text-white\/70,
+body[data-theme="sentaient"] #soundscapeContainer .atmos-sublabel,
+body[data-theme="sentaient"] #soundscapeContainer .text-\[var\(--accent\)\] {
+    color: #60a9ff !important;
+}
+
+/* Ensure active button text is consistent and has high contrast in sentAIent theme */
+body[data-theme="sentaient"] .toggle-active,
+body[data-theme="sentaient"] .active-mode,
+body[data-theme="sentaient"] .glass-pill.active {
+    color: #202733 !important;
+}
+
+/* Force blue text for inactive toggle buttons in sentAIent theme */
+body[data-theme="sentaient"] .toggle-inactive,
+body[data-theme="sentaient"] .glass-pill:not(.active) {
+    color: #60a9ff !important;
+}
+
+/* Fix visual mode button text */
+[data-theme-type="light"] .visual-btn {
+    color: var(--text-main) !important;
+}
+
+/* Active visual buttons keep white text for contrast */
+[data-theme-type="light"] .visual-btn[style*="background"] {
+    color: #ffffff !important;
+}
+
+/* RIGHT MENU VISIBILITY FIXES (Button Outlines) */
+[data-theme-type="light"] .soundscape-item,
+[data-theme-type="light"] .section-header,
+[data-theme-type="light"] #journeyContainer button,
+[data-theme-type="light"] .preset-btn,
+[data-theme-type="light"] .glass-card {
+    border: 1px solid var(--border) !important;
+    background: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Hover specific for interactive elements */
+[data-theme-type="light"] .soundscape-item:hover,
+[data-theme-type="light"] .section-header:hover,
+[data-theme-type="light"] #journeyContainer button:not(:disabled):hover,
+[data-theme-type="light"] .preset-btn:hover {
+    border-color: var(--accent) !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Active/Selected states */
+[data-theme-type="light"] .journey-active,
+[data-theme-type="light"] #journeyContainer button.ring-2,
+[data-theme-type="light"] .preset-btn.active {
+    border-color: var(--accent) !important;
+    background: var(--accent) !important;
+    color: #ffffff !important;
+}
+
+/* Ensure text inside journey/preset buttons matches theme contrast unless active */
+[data-theme-type="light"] #journeyContainer button:not(.ring-2),
+[data-theme-type="light"] .preset-btn:not(.active) {
+    color: var(--text-main) !important;
+}
+
+/* Enhance slider visibility in light mode */
+[data-theme-type="light"] input[type=range] {
+    background-color: var(--border) !important;
+}
+
+
+
+/* Legacy panel (for modals) */
+.panel {
+    background-color: var(--bg-panel);
+    border-color: var(--border);
+    transition: background-color 0.5s, border-color 0.5s;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* HEADER ICONS - Force Accent Color (Global) */
+#tutorialBtn,
+#feedbackBtn,
+#profileBtn,
+#themeBtn {
+    color: var(--accent) !important;
+    opacity: 1;
+}
+
+/* VISIBILITY FIXES (User Feedback) */
+
+/* 1. Force Numbers/Values to Accent Color (vs Gray/White) */
+.tabular-nums,
+span[id$="Value"],
+span[id$="Val"] {
+    color: var(--accent) !important;
+    font-weight: 600;
+    opacity: 1;
+}
+
+/* 2. Theme Menu Description Contrast */
+.theme-card p,
+.theme-card .text-xs {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Ensure Theme Title is bright */
+.theme-card h3 {
+    color: #fff !important;
+}
+
+/* 3. Control Labels (VOL, TONE, SPD) - Crisp White */
+/* Better: Target specific label contexts */
+.mixer-section .text-\[var\(--text-muted\)\] {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* ATMOSPHERE VISIBILITY CLASSES (Mode-Aware -> Universal Accent) */
+.atmos-label {
+    color: var(--accent) !important;
+    font-weight: 600;
+}
+
+.atmos-val {
+    color: var(--accent) !important;
+    font-weight: 700;
+    opacity: 1;
+}
+
+.atmos-sublabel {
+    color: var(--accent) !important;
+    /* Universal Accent Color */
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+/* MIXER HEADERS - Force Accent Color */
+.mixer-section h3,
+[data-section="atmosphere"] h3,
+[data-section="journeys"] h3 {
+    color: var(--accent) !important;
+}
+
+/* MIXER SECTIONS UNIVERSAL ENFORCEMENT (User Request: "Everything match theme") */
+/* Targets: Section Header Icon, Labels, Item Names, Muted Text */
+[data-section="atmosphere"] .text-\[var\(--text-muted\)\],
+[data-section="atmosphere"] svg,
+[data-section="atmosphere"] label,
+[data-section="journeys"] .text-\[var\(--text-muted\)\],
+[data-section="journeys"] svg,
+[data-section="journeys"] label,
+[data-section="djpads"] .text-\[var\(--text-muted\)\],
+[data-section="djpads"] svg,
+[data-section="djpads"] label,
+[data-section="stories"] .text-\[var\(--text-muted\)\],
+[data-section="stories"] svg,
+[data-section="stories"] label,
+[data-section="uploads"] .text-\[var\(--text-muted\)\],
+[data-section="uploads"] svg,
+[data-section="uploads"] label,
+[data-section="classical"] .text-\[var\(--text-muted\)\],
+[data-section="classical"] svg,
+[data-section="classical"] label {
+    color: var(--accent) !important;
+}
+
+/* Top Bar Labels (PITCH, BEAT, VOL) */
+header .text-\[var\(--text-muted\)\] {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+
+/* Range Sliders */
+input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+}
+
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: inherit;
+    margin-top: -4px;
+    /* Centering tweak for 8px track: (8 - 16) / 2 = -4 */
+    box-shadow: 0 0 12px var(--accent-glow);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 8px;
+    /* Increased from 4px for easier selection */
+    cursor: inherit;
+    background: var(--slider-track);
+    border-radius: 4px;
+}
+
+/* Larger sliders for mobile */
+.slider-large::-webkit-slider-thumb {
+    height: 24px;
+    width: 24px;
+    margin-top: -10px;
+}
+
+.slider-large::-webkit-slider-runnable-track {
+    height: 6px;
+}
+
+.tone-slider::-webkit-slider-thumb {
+    background: #a78bfa;
+    box-shadow: 0 0 8px rgba(167, 139, 250, 0.4);
+}
+
+.speed-slider::-webkit-slider-thumb {
+    background: #fbbf24;
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
+}
+
+/* Volume sliders - complementary color distinct from accent */
+.volume-slider::-webkit-slider-thumb {
+    background: var(--volume-accent);
+    box-shadow: 0 0 12px var(--volume-glow);
+}
+
+.visualizer-container {
+    box-shadow: 0 0 20px var(--accent-glow);
+    transition: box-shadow 0.5s;
+}
+
+.fade-text {
+    transition: opacity 1s ease-in-out;
+}
+
+.preset-btn.active {
+    border-color: var(--accent) !important;
+    background: linear-gradient(135deg, var(--accent-glow), rgba(45, 212, 191, 0.25)) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: white !important;
+    box-shadow:
+        0 0 20px var(--accent-glow),
+        0 4px 16px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+    z-index: 10;
+}
+
+.recording-active {
+    animation: recordPulse 2s infinite;
+    background-color: #ef4444 !important;
+    border-color: #ef4444 !important;
+    color: white !important;
+}
+
+/* Active Journey/Sweep button */
+.journey-active {
+    border-color: var(--accent) !important;
+    background: rgba(45, 212, 191, 0.15) !important;
+    box-shadow: 0 0 20px var(--accent-glow), inset 0 0 10px rgba(45, 212, 191, 0.1);
+    transform: scale(1.02);
+}
+
+.journey-active::before {
+    content: '▶';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    font-size: 8px;
+    color: var(--accent);
+    animation: pulse 1.5s infinite;
+}
+
+/* Story Card Playing State */
+.story-card.playing {
+    border-color: #a855f7 !important;
+    background: rgba(168, 85, 247, 0.1) !important;
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.3), inset 0 0 10px rgba(168, 85, 247, 0.1);
+}
+
+.story-card.playing::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 0.75rem;
+    border: 2px solid #a855f7;
+    animation: story-pulse 2s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes story-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(1.02);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@keyframes recordPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+
+/* Immersive Mode - hide controls on inactivity */
+.immersive-hidden {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+#appOverlay {
+    transition: opacity 0.5s ease;
+}
+
+/* Play button glow animation */
+.play-button-large {
+    box-shadow: 0 0 30px var(--accent-glow), 0 4px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.play-button-large:hover {
+    box-shadow: 0 0 50px var(--accent-glow), 0 6px 25px rgba(0, 0, 0, 0.4);
+    transform: scale(1.05);
+}
+
+.play-button-large:active {
+    transform: scale(0.95);
+}
+
+.modal {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    pointer-events: none;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.modal.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+/* Modal inner content - enhanced glassmorphism */
+.modal>.glass-card,
+.modal>div>.glass-card {
+    max-height: calc(100vh - 120px);
+    max-height: calc(100dvh - 120px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    pointer-events: auto;
+    background: rgba(30, 41, 59, 0.85);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Mobile: even more space for bottom nav */
+@media (max-width: 640px) {
+
+    .modal>.glass-card,
+    .modal>div>.glass-card {
+        max-height: calc(100vh - 160px);
+        max-height: calc(100dvh - 160px);
+        max-width: calc(100vw - 32px);
+    }
+
+    /* Make modal content scrollable */
+    .modal {
+        align-items: flex-start;
+        padding-top: 2rem;
+        padding-bottom: 100px;
+        /* Space for mobile nav */
+    }
+}
+
+/* Small height screens - compact modals */
+@media (max-height: 600px) {
+
+    .modal>.glass-card,
+    .modal>div>.glass-card {
+        max-height: calc(100vh - 80px);
+        max-height: calc(100dvh - 80px);
+        padding: 1rem !important;
+    }
+
+    .modal>.glass-card h3,
+    .modal>div>.glass-card h3 {
+        font-size: 1rem;
+    }
+}
+
+/* Theme Gallery Grid */
+.theme-card {
+    position: relative;
+    border-radius: 1rem;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    /* Staggered entry animation */
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    animation: themeCardEntry 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Staggered delays for each card */
+.theme-card:nth-child(1) {
+    animation-delay: 0.05s;
+}
+
+.theme-card:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.theme-card:nth-child(3) {
+    animation-delay: 0.15s;
+}
+
+.theme-card:nth-child(4) {
+    animation-delay: 0.2s;
+}
+
+.theme-card:nth-child(5) {
+    animation-delay: 0.25s;
+}
+
+.theme-card:nth-child(6) {
+    animation-delay: 0.3s;
+}
+
+.theme-card:nth-child(7) {
+    animation-delay: 0.35s;
+}
+
+.theme-card:nth-child(8) {
+    animation-delay: 0.4s;
+}
+
+.theme-card:nth-child(9) {
+    animation-delay: 0.45s;
+}
+
+.theme-card:nth-child(10) {
+    animation-delay: 0.5s;
+}
+
+@keyframes themeCardEntry {
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.theme-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    border-color: var(--accent);
+    box-shadow:
+        0 15px 40px -10px var(--accent-glow),
+        0 0 0 1px var(--accent),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.theme-preview {
+    height: 80px;
+    width: 100%;
+    position: relative;
+    background: var(--theme-bg);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.theme-card:hover .theme-preview {
+    transform: scale(1.05);
+}
+
+.theme-preview::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.5));
+}
+
+/* Selected State with Shimmer Effect */
+.theme-card.active {
+    border-color: var(--accent);
+    box-shadow:
+        0 0 0 2px var(--accent-glow),
+        0 8px 25px -5px var(--accent-glow);
+}
+
+.theme-card.active::before {
+    content: '✓';
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: var(--accent);
+    color: var(--bg-main);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 10;
+    box-shadow: 0 2px 8px var(--accent-glow);
+    animation: checkPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes checkPop {
+    0% {
+        transform: scale(0);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Shimmer effect on active card */
+.theme-card.active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.1),
+            transparent);
+    animation: shimmer 2s infinite;
+    pointer-events: none;
+    z-index: 5;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+
+    50%,
+    100% {
+        left: 100%;
+    }
+}
+
+select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.2rem center;
+    background-repeat: no-repeat;
+    background-size: 1.2em 1.2em;
+    padding-right: 1.5rem;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+    .preset-btn {
+        padding: 0.75rem 0.25rem;
+        font-size: 10px;
+    }
+
+    .preset-btn span:last-child {
+        font-size: 8px;
+    }
+
+    /* Larger play button on mobile */
+    .play-button-large {
+        width: 5rem;
+        height: 5rem;
+    }
+
+    /* Better touch spacing */
+    .glass-card {
+        padding: 0.75rem;
+    }
+
+    /* Adjust header for smaller screens */
+    .glass-card.mx-4 {
+        margin-left: 0.5rem;
+        margin-right: 0.5rem;
+    }
+
+    /* Make sliders easier to grab */
+    input[type=range]::-webkit-slider-thumb {
+        height: 28px;
+        width: 28px;
+    }
+
+    /* Stack footer controls vertically on small screens */
+    footer {
+        flex-direction: column;
+        gap: 1rem !important;
+        padding-bottom: 1.5rem !important;
+    }
+
+    /* Center play button area */
+    footer>div {
+        justify-content: center;
+    }
+
+    /* Simplify visual controls on mobile */
+    .glass-pill.p-1 {
+        padding: 0.25rem;
+    }
+
+    /* Sidebar takes more screen on mobile */
+    #leftPanel,
+    #rightPanel {
+        width: 85vw !important;
+        max-width: 320px;
+    }
+
+    /* Sweep buttons smaller on mobile */
+    .sweep-btn {
+        padding: 0.5rem !important;
+    }
+
+    .sweep-btn span.text-lg {
+        font-size: 1rem;
+    }
+}
+
+/* Tablet optimizations */
+@media (min-width: 641px) and (max-width: 1023px) {
+
+    /* Slightly smaller sidebars on tablet */
+    #leftPanel {
+        width: 280px;
+    }
+
+    #rightPanel {
+        width: 340px;
+    }
+
+    /* Keep footer horizontal but tighter */
+    footer {
+        gap: 2rem !important;
+    }
+}
+
+/* iPhone specific - prevent bounce/overscroll */
+@media (max-width: 428px) {
+    body {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+    }
+
+    #appOverlay {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Safe area support for notched devices (iPhone X+) */
+@supports (padding: max(0px)) {
+    body {
+        padding-top: env(safe-area-inset-top);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .mx-4.mb-4 {
+        margin-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+}
+
+/* Canvas full screen */
+#visualizer {
+    background: var(--bg-main);
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+}
+
+/* --- COCKPIT LAYOUT (Desktop) --- */
+@media (min-width: 1024px) {
+
+    /* Fixed Sidebars with Enhanced Glassmorphism */
+    #leftPanel {
+        transform: translateX(0) !important;
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(24px) saturate(150%);
+        -webkit-backdrop-filter: blur(24px) saturate(150%);
+        box-shadow:
+            2px 0 24px rgba(0, 0, 0, 0.3),
+            inset -1px 0 0 rgba(255, 255, 255, 0.1);
+    }
+
+    #rightPanel {
+        transform: translateX(0) !important;
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(24px) saturate(150%);
+        -webkit-backdrop-filter: blur(24px) saturate(150%);
+        box-shadow:
+            -2px 0 24px rgba(0, 0, 0, 0.3),
+            inset 1px 0 0 rgba(255, 255, 255, 0.1);
+    }
+
+    /* Hide Toggles & Close Buttons on Desktop */
+    #leftToggle,
+    #rightToggle,
+    #closeLeftBtn,
+    #closeRightBtn {
+        display: none !important;
+    }
+
+    /* Adjust Center Content to fit between panels */
+    header,
+    footer,
+    #tapZone {
+        transition: all 0.5s ease;
+        margin-left: 16rem;
+        /* Match w-64 */
+        margin-right: 20rem;
+        /* Match w-80 */
+    }
+
+}
+
+/* Mode Toggle Buttons - Active/Inactive States */
+.toggle-active {
+    background: var(--accent) !important;
+    color: var(--bg-main) !important;
+    box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.toggle-inactive {
+    background: transparent !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.toggle-inactive:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Prevent text selection on buttons */
+button,
+.preset-btn {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Smooth momentum scrolling on iOS */
+.custom-scrollbar {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Dynamic Preset Button Sizing - scales with viewport height */
+.preset-btn {
+    /* Dynamic padding based on viewport height */
+    padding-top: clamp(0.25rem, 1vh, 0.75rem);
+    padding-bottom: clamp(0.25rem, 1vh, 0.75rem);
+    /* Minimum height for touch targets */
+    min-height: clamp(36px, 5vh, 56px);
+}
+
+/* Brain waves grid buttons - dynamic sizing */
+#leftPanel .grid.grid-cols-2 .preset-btn {
+    padding-top: clamp(0.25rem, 0.8vh, 0.5rem);
+    padding-bottom: clamp(0.25rem, 0.8vh, 0.5rem);
+    min-height: clamp(32px, 4vh, 48px);
+}
+
+/* Brain wave button text scaling */
+#leftPanel .preset-btn span:first-child {
+    font-size: clamp(10px, 1.2vh + 0.2rem, 14px);
+}
+
+#leftPanel .preset-btn span:last-child {
+    font-size: clamp(7px, 0.8vh + 0.1rem, 9px);
+}
+
+/* For very small heights, make text even smaller */
+@media (max-height: 600px) {
+    .preset-btn {
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+        min-height: auto;
+        /* Allow content to dictate height */
+        height: auto;
+    }
+
+    #leftPanel .preset-btn span:first-child {
+        font-size: 9px;
+    }
+
+    #leftPanel .preset-btn span:last-child {
+        font-size: 7px;
+    }
+
+    /* Reduce header spacing */
+    #leftPanel .py-2 {
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+    }
+}
+
+/* For taller screens, allow more breathing room */
+@media (min-height: 900px) {
+    .preset-btn {
+        min-height: 48px;
+    }
+
+    #leftPanel .grid.grid-cols-2 .preset-btn {
+        min-height: 44px;
+    }
+}
+
+/* ==========================================
+   MOBILE BOTTOM NAVIGATION BAR
+   ========================================== */
+
+.mobile-bottom-nav {
+    height: 70px;
+}
+
+.mobile-nav-btn {
+    color: var(--text-muted);
+    min-width: 64px;
+    min-height: 44px;
+}
+
+.mobile-nav-btn:hover,
+.mobile-nav-btn.active {
+    color: var(--accent);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.mobile-play-btn {
+    box-shadow: 0 4px 20px rgba(45, 212, 191, 0.4);
+}
+
+.mobile-play-btn.playing {
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 4px 20px rgba(45, 212, 191, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 4px 30px rgba(45, 212, 191, 0.6);
+    }
+}
+
+/* Show bottom nav only on mobile */
+@media (max-width: 640px) {
+    .mobile-bottom-nav {
+        display: block !important;
+    }
+
+    /* Hide original footer controls on mobile */
+    footer {
+        display: none !important;
+    }
+
+    /* Hide desktop sidebar toggles on mobile */
+    #leftToggle,
+    #rightToggle {
+        display: none !important;
+    }
+
+    /* Add bottom padding to main content to avoid overlap with nav */
+    #appOverlay {
+        padding-bottom: 80px;
+    }
+
+    /* Adjust tap zone for mobile nav */
+    #tapZone {
+        margin-bottom: 80px;
+    }
+}
+
+/* Ensure bottom nav hidden on desktop */
+@media (min-width: 641px) {
+    .mobile-bottom-nav {
+        display: none !important;
+    }
+}
+
+/* Touch feedback improvements */
+@media (hover: none) and (pointer: coarse) {
+
+    /* Better touch targets */
+    .glass-pill,
+    .preset-btn,
+    button {
+        min-height: 44px;
+    }
+
+    /* Larger slider thumbs for touch */
+    input[type=range]::-webkit-slider-thumb {
+        height: 32px;
+        width: 32px;
+    }
+
+    /* Use active state for touch feedback */
+    .preset-btn:active,
+    .glass-pill:active {
+        background: rgba(255, 255, 255, 0.15);
+        transform: scale(0.98);
+    }
+}
+
+/* ==========================================
+   MISSING TAILWIND UTILITY CLASSES
+   For Journey Grid and Library Button
+   ========================================== */
+
+/* Grid columns - 7 column layout for Journey lessons */
+.grid-cols-7 {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+/* Aspect ratio - square buttons */
+.aspect-square {
+    aspect-ratio: 1 / 1;
+}
+
+/* Gap utilities */
+.gap-1\.5 {
+    gap: 0.375rem;
+}
+
+/* Amber colors for milestone buttons */
+.bg-amber-500\/20 {
+    background-color: rgb(245 158 11 / 0.2);
+}
+
+.text-amber-300 {
+    color: rgb(252 211 77);
+}
+
+.border-amber-500\/40 {
+    border-color: rgb(245 158 11 / 0.4);
+}
+
+/* Purple colors for Journey accents */
+.text-purple-400 {
+    color: rgb(192 132 252);
+}
+
+.text-purple-300 {
+    color: rgb(216 180 254);
+}
+
+.bg-purple-500\/20 {
+    background-color: rgb(168 85 247 / 0.2);
+}
+
+.border-purple-500\/40 {
+    border-color: rgb(168 85 247 / 0.4);
+}
+
+/* Yellow colors for Texture category */
+.bg-yellow-500\/20 {
+    background-color: rgba(234, 179, 8, 0.2);
+}
+
+.text-yellow-400 {
+    color: rgb(250, 204, 21);
+}
+
+.border-yellow-500\/30 {
+    border-color: rgba(234, 179, 8, 0.3);
+}
+
+/* Blue colors for Drops category */
+.bg-blue-500\/20 {
+    background-color: rgba(59, 130, 246, 0.2);
+}
+
+.text-blue-400 {
+    color: rgb(96, 165, 250);
+}
+
+.border-blue-500\/30 {
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* Pink gradient support */
+.from-purple-500 {
+    --tw-gradient-from: #a855f7;
+    --tw-gradient-to: rgb(168 85 247 / 0);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.to-pink-500 {
+    --tw-gradient-to: #ec4899;
+}
+
+/* From/To pink for alternative gradients */
+.from-pink-500\/20 {
+    --tw-gradient-from: rgb(236 72 153 / 0.2);
+    --tw-gradient-to: rgb(236 72 153 / 0);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.to-purple-500\/20 {
+    --tw-gradient-to: rgb(168 85 247 / 0.2);
+}
+
+.from-purple-500\/20 {
+    --tw-gradient-from: rgb(168 85 247 / 0.2);
+    --tw-gradient-to: rgb(168 85 247 / 0);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.to-pink-500\/20 {
+    --tw-gradient-to: rgb(236 72 153 / 0.2);
+}
+
+/* Green colors for completed lessons */
+.bg-green-500\/30 {
+    background-color: rgb(34 197 94 / 0.3);
+}
+
+.text-green-300 {
+    color: rgb(134 239 172);
+}
+
+.border-green-500\/50 {
+    border-color: rgb(34 197 94 / 0.5);
+}
+
+.border-green-500\/40 {
+    border-color: rgb(34 197 94 / 0.4);
+}
+
+.from-green-500\/20 {
+    --tw-gradient-from: rgb(34 197 94 / 0.2);
+    --tw-gradient-to: rgb(34 197 94 / 0);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.to-teal-500\/20 {
+    --tw-gradient-to: rgb(20 184 166 / 0.2);
+}
+
+/* ==========================================
+   RESIZABLE PANELS
+   ========================================== */
+
+/* Panel compact mode - applied when width < 80% of default */
+.panel-compact {
+    --heading-size: 9px;
+    --label-size: 8px;
+    --icon-scale: 0.85;
+}
+
+.panel-compact .p-4,
+.panel-compact .p-6 {
+    padding: 0.75rem !important;
+}
+
+.panel-compact .p-2 {
+    padding: 0.375rem !important;
+}
+
+.panel-compact .gap-2 {
+    gap: 0.375rem !important;
+}
+
+.panel-compact .gap-3 {
+    gap: 0.5rem !important;
+}
+
+.panel-compact .text-xs {
+    font-size: 0.65rem !important;
+}
+
+.panel-compact .text-sm {
+    font-size: 0.7rem !important;
+}
+
+.panel-compact svg {
+    transform: scale(var(--icon-scale, 1));
+}
+
+.panel-compact .preset-btn,
+.panel-compact .combo-preset-btn {
+    padding: 0.5rem !important;
+}
+
+/* Resize handle indicator */
+.panel-resize-handle::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 3px;
+    height: 40px;
+    background: var(--accent);
+    opacity: 0;
+    border-radius: 2px;
+    transition: opacity 0.2s;
+}
+
+.panel-resize-handle:hover::before {
+    opacity: 0.5;
+}
+
+/* Panel column layouts for wider panels */
+/* 3 columns at 20%+ wider */
+.panel-cols-3 .grid-cols-2 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+/* 4 columns at 50%+ wider */
+.panel-cols-4 .grid-cols-2 {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+/* Also handle flex-based grids in left panel */
+.panel-cols-3 .flex.flex-wrap>.preset-btn,
+.panel-cols-3 .flex.flex-wrap>button {
+    flex-basis: calc(33.333% - 0.5rem);
+    max-width: calc(33.333% - 0.5rem);
+}
+
+.panel-cols-4 .flex.flex-wrap>.preset-btn,
+.panel-cols-4 .flex.flex-wrap>button {
+    flex-basis: calc(25% - 0.5rem);
+    max-width: calc(25% - 0.5rem);
+}
+
+/* Atmosphere section: 2 columns when right panel is 50%+ wider */
+.panel-cols-4 #soundscapeContainer {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+/* Reorder mixer sections - DJ Pads to bottom */
+#rightPanel .flex-1.overflow-y-auto {
+    display: flex;
+    flex-direction: column;
+}
+
+#rightPanel .mixer-section[data-section="djpads"] {
+    order: 100;
+    /* Push to bottom */
+}
+
+/* Timer hover persistence - keep visible when hovered */
+#timerRing:hover,
+#timerDisplay:hover,
+#timerRing.timer-active,
+#timerDisplay.timer-active {
+    opacity: 1 !important;
+}
+
+/* Timer container should stay visible on hover */
+.timer-container:hover #timerRing,
+.timer-container:hover #timerDisplay {
+    opacity: 1 !important;
+}
+
+/* ================================ */
+/* LIGHT THEME OVERRIDES            */
+/* ================================ */
+
+/* Cloud theme - use blue accent color for all text */
+body[data-theme="cloud"] {
+    --text-main: #0369a1;
+    /* Sky blue */
+    --text-muted: #0284c7;
+}
+
+body[data-theme="cloud"] .text-white,
+body[data-theme="cloud"] h1,
+body[data-theme="cloud"] h2,
+body[data-theme="cloud"] h3,
+body[data-theme="cloud"] h4,
+body[data-theme="cloud"] .font-bold,
+body[data-theme="cloud"] .font-medium,
+body[data-theme="cloud"] span,
+body[data-theme="cloud"] label,
+body[data-theme="cloud"] p {
+    color: #0369a1 !important;
+}
+
+body[data-theme="cloud"] .text-slate-400,
+body[data-theme="cloud"] .text-gray-400,
+body[data-theme="cloud"] .text-zinc-400,
+body[data-theme="cloud"] .uppercase {
+    color: #0284c7 !important;
+}
+
+body[data-theme="cloud"] .glass-card,
+body[data-theme="cloud"] aside,
+body[data-theme="cloud"] #leftPanel,
+body[data-theme="cloud"] #rightPanel {
+    background: rgba(224, 242, 254, 0.95) !important;
+}
+
+/* Dawn theme - use red accent color for all text */
+body[data-theme="dawn"] {
+    --text-main: #be123c;
+    /* Rose red */
+    --text-muted: #e11d48;
+}
+
+body[data-theme="dawn"] .text-white,
+body[data-theme="dawn"] h1,
+body[data-theme="dawn"] h2,
+body[data-theme="dawn"] h3,
+body[data-theme="dawn"] h4,
+body[data-theme="dawn"] .font-bold,
+body[data-theme="dawn"] .font-medium,
+body[data-theme="dawn"] span,
+body[data-theme="dawn"] label,
+body[data-theme="dawn"] p {
+    color: #be123c !important;
+}
+
+body[data-theme="dawn"] .text-slate-400,
+body[data-theme="dawn"] .text-gray-400,
+body[data-theme="dawn"] .text-zinc-400,
+body[data-theme="dawn"] .uppercase {
+    color: #e11d48 !important;
+}
+
+body[data-theme="dawn"] .glass-card,
+body[data-theme="dawn"] aside,
+body[data-theme="dawn"] #leftPanel,
+body[data-theme="dawn"] #rightPanel {
+    background: rgba(255, 228, 230, 0.95) !important;
+}
+
+/* Light theme preset buttons */
+body[data-theme="cloud"] .preset-btn,
+body[data-theme="dawn"] .preset-btn {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+body[data-theme="cloud"] .preset-btn.active,
+body[data-theme="dawn"] .preset-btn.active {
+    background: var(--accent);
+    color: white !important;
+}
+
+/* ================================ */
+/* TOP BAR BUTTONS FOR LIGHT THEMES */
+/* ================================ */
+
+/* Mode toggle buttons (Binaural/Isochronic/Monaural) - dark text on light bar */
+body[data-theme="cloud"] #modeToggle .mode-btn,
+body[data-theme="dawn"] #modeToggle .mode-btn {
+    color: var(--text-muted) !important;
+}
+
+body[data-theme="cloud"] #modeToggle .mode-btn.toggle-active,
+body[data-theme="dawn"] #modeToggle .mode-btn.toggle-active {
+    color: white !important;
+}
+
+/* Visual mode buttons (Sphere/Flow/Lava) - dark text for light themes */
+body[data-theme="cloud"] #topControlBar button[id$="Btn"],
+body[data-theme="dawn"] #topControlBar button[id$="Btn"],
+body[data-theme="cloud"] #sphereBtn,
+body[data-theme="dawn"] #sphereBtn,
+body[data-theme="cloud"] #flowBtn,
+body[data-theme="dawn"] #flowBtn,
+body[data-theme="cloud"] #lavaBtn,
+body[data-theme="dawn"] #lavaBtn {
+    color: var(--text-muted) !important;
+}
+
+/* Visual mode buttons active state - white text on accent */
+body[data-theme="cloud"] #topControlBar button[id$="Btn"].toggle-active,
+body[data-theme="dawn"] #topControlBar button[id$="Btn"].toggle-active {
+    color: white !important;
+}
+
+/* Top bar text elements (slider labels, values) - dark text */
+body[data-theme="cloud"] #topControlBar span,
+body[data-theme="dawn"] #topControlBar span,
+body[data-theme="cloud"] #topControlBar label,
+body[data-theme="dawn"] #topControlBar label {
+    color: var(--text-main) !important;
+}
+
+/* Keep the timer display using accent color */
+body[data-theme="cloud"] #timerDisplay,
+body[data-theme="dawn"] #timerDisplay {
+    color: var(--accent) !important;
+}
+
+/* ================================ */
+/* RIGHT PANEL FIXES FOR LIGHT THEMES */
+/* ================================ */
+
+/* All buttons in right panel - use accent color borders */
+body[data-theme="cloud"] #rightPanel button,
+body[data-theme="dawn"] #rightPanel button {
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
+}
+
+body[data-theme="cloud"] #rightPanel button:hover,
+body[data-theme="dawn"] #rightPanel button:hover {
+    background: rgba(2, 132, 199, 0.15) !important;
+}
+
+body[data-theme="dawn"] #rightPanel button:hover {
+    background: rgba(220, 38, 38, 0.15) !important;
+}
+
+/* Atmosphere/Soundscape buttons - ensure readable */
+body[data-theme="cloud"] .soundscape-btn,
+body[data-theme="cloud"] #soundscapeContainer button {
+    background: rgba(212, 235, 247, 0.7) !important;
+    border: 1px solid var(--accent) !important;
+    color: var(--accent) !important;
+}
+
+body[data-theme="dawn"] .soundscape-btn,
+body[data-theme="dawn"] #soundscapeContainer button {
+    background: rgba(253, 232, 212, 0.7) !important;
+    border: 1px solid var(--accent) !important;
+    color: var(--accent) !important;
+}
+
+body[data-theme="cloud"] .soundscape-btn.active,
+body[data-theme="cloud"] #soundscapeContainer button.active,
+body[data-theme="dawn"] .soundscape-btn.active,
+body[data-theme="dawn"] #soundscapeContainer button.active {
+    background: var(--accent) !important;
+    color: white !important;
+}
+
+/* Slider tracks and values */
+body[data-theme="cloud"] #rightPanel input[type="range"],
+body[data-theme="dawn"] #rightPanel input[type="range"] {
+    background: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Ensure slider thumbs/dots are fully visible with vertical spacing */
+#rightPanel input[type="range"] {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+/* Section headers in right panel */
+body[data-theme="cloud"] #rightPanel .section-header,
+body[data-theme="dawn"] #rightPanel .section-header,
+body[data-theme="cloud"] #rightPanel h3,
+body[data-theme="dawn"] #rightPanel h3 {
+    color: var(--accent) !important;
+}
+
+/* Mixer section borders */
+body[data-theme="cloud"] .mixer-section,
+body[data-theme="dawn"] .mixer-section {
+    border-color: var(--accent) !important;
+}
+
+/* Input borders */
+body[data-theme="cloud"] #rightPanel input,
+body[data-theme="dawn"] #rightPanel input,
+body[data-theme="cloud"] #rightPanel select,
+body[data-theme="dawn"] #rightPanel select {
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
+}
+
+/* DJ Studio slider backgrounds for light themes */
+body[data-theme="cloud"] #djSoundPitch,
+body[data-theme="cloud"] #djSoundTone,
+body[data-theme="cloud"] #djSoundSpeed,
+body[data-theme="dawn"] #djSoundPitch,
+body[data-theme="dawn"] #djSoundTone,
+body[data-theme="dawn"] #djSoundSpeed {
+    background: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* DJ Studio slider backgrounds for dark themes - ensure contrast */
+body:not([data-theme="cloud"]):not([data-theme="dawn"]) #djSoundPitch,
+body:not([data-theme="cloud"]):not([data-theme="dawn"]) #djSoundTone,
+body:not([data-theme="cloud"]):not([data-theme="dawn"]) #djSoundSpeed {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* DJ Studio value labels - ensure they use theme accent on all backgrounds */
+#djSoundPitchVal,
+#djSoundToneVal,
+#djSoundSpeedVal {
+    font-weight: 600;
+}
+
+
+/* Soundscape item default background and text colors for dark themes */
+.soundscape-item {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Ensure all text is visible on dark backgrounds */
+.soundscape-item label,
+.soundscape-item span {
+    color: var(--text-main) !important;
+}
+
+/* Soundscape items - light theme overrides */
+body[data-theme="cloud"] .soundscape-item,
+body[data-theme="dawn"] .soundscape-item {
+    background: rgba(255, 255, 255, 0.7) !important;
+    border-color: var(--accent) !important;
+}
+
+body[data-theme="cloud"] .soundscape-item label,
+body[data-theme="cloud"] .soundscape-item span,
+body[data-theme="dawn"] .soundscape-item label,
+body[data-theme="dawn"] .soundscape-item span {
+    color: var(--text-main) !important;
+}
+
+/* Left panel items for light themes */
+body[data-theme="cloud"] #leftPanel,
+body[data-theme="dawn"] #leftPanel {
+    background: rgba(240, 244, 248, 0.95) !important;
+}
+
+body[data-theme="dawn"] #leftPanel {
+    background: rgba(254, 242, 242, 0.95) !important;
+}
+
+/* ==========================================
+   TOP HEADER BAR - Light Theme Overrides
+   ========================================== */
+
+/* Header bar background - lighter for light themes */
+body[data-theme="cloud"] #topControlBar,
+body[data-theme="dawn"] #topControlBar {
+    background: rgba(226, 232, 240, 0.95) !important;
+    border-color: rgba(100, 116, 139, 0.3) !important;
+}
+
+body[data-theme="dawn"] #topControlBar {
+    background: rgba(252, 231, 231, 0.95) !important;
+    border-color: rgba(185, 140, 140, 0.3) !important;
+}
+
+/* Mode toggle container - dark background override */
+body[data-theme="cloud"] #modeToggle,
+body[data-theme="dawn"] #modeToggle {
+    background: rgba(0, 0, 0, 0.1) !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Slider track backgrounds - dark for light themes */
+body[data-theme="cloud"] #topControlBar input[type="range"],
+body[data-theme="dawn"] #topControlBar input[type="range"] {
+    background: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Text values near sliders - use theme text color */
+body[data-theme="cloud"] #volValue,
+body[data-theme="dawn"] #volValue {
+    color: var(--text-main) !important;
+}
+
+/* Dividers between sections - dark for visibility */
+body[data-theme="cloud"] #topControlBar .bg-white\/20,
+body[data-theme="dawn"] #topControlBar .bg-white\/20 {
+    background: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Inactive mode buttons - dark text */
+body[data-theme="cloud"] .toggle-inactive,
+body[data-theme="dawn"] .toggle-inactive {
+    color: var(--text-muted) !important;
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+body[data-theme="cloud"] .toggle-inactive:hover,
+body[data-theme="dawn"] .toggle-inactive:hover {
+    background-color: rgba(0, 0, 0, 0.1) !important;
+    color: var(--text-main) !important;
+}
+
+/* ALL text in header bar - use dark text for light themes */
+body[data-theme="cloud"] #topControlBar span,
+body[data-theme="dawn"] #topControlBar span {
+    color: var(--text-main) !important;
+}
+
+/* Labels specifically - use accent color */
+body[data-theme="cloud"] #topControlBar span[class*="text-[var(--accent)]"],
+body[data-theme="dawn"] #topControlBar span[class*="text-[var(--accent)]"] {
+    color: var(--accent) !important;
+}
+
+/* Values with white text classes - override to dark */
+body[data-theme="cloud"] #topControlBar span[class*="text-white"],
+body[data-theme="dawn"] #topControlBar span[class*="text-white"] {
+    color: var(--text-muted) !important;
+}
+
+/* Icon buttons - use accent color */
+body[data-theme="cloud"] #topRightIcons button,
+body[data-theme="dawn"] #topRightIcons button {
+    color: var(--accent) !important;
+}
+
+body[data-theme="cloud"] #topRightIcons button svg,
+body[data-theme="dawn"] #topRightIcons button svg {
+    stroke: var(--accent) !important;
+}
+
+/* SVG icons in mode buttons */
+body[data-theme="cloud"] #topControlBar svg,
+body[data-theme="dawn"] #topControlBar svg {
+    stroke: currentColor !important;
+}
+
+/* ==========================================
+   THEME GALLERY MODAL - Light Theme Overrides
+   AGGRESSIVE: Override ALL text to be dark
+   ========================================== */
+
+/* Modal card background */
+body[data-theme="cloud"] #themeModalCard,
+body[data-theme="dawn"] #themeModalCard {
+    background: rgba(240, 244, 248, 0.98) !important;
+    border-color: rgba(100, 116, 139, 0.3) !important;
+    color: #1e293b !important;
+}
+
+body[data-theme="dawn"] #themeModalCard {
+    background: rgba(254, 242, 242, 0.98) !important;
+    border-color: rgba(185, 140, 140, 0.3) !important;
+    color: #78350f !important;
+}
+
+/* FORCE all text elements inside the modal to be dark */
+body[data-theme="cloud"] #themeModalCard *,
+body[data-theme="dawn"] #themeModalCard * {
+    color: inherit;
+}
+
+/* Modal header - dark text */
+body[data-theme="cloud"] #themeModalCard h2,
+body[data-theme="cloud"] #themeModalCard .text-lg,
+body[data-theme="dawn"] #themeModalCard h2,
+body[data-theme="dawn"] #themeModalCard .text-lg {
+    color: #0f172a !important;
+}
+
+/* Subtitle - muted dark text */
+body[data-theme="cloud"] #themeModalCard .text-xs,
+body[data-theme="dawn"] #themeModalCard .text-xs {
+    color: #64748b !important;
+}
+
+/* Modal header background & border */
+body[data-theme="cloud"] #themeModalCard>div:first-child,
+body[data-theme="dawn"] #themeModalCard>div:first-child {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Close button - dark icon */
+body[data-theme="cloud"] #themeModalCard button svg,
+body[data-theme="dawn"] #themeModalCard button svg {
+    stroke: #475569 !important;
+}
+
+/* Grid content area */
+body[data-theme="cloud"] #themeModalCard .overflow-y-auto,
+body[data-theme="dawn"] #themeModalCard .overflow-y-auto {
+    background: transparent !important;
+}
+
+/* Theme cards - dark text */
+body[data-theme="cloud"] .theme-card,
+body[data-theme="cloud"] .theme-card *,
+body[data-theme="dawn"] .theme-card,
+body[data-theme="dawn"] .theme-card * {
+    color: #1e293b !important;
+}
+
+body[data-theme="dawn"] .theme-card,
+body[data-theme="dawn"] .theme-card * {
+    color: #78350f !important;
+}
+
+/* Theme card title - darker */
+body[data-theme="cloud"] .theme-card-title,
+body[data-theme="dawn"] .theme-card-title {
+    color: #0f172a !important;
+}
+
+/* Theme card description - muted */
+body[data-theme="cloud"] .theme-card-desc,
+body[data-theme="dawn"] .theme-card-desc {
+    color: #64748b !important;
+}
+
+/* Cursor section - ALL text dark */
+body[data-theme="cloud"] #cursorSection,
+body[data-theme="cloud"] #cursorSection *,
+body[data-theme="dawn"] #cursorSection,
+body[data-theme="dawn"] #cursorSection * {
+    color: #1e293b !important;
+}
+
+body[data-theme="dawn"] #cursorSection,
+body[data-theme="dawn"] #cursorSection * {
+    color: #78350f !important;
+}
+
+/* Cursor section headers */
+body[data-theme="cloud"] #cursorSection h3,
+body[data-theme="dawn"] #cursorSection h3 {
+    color: #0f172a !important;
+}
+
+/* Cursor section subtitle */
+body[data-theme="cloud"] #cursorSection .text-xs,
+body[data-theme="dawn"] #cursorSection .text-xs {
+    color: #64748b !important;
+}
+
+/* Cursor shape buttons */
+body[data-theme="cloud"] .cursor-option,
+body[data-theme="dawn"] .cursor-option {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+body[data-theme="cloud"] .cursor-option:hover,
+body[data-theme="dawn"] .cursor-option:hover {
+    background: rgba(0, 0, 0, 0.1) !important;
+    border-color: rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Cursor shape buttons (active) */
+body[data-theme="cloud"] .cursor-option.active,
+body[data-theme="dawn"] .cursor-option.active {
+    background: rgba(45, 212, 191, 0.2) !important;
+    border-color: var(--accent) !important;
+}
+
+/* Cursor shape button labels */
+body[data-theme="cloud"] .cursor-option div,
+body[data-theme="dawn"] .cursor-option div {
+    color: var(--text-main) !important;
+}
+
+/* Color picker label */
+body[data-theme="cloud"] #cursorSection label,
+body[data-theme="dawn"] #cursorSection label {
+    color: #475569 !important;
+}
+
+/* Labels */
+body[data-theme="cloud"] #themeModalCard label,
+body[data-theme="dawn"] #themeModalCard label {
+    color: var(--text-muted) !important;
+}
+
+/* Reset button */
+body[data-theme="cloud"] #resetCursorColor,
+body[data-theme="dawn"] #resetCursorColor {
+    background: rgba(0, 0, 0, 0.1) !important;
+    color: var(--text-main) !important;
+}
+
+body[data-theme="cloud"] #resetCursorColor:hover,
+body[data-theme="dawn"] #resetCursorColor:hover {
+    background: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Theme card text */
+body[data-theme="cloud"] .theme-card .text-white\/70,
+body[data-theme="dawn"] .theme-card .text-white\/70 {
+    color: var(--text-muted) !important;
+}
+
+/* IMPORTANT: Preserve theme card inline styles - each card should show its own theme's colors */
+/* Don't apply text-main overrides to theme card text */
+.theme-card div[style*="color:"] {
+    color: inherit !important;
+    /* Let inline styles take priority */
+}
+
+/* Alternatively, explicitly reset to allow inline styles */
+body[data-theme="cloud"] .theme-card>div:last-child div,
+body[data-theme="dawn"] .theme-card>div:last-child div {
+    color: unset;
+}
+
+/* ==========================================
+   CURSOR SECTION - Light Theme Overrides
+   Comprehensive visibility fixes for Cloud/Dawn
+   ========================================== */
+
+/* Cursor section container */
+body[data-theme="cloud"] #cursorSection,
+body[data-theme="dawn"] #cursorSection {
+    border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Cursor section header icon container */
+body[data-theme="cloud"] #cursorSection>div:first-child>div:first-child,
+body[data-theme="dawn"] #cursorSection>div:first-child>div:first-child {
+    background: var(--accent) !important;
+    opacity: 0.2;
+}
+
+/* Cursor section title ("CUSTOM CURSOR") */
+body[data-theme="cloud"] #cursorSection h3,
+body[data-theme="dawn"] #cursorSection h3 {
+    color: var(--text-main) !important;
+}
+
+/* Cursor section subtitle */
+body[data-theme="cloud"] #cursorSection h3+div,
+body[data-theme="cloud"] #cursorSection .text-xs,
+body[data-theme="dawn"] #cursorSection h3+div,
+body[data-theme="dawn"] #cursorSection .text-xs {
+    color: var(--text-muted) !important;
+    opacity: 1 !important;
+}
+
+/* Color picker section background */
+body[data-theme="cloud"] #cursorSection>div:nth-child(2),
+body[data-theme="dawn"] #cursorSection>div:nth-child(2) {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* "Color:" label */
+body[data-theme="cloud"] #cursorSection span.text-xs,
+body[data-theme="dawn"] #cursorSection span.text-xs {
+    color: var(--text-main) !important;
+}
+
+/* Cursor shape buttons (inactive) */
+body[data-theme="cloud"] .cursor-option,
+body[data-theme="dawn"] .cursor-option {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+body[data-theme="cloud"] .cursor-option:hover,
+body[data-theme="dawn"] .cursor-option:hover {
+    background: rgba(0, 0, 0, 0.1) !important;
+    border-color: rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Cursor shape buttons (active) */
+body[data-theme="cloud"] .cursor-option.active,
+body[data-theme="dawn"] .cursor-option.active {
+    background: rgba(45, 212, 191, 0.2) !important;
+    border-color: var(--accent) !important;
+}
+
+/* Cursor shape button labels */
+body[data-theme="cloud"] .cursor-option div,
+body[data-theme="dawn"] .cursor-option div {
+    color: var(--text-main) !important;
+}
+
+/* ==========================================
+   DJ PADS - Light Theme Overrides
+   ========================================== */
+
+/* DJ Pad buttons - dark text */
+body[data-theme-type="light"] .dj-pad {
+    color: var(--text-main) !important;
+    border-color: var(--accent) !important;
+    background: rgba(255, 255, 255, 0.5) !important;
+}
+
+body[data-theme-type="light"] .dj-pad span {
+    color: var(--text-main) !important;
+    text-shadow: none !important;
+}
+
+body[data-theme-type="light"] .dj-pad:hover {
+    background: rgba(255, 255, 255, 0.7) !important;
+    border-color: var(--accent) !important;
+}
+
+/* DJ Category tabs */
+body[data-theme-type="light"] .dj-cat-tab {
+    color: var(--text-main) !important;
+    border-color: var(--accent) !important;
+    background: rgba(255, 255, 255, 0.5) !important;
+}
+
+body[data-theme-type="light"] .dj-cat-tab:hover {
+    background: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* DJ Mode toggle buttons */
+body[data-theme-type="light"] .dj-mode-btn {
+    color: var(--text-main) !important;
+    border-color: var(--accent) !important;
+    background: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* DJ Stop All button */
+body[data-theme-type="light"] #djStopAll {
+    color: #dc2626 !important;
+    border-color: #dc2626 !important;
+    background: rgba(220, 38, 38, 0.1) !important;
+}
+
+/* ==========================================
+   DJ PAD TEXT STYLING (Default + Light Themes)
+   ========================================== */
+
+/* Default dark theme - white text */
+.dj-pad-icon {
+    color: white;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+.dj-pad-label {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.dj-pad-label.dj-pad-active {
+    color: var(--accent);
+}
+
+.dj-pad-loop {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Light themes - dark text */
+body[data-theme-type="light"] .dj-pad-icon {
+    color: var(--text-main) !important;
+    text-shadow: none !important;
+}
+
+body[data-theme-type="light"] .dj-pad-label {
+    color: var(--text-main) !important;
+}
+
+body[data-theme-type="light"] .dj-pad-label.dj-pad-active {
+    color: var(--accent) !important;
+}
+
+body[data-theme-type="light"] .dj-pad-loop {
+    color: var(--text-muted) !important;
+}
+
+/* ==========================================
+   THEME CARD TEXT STYLING (Default + Light Themes)
+   ========================================== */
+
+/* Default dark theme - white text */
+.theme-card-title {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.theme-card-desc {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Light themes - dark text for readability */
+body[data-theme-type="light"] .theme-card-title {
+    color: var(--text-main) !important;
+}
+
+body[data-theme-type="light"] .theme-card-desc {
+    color: var(--text-muted) !important;
+}
+
+/* ==========================================
+   GENERAL LIGHT THEME TEXT FIXES
+   Aggressive overrides for ALL white text
+   ========================================== */
+
+/* Fix all text-white/XX classes in light themes */
+body[data-theme-type="light"] [class*="text-white"],
+body[data-theme-type="light"] [class*="text-slate-"] {
+    color: var(--text-main) !important;
+}
+
+/* AGGRESSIVE: Override ALL text in left and right panels */
+body[data-theme="cloud"] #leftPanel,
+body[data-theme="cloud"] #rightPanel,
+body[data-theme="dawn"] #leftPanel,
+body[data-theme="dawn"] #rightPanel {
+    color: var(--text-main) !important;
+}
+
+body[data-theme="cloud"] #leftPanel *,
+body[data-theme="cloud"] #rightPanel *,
+body[data-theme="dawn"] #leftPanel *,
+body[data-theme="dawn"] #rightPanel * {
+    color: inherit;
+}
+
+/* Force dark text on all headers, labels, and spans in panels */
+body[data-theme="cloud"] aside h1,
+body[data-theme="cloud"] aside h2,
+body[data-theme="cloud"] aside h3,
+body[data-theme="cloud"] aside h4,
+body[data-theme="cloud"] aside span,
+body[data-theme="cloud"] aside label,
+body[data-theme="cloud"] aside p,
+body[data-theme="dawn"] aside h1,
+body[data-theme="dawn"] aside h2,
+body[data-theme="dawn"] aside h3,
+body[data-theme="dawn"] aside h4,
+body[data-theme="dawn"] aside span,
+body[data-theme="dawn"] aside label,
+body[data-theme="dawn"] aside p {
+    color: var(--text-main) !important;
+}
+
+/* Section headings like BRAIN WAVES, HEALING, etc */
+body[data-theme="cloud"] .uppercase,
+body[data-theme="dawn"] .uppercase {
+    color: var(--text-muted) !important;
+}
+
+/* Slider values and labels */
+body[data-theme="cloud"] input[type="range"]+span,
+body[data-theme="cloud"] .slider-value,
+body[data-theme="dawn"] input[type="range"]+span,
+body[data-theme="dawn"] .slider-value {
+    color: var(--text-main) !important;
+}
+
+/* Classical section text */
+body[data-theme="cloud"] .classical-track,
+body[data-theme="cloud"] .classical-track *,
+body[data-theme="dawn"] .classical-track,
+body[data-theme="dawn"] .classical-track * {
+    color: var(--text-main) !important;
+}
+
+/* Volume labels */
+body[data-theme="cloud"] [class*="font-bold"],
+body[data-theme="dawn"] [class*="font-bold"] {
+    color: var(--text-main) !important;
+}
+
+/* Muted text (percentages, descriptions) */
+body[data-theme="cloud"] [class*="text-xs"],
+body[data-theme="cloud"] [class*="text-sm"],
+body[data-theme="dawn"] [class*="text-xs"],
+body[data-theme="dawn"] [class*="text-sm"] {
+    color: var(--text-muted) !important;
+}
+
+/* Fix bg-white/XX backgrounds - make them more opaque */
+body[data-theme="cloud"] [class*="bg-white/5"],
+body[data-theme="dawn"] [class*="bg-white/5"] {
+    background-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+body[data-theme="cloud"] [class*="bg-white/10"],
+body[data-theme="dawn"] [class*="bg-white/10"] {
+    background-color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Fix borders */
+body[data-theme="cloud"] [class*="border-white"],
+body[data-theme="dawn"] [class*="border-white"] {
+    border-color: var(--accent) !important;
+}
+
+/* Footer area fixes */
+body[data-theme="cloud"] footer,
+body[data-theme="dawn"] footer {
+    /* Background removed for transparency */
+    background: transparent !important;
+}
+
+body[data-theme="cloud"] footer span,
+body[data-theme="cloud"] footer label,
+body[data-theme="dawn"] footer span,
+body[data-theme="dawn"] footer label {
+    color: var(--text-main) !important;
+}
+
+/* ==========================================
+   VISUALIZER CONTROLS - Light Theme Fixes
+   ========================================== */
+
+/* Speed slider container label */
+body[data-theme="cloud"] #speedSliderContainer label,
+body[data-theme="dawn"] #speedSliderContainer label {
+    color: var(--text-main) !important;
+}
+
+body[data-theme="cloud"] #speedSliderContainer span,
+body[data-theme="dawn"] #speedSliderContainer span {
+    color: var(--accent) !important;
+}
+
+/* Inactive glass-pill buttons (Sphere, Lava when not active) */
+body[data-theme="cloud"] .glass-pill,
+body[data-theme="dawn"] .glass-pill {
+    color: var(--text-main) !important;
+    background: rgba(255, 255, 255, 0.5) !important;
+    border-color: var(--accent) !important;
+}
+
+body[data-theme="cloud"] .glass-pill.active,
+body[data-theme="dawn"] .glass-pill.active {
+    background: var(--accent) !important;
+    color: white !important;
+}
+
+/* Visual mode buttons in footer area */
+body[data-theme="cloud"] #tapZone button,
+body[data-theme="dawn"] #tapZone button {
+    color: var(--text-main) !important;
+}
+
+body[data-theme="cloud"] #tapZone button.toggle-active,
+body[data-theme="dawn"] #tapZone button.toggle-active {
+    color: white !important;
+}
+
+/* Speed value display */
+body[data-theme="cloud"] #speedValue,
+body[data-theme="dawn"] #speedValue {
+    color: var(--accent) !important;
+}
+
+/* ==========================================
+   LEFT SIDEBAR - Enhanced Light Theme Fixes
+   ========================================== */
+
+/* Section divider headers (BRAIN WAVES, HEALING, AMBIENCE) - target by parent structure */
+body[data-theme="cloud"] #leftPanel .py-2 span,
+body[data-theme="dawn"] #leftPanel .py-2 span {
+    color: var(--accent) !important;
+}
+
+/* Override any inline-styled accent color text */
+body[data-theme="cloud"] #leftPanel span[style*="color: var(--accent)"],
+body[data-theme="dawn"] #leftPanel span[style*="color: var(--accent)"] {
+    color: var(--accent) !important;
+}
+
+/* Preset button sub-labels (Sleep, Meditation, etc.) */
+body[data-theme="cloud"] .preset-btn span:last-child,
+body[data-theme="dawn"] .preset-btn span:last-child {
+    color: var(--text-muted) !important;
+}
+
+/* Preset button main labels */
+body[data-theme="cloud"] .preset-btn span:first-child,
+body[data-theme="dawn"] .preset-btn span:first-child {
+    color: var(--accent) !important;
+}
+
+/* ==========================================
+   COMPREHENSIVE LIGHT THEME FIXES
+   Cloud and Dawn themes require extensive overrides
+   because Tailwind utility classes assume dark backgrounds
+   ========================================== */
+
+/* === SIDEBAR BACKGROUNDS - AGGRESSIVE OVERRIDES === */
+/* Target the panels directly with high specificity */
+body[data-theme="cloud"] aside#leftPanel,
+body[data-theme="cloud"] aside#rightPanel,
+body[data-theme="dawn"] aside#leftPanel,
+body[data-theme="dawn"] aside#rightPanel,
+body[data-theme="cloud"] #leftPanel.glass-card,
+body[data-theme="dawn"] #leftPanel.glass-card,
+body[data-theme="cloud"] #rightPanel.glass-card,
+body[data-theme="dawn"] #rightPanel.glass-card {
+    background: var(--bg-panel) !important;
+    background-color: var(--bg-panel) !important;
+}
+
+/* Override any bg-[var(--bg-panel)] that might have dark value cached */
+body[data-theme="cloud"] .bg-\[var\(--bg-panel\)\],
+body[data-theme="dawn"] .bg-\[var\(--bg-panel\)\] {
+    background-color: var(--bg-panel) !important;
+}
+
+/* Target ALL descendants to ensure light bg propagates */
+body[data-theme="cloud"] #leftPanel *,
+body[data-theme="dawn"] #leftPanel *,
+body[data-theme="cloud"] #rightPanel *,
+body[data-theme="dawn"] #rightPanel * {
+    --glass-bg: var(--bg-panel);
+}
+
+/* Override glass-card specifically for sidebars */
+body[data-theme="cloud"] #leftPanel.glass-card,
+body[data-theme="dawn"] #leftPanel.glass-card,
+body[data-theme="cloud"] #rightPanel.glass-card,
+body[data-theme="dawn"] #rightPanel.glass-card {
+    background: var(--bg-panel) !important;
+    backdrop-filter: blur(20px);
+}
+
+/* Sidebar header areas - make transparent */
+body[data-theme="cloud"] #leftPanel>div,
+body[data-theme="dawn"] #leftPanel>div,
+body[data-theme="cloud"] #rightPanel>div,
+body[data-theme="dawn"] #rightPanel>div {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* === PRESET BUTTONS - CRITICAL FIX === */
+body[data-theme="cloud"] .preset-btn,
+body[data-theme="dawn"] .preset-btn {
+    background: rgba(255, 255, 255, 0.7) !important;
+    border-color: var(--border) !important;
+}
+
+body[data-theme="cloud"] .preset-btn:hover,
+body[data-theme="dawn"] .preset-btn:hover {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-color: var(--accent) !important;
+}
+
+body[data-theme="cloud"] .preset-btn *,
+body[data-theme="dawn"] .preset-btn * {
+    color: var(--text-main) !important;
+}
+
+body[data-theme="cloud"] .preset-btn .text-xs,
+body[data-theme="dawn"] .preset-btn .text-xs {
+    color: var(--text-muted) !important;
+}
+
+/* === SECTION HEADERS (BRAIN WAVES, HEALING, etc.) === */
+body[data-theme="cloud"] #leftPanel .tracking-widest,
+body[data-theme="dawn"] #leftPanel .tracking-widest,
+body[data-theme="cloud"] #rightPanel .tracking-widest,
+body[data-theme="dawn"] #rightPanel .tracking-widest {
+    color: var(--text-main) !important;
+}
+
+/* === SLIDERS - CRITICAL FIX === */
+body[data-theme="cloud"] input[type="range"],
+body[data-theme="dawn"] input[type="range"] {
+    background: var(--border) !important;
+}
+
+body[data-theme="cloud"] input[type="range"]::-webkit-slider-runnable-track,
+body[data-theme="dawn"] input[type="range"]::-webkit-slider-runnable-track {
+    background: var(--border) !important;
+}
+
+body[data-theme="cloud"] input[type="range"]::-webkit-slider-thumb,
+body[data-theme="dawn"] input[type="range"]::-webkit-slider-thumb {
+    background: var(--accent) !important;
+    border: 2px solid white !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* === ALL TEXT WITH WHITE/SLATE COLORS === */
+body[data-theme="cloud"] [class*="text-white"],
+body[data-theme="dawn"] [class*="text-white"],
+body[data-theme="cloud"] [class*="text-slate-"],
+body[data-theme="dawn"] [class*="text-slate-"] {
+    color: var(--text-main) !important;
+}
+
+/* === LABELS (PITCH, BEAT, VOL, SPEED, etc.) === */
+body[data-theme="cloud"] label,
+body[data-theme="dawn"] label {
+    color: var(--text-main) !important;
+}
+
+/* === CLOSE BUTTONS === */
+body[data-theme="cloud"] #closeLeftBtn,
+body[data-theme="dawn"] #closeLeftBtn,
+body[data-theme="cloud"] #closeRightBtn,
+body[data-theme="dawn"] #closeRightBtn {
+    color: var(--text-main) !important;
+}
+
+/* === BG-SLATE BACKGROUNDS === */
+body[data-theme="cloud"] [class*="bg-slate-"],
+body[data-theme="dawn"] [class*="bg-slate-"] {
+    background-color: var(--border) !important;
+}
+
+/* === VISUAL MODE BUTTONS (SPHERE, FLOW, LAVA) === */
+body[data-theme="cloud"] .visual-btn,
+body[data-theme="dawn"] .visual-btn {
+    color: var(--text-main) !important;
+    background: rgba(255, 255, 255, 0.5) !important;
+}
+
+body[data-theme="cloud"] .visual-btn.toggle-active,
+body[data-theme="dawn"] .visual-btn.toggle-active {
+    color: white !important;
+    background: var(--accent) !important;
+}
+
+/* === SVG ICONS IN SIDEBARS === */
+body[data-theme="cloud"] #leftPanel svg,
+body[data-theme="dawn"] #leftPanel svg,
+body[data-theme="cloud"] #rightPanel svg,
+body[data-theme="dawn"] #rightPanel svg {
+    color: var(--text-main) !important;
+    stroke: var(--text-main) !important;
+}
+
+/* === COMBO PRESET BUTTONS === */
+body[data-theme="cloud"] .combo-preset-btn,
+body[data-theme="dawn"] .combo-preset-btn {
+    background: rgba(255, 255, 255, 0.6) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border) !important;
+}
+
+/* === SCROLLBAR FOR SIDEBARS === */
+body[data-theme="cloud"] .custom-scrollbar::-webkit-scrollbar-thumb,
+body[data-theme="dawn"] .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--border) !important;
+}
+
+body[data-theme="cloud"] .custom-scrollbar::-webkit-scrollbar-track,
+body[data-theme="dawn"] .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* ==========================================
+   TOP CONTROL BAR RESPONSIVE MODES
+   Progressive element hiding for narrow screens
+   ========================================== */
+
+/* Compact mode (<500px available) - hide most labels, keep essential controls */
+#topControlBar.control-bar-compact .text-\[10px\] {
+    display: none;
+}
+
+#topControlBar.control-bar-compact .w-px {
+    display: none;
+}
+
+#topControlBar.control-bar-compact {
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+}
+
+#topControlBar.control-bar-compact input[type="range"] {
+    width: 3rem;
+}
+
+#topControlBar.control-bar-compact .mode-btn {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    font-size: 0.625rem;
+}
+
+/* Narrow mode (500-700px) - hide some labels, show compact layout */
+#topControlBar.control-bar-narrow .text-\[10px\]:not(#baseValue):not(#beatValue):not(#volValue) {
+    display: none;
+}
+
+#topControlBar.control-bar-narrow {
+    gap: 0.625rem;
+}
+
+/* Medium mode (700-900px) - hide dividers only */
+#topControlBar.control-bar-medium .w-px:not(:first-of-type) {
+    display: none;
+}
+
+/* Mobile optimization - stack elements when very narrow */
+@media (max-width: 640px) {
+    #topControlBar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #topControlBar>div {
+        justify-content: center;
+    }
+}
+
+/* ==========================================
+   DJ STOP ALL BUTTON - CONDITIONAL STYLING
+   ========================================== */
+
+/* Stop All button - active/playing state (red) */
+#djStopAll.dj-playing {
+    background: rgba(239, 68, 68, 0.2) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+    color: #f87171 !important;
+}
+
+#djStopAll.dj-playing:hover {
+    background: rgba(239, 68, 68, 0.3) !important;
+}

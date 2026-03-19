@@ -9,7 +9,7 @@ export const APPS_CONFIG = {
         tagline: 'Personal Binaural Beats Studio',
         url: 'https://sentaient.com/mindwave-beta.html',
         demoUrl: 'https://sentaient.com/mindwave-demo.html',
-        logo: '/mindwave-logo.png',
+        logo: './mindwave-logo.png',
         primaryColor: '#2dd4bf', // Teal
         topics: ['Focus', 'Sleep', 'Meditation', 'Deep Work', 'Anxiety Relief'],
         scripts: [
@@ -36,6 +36,27 @@ export const APPS_CONFIG = {
         assets: {
             backgrounds: [],
             icons: ['🎧', '🌊']
+        }
+    },
+    viral_hub: {
+        id: 'viral_hub',
+        name: 'Viral Hub',
+        tagline: 'Autonomous SaaS Marketing Engine',
+        url: 'https://sentaient.com/viral.html',
+        logo: '/viral-logo.png',
+        primaryColor: '#6366f1', // Indigo/Violet
+        topics: ['Automation', 'Marketing', 'ROI', 'Viral Growth', 'UGC Generation'],
+        scripts: [
+            {
+                type: 'ugc',
+                hook: 'Stop wasting hours on marketing creative. Let the robot do it.',
+                body: 'Viral Hub creates your ad scripts, UGC concepts, and AI visuals in seconds. It is like having a marketing team in a single tab.',
+                cta: 'Get Eternity Access to Viral Hub'
+            }
+        ],
+        assets: {
+            backgrounds: ['/binaural-assets/images/viral-bg.jpg'],
+            icons: ['🚀', '📈', '🤖']
         }
     }
 };

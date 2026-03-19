@@ -3,8 +3,13 @@
  * Measures product-market fit, feature value, and emotional resonance
  */
 
-import { getAuth } from 'firebase/auth';
-import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import {
+    db,
+    auth as firebaseAuth,
+    collection,
+    addDoc,
+    serverTimestamp
+} from '../services/firebase.js';
 
 // Survey trigger conditions
 const TRIGGER_CONDITIONS = {
@@ -47,7 +52,7 @@ function createSurveyModal(triggerType) {
     const modal = document.createElement('div');
     modal.id = 'feedbackSurveyModal';
     // Use consistent overlay styles
-    modal.className = 'fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm opacity-0 transition-opacity duration-300';
+    modal.className = 'fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md opacity-0 transition-opacity duration-300 survey-contrast-fix';
 
     // We'll animate opacity in after append
     setTimeout(() => modal.classList.remove('opacity-0'), 10);
@@ -128,6 +133,14 @@ function createSurveyModal(triggerType) {
                         </select>
                         <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/50">▼</div>
                     </div>
+                </div>
+
+                <!-- Visual Styles -->
+                <div class="space-y-3">
+                    <label class="block text-sm font-bold text-white">
+                        What are your favorite visual styles and combinations?
+                    </label>
+                    <input type="text" name="favorite_visuals" placeholder="e.g. Interstellar with Gamma waves..." class="w-[100%] bg-black/20 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-[var(--accent)] outline-none placeholder:text-white/20">
                 </div>
 
                 <!-- Improvements -->
@@ -218,6 +231,7 @@ function setupSurveyHandlers(modal, triggerType) {
                 best_feature: formData.get('best_feature'),
                 use_case: formData.get('use_case'),
                 feelings: formData.getAll('feelings'),
+                favorite_visuals: formData.get('favorite_visuals') || '',
                 improvements: formData.get('improvements') || '',
                 competitors_used: formData.get('competitors_used') || '',
                 trigger_type: triggerType,
@@ -259,13 +273,15 @@ function setupSurveyHandlers(modal, triggerType) {
  * Submit feedback to Firestore
  */
 async function submitFeedback(data) {
-    const auth = getAuth();
-    const db = getFirestore();
+    if (!db) {
+        console.warn('[Survey] Firebase not initialized, cannot submit');
+        return;
+    }
 
     const feedbackDoc = {
         ...data,
-        userId: auth.currentUser?.uid || 'anonymous',
-        userEmail: auth.currentUser?.email || null,
+        userId: firebaseAuth?.currentUser?.uid || 'anonymous',
+        userEmail: firebaseAuth?.currentUser?.email || null,
         createdAt: serverTimestamp(),
         userAgent: navigator.userAgent,
         screenSize: `${window.innerWidth}x${window.innerHeight}`

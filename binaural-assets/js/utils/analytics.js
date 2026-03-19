@@ -7,7 +7,7 @@
 const ENV = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : {};
 
 // Google Analytics Measurement ID
-const GA_MEASUREMENT_ID = ENV.VITE_GA_MEASUREMENT_ID || null;
+const GA_MEASUREMENT_ID = ENV.VITE_GOOGLE_ANALYTICS_ID || null;
 
 /**
  * Initialize Google Analytics

@@ -1,13 +1,19 @@
 /**
  * Daily Limit Service
- * Enforces 15-minute listening limit for free users
+ * Enforces listening limits based on user tier (Free = 15m, Yogi = 2h, Pro = Unlimited)
  */
 
-import { isPremiumUser } from '../services/stripe-simple.js';
+import { getUserTier } from '../services/stripe-simple.js';
 
 const KEY_USAGE = 'mindwave_daily_usage';
 const KEY_DATE = 'mindwave_daily_date';
-const LIMIT_SECONDS = 15 * 60; // 15 minutes
+
+const LIMITS_SECONDS = {
+    free: 15 * 60,       // 15 minutes
+    zen: 120 * 60,       // 2 hours
+    nirvana: Infinity,   // Unlimited
+    lifetime: Infinity   // Unlimited
+};
 
 export const DailyLimitService = {
     /**
@@ -34,20 +40,22 @@ export const DailyLimitService = {
 
     /**
      * Increment usage by seconds
-     * Returns true if limit reached (and user is not premium)
+     * Returns true if limit reached based on provided tier
      */
-    increment(seconds = 1, isPremium = false) {
-        // Checking premium status is async, so we assume caller handles that
-        // OR we just track everyone and only ENFORCE for free users
+    increment(seconds = 1, tier = 'free') {
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (isLocal) return false; // Bypass limit on localhost
 
         const current = this.getUsage();
         const verifiedNew = current + seconds;
         localStorage.setItem(KEY_USAGE, verifiedNew);
 
-        // If premium, we never return true (limit reached)
-        if (isPremium) return false;
+        const limit = LIMITS_SECONDS[tier] || LIMITS_SECONDS.free;
 
-        return verifiedNew >= LIMIT_SECONDS;
+        // If unlimited tier, never return true (limit reached)
+        if (limit === Infinity) return false;
+
+        return verifiedNew >= limit;
     },
 
     /**
@@ -55,17 +63,23 @@ export const DailyLimitService = {
      * @returns {Promise<{allowed: boolean, remaining: number}>}
      */
     async checkLimit() {
-        // Premium users have no limit
-        const isPremium = await isPremiumUser();
-        if (isPremium) {
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (isLocal) {
+            return { allowed: true, remaining: Infinity };
+        }
+
+        const tier = await getUserTier();
+        const limit = LIMITS_SECONDS[tier] || LIMITS_SECONDS.free;
+
+        if (limit === Infinity) {
             return { allowed: true, remaining: Infinity };
         }
 
         const usage = this.getUsage();
-        const remaining = Math.max(0, LIMIT_SECONDS - usage);
+        const remaining = Math.max(0, limit - usage);
 
         return {
-            allowed: usage < LIMIT_SECONDS,
+            allowed: usage < limit,
             remaining
         };
     },

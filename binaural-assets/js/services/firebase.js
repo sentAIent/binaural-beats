@@ -8,7 +8,7 @@ import { state } from '../state.js';
 let app, auth, db, storage;
 let initializeApp, getAuth, getFirestore, getStorage;
 let onAuthStateChanged, signInWithCustomToken, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, updateProfile;
-let collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, query, orderBy, serverTimestamp;
+let collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, addDoc, where, limit, collectionGroup;
 let ref, uploadBytes, getDownloadURL, deleteObject;
 
 const authCallbacks = [];
@@ -114,7 +114,12 @@ export async function initFirebase() {
         updateProfile = firebaseAuth.updateProfile;
 
         getFirestore = firebaseFirestore.getFirestore;
+        const initializeFirestore = firebaseFirestore.initializeFirestore;
+        const persistentLocalCache = firebaseFirestore.persistentLocalCache;
+        const persistentMultipleTabManager = firebaseFirestore.persistentMultipleTabManager;
+
         collection = firebaseFirestore.collection;
+        collectionGroup = firebaseFirestore.collectionGroup;
         doc = firebaseFirestore.doc;
         setDoc = firebaseFirestore.setDoc;
         getDoc = firebaseFirestore.getDoc;
@@ -123,6 +128,9 @@ export async function initFirebase() {
         onSnapshot = firebaseFirestore.onSnapshot;
         query = firebaseFirestore.query;
         orderBy = firebaseFirestore.orderBy;
+        addDoc = firebaseFirestore.addDoc;
+        where = firebaseFirestore.where;
+        limit = firebaseFirestore.limit;
         serverTimestamp = firebaseFirestore.serverTimestamp;
 
         getStorage = firebaseStorage.getStorage;
@@ -134,25 +142,80 @@ export async function initFirebase() {
         // Initialize App
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
-        db = getFirestore(app);
         storage = getStorage(app);
+
+        // Initialize Firestore with Persistence (Modern API)
+        try {
+            db = initializeFirestore(app, {
+                localCache: persistentLocalCache({
+                    tabManager: persistentMultipleTabManager()
+                })
+            });
+            console.log('[Firebase] Persistence enabled (Modern API)');
+        } catch (e) {
+            console.warn('[Firebase] Firestore init custom settings failed, falling back to default:', e);
+            db = getFirestore(app);
+        }
 
         console.log("Firebase initialized successfully");
 
         // Auth Listener
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             state.currentUser = user;
             console.log("Auth State Changed:", user ? user.uid : "No User");
 
-            // ✅ FIX Issue #2: Update tier based on subscription status
             if (user) {
                 if (!user.displayName && user.email) user.displayName = user.email.split('@')[0];
-                // Check if user has premium subscription
+
+                // 1. Initial check from localStorage (Cache)
                 const isPremium = localStorage.getItem('mindwave_premium') === 'true';
-                state.userTier = isPremium ? 'pro' : 'free';
-                console.log('[Auth] User tier:', state.userTier);
+                const isLifetime = localStorage.getItem('mindwave_lifetime') === 'true';
+
+                state.userTier = localStorage.getItem('mindwave_tier') || (isPremium ? 'pro' : 'free');
+                state.isLifetime = isLifetime;
+
+                console.log('[Auth] Initial Tier:', state.userTier, 'Lifetime:', state.isLifetime);
+
+                // 1.5 Cloud Sync Analytics & Media Vault
+                import('./cloud-sync.js').then(module => {
+                    module.syncAnalyticsFromCloud(user.uid);
+                }).catch(err => {
+                    console.warn('[Cloud Sync] Failed to load module:', err);
+                });
+
+                import('./storage-manager.js').then(module => {
+                    module.syncCloudDown().catch(err => {
+                        console.warn('[StorageManager] Background sync failed:', err);
+                    });
+                }).catch(err => {
+                    console.warn('[StorageManager] Failed to load module:', err);
+                });
+
+                // 2. Background Refresh from Firestore
+                try {
+                    const subDoc = await getDoc(doc(db, 'subscriptions', user.uid));
+                    if (subDoc.exists()) {
+                        const data = subDoc.data();
+                        const active = data.status === 'active';
+                        const lifetime = data.plan === 'lifetime';
+
+                        // Update state
+                        state.isLifetime = active && lifetime;
+                        state.userTier = active ? (data.plan || 'pro') : 'free';
+
+                        // Sync localStorage
+                        localStorage.setItem('mindwave_premium', active ? 'true' : 'false');
+                        localStorage.setItem('mindwave_tier', state.userTier);
+                        localStorage.setItem('mindwave_lifetime', (active && lifetime) ? 'true' : 'false');
+
+                        console.log('[Auth] Refreshed Tier:', state.userTier, 'Lifetime:', state.isLifetime);
+                    }
+                } catch (err) {
+                    console.warn('[Auth] sub refresh failed:', err.message);
+                }
             } else {
                 state.userTier = 'free';
+                state.isLifetime = false;
                 if (unsubscribeLibrary) { unsubscribeLibrary(); unsubscribeLibrary = null; }
                 if (unsubscribeAudioLibrary) { unsubscribeAudioLibrary(); unsubscribeAudioLibrary = null; }
             }
@@ -500,11 +563,13 @@ export async function fetchAudioLibrary() {
     });
     return tracks;
 }
-
 export {
     auth,
     db,
     storage,
+    getAuth,
+    getFirestore,
+    getDoc,
     doc,
     setDoc,
     deleteDoc,
@@ -512,6 +577,10 @@ export {
     query,
     orderBy,
     onSnapshot,
-    serverTimestamp
+    serverTimestamp,
+    addDoc,
+    where,
+    limit,
+    getDocs,
+    collectionGroup
 };
-

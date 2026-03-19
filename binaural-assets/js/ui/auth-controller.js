@@ -8,9 +8,13 @@ import {
     registerAuthCallback,
     subscribeToLibrary,
     saveMixToCloud,
-    deleteMixFromCloud
+    deleteMixFromCloud,
+    auth as firebaseAuth
 } from '../services/firebase.js';
 import { showToast, applyMixState } from '../utils/helpers.js';
+import { trackReferralSignup } from '../services/referral.js';
+import { trackGlobalEvent } from '../services/analytics-service.js';
+import { publishPreset } from '../services/presets-service.js';
 
 let isLoginMode = true;
 
@@ -96,7 +100,10 @@ export function initAuthUI() {
                     showToast("Welcome back!", "success");
                     closeAuthModal();
                 } else {
-                    await registerUser(email, password, name);
+                    const user = await registerUser(email, password, name);
+                    await trackReferralSignup(user);
+                    await trackGlobalEvent('sign_up', { method: 'email', userId: user.uid });
+                    localStorage.setItem('mindwave_account_created', Date.now().toString());
                     showToast("Account created!", "success");
                     closeAuthModal();
                 }
@@ -342,7 +349,7 @@ async function updateDailyUsageDisplay() {
                     <div class="text-lg font-bold text-amber-400">
                         ∞ Unlimited
                     </div>
-                    <div class="text-[10px] text-[var(--text-muted)]">Pro member • ${usageMinutes}min today</div>
+                    <div class="text-[10px] text-[var(--text-muted)]">Nirvana member • ${usageMinutes}min today</div>
                 `;
                 usageEl.className = 'col-span-2 p-3 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/20 text-center';
             } else {
@@ -589,6 +596,13 @@ export function renderLibraryList(mixes) {
                                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
                                 </svg>
                             </button>
+                            <button class="lib-share-btn p-1.5 rounded-lg border border-purple-500/30 text-purple-400 hover:bg-purple-500/20 transition-all" title="Share to Gallery">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                                    <polyline points="16 6 12 2 8 6"></polyline>
+                                    <line x1="12" y1="2" x2="12" y2="15"></line>
+                                </svg>
+                            </button>
                         </div>
                     </div>
                     <div class="flex items-center gap-2 mt-1.5 text-[10px] text-[var(--text-muted)]">
@@ -616,6 +630,31 @@ export function renderLibraryList(mixes) {
             e.stopPropagation();
             if (confirm(`Delete "${mix.name}"?`)) {
                 await deleteMixFromCloud(mix.id);
+            }
+        };
+
+        // Share to Gallery Action
+        div.querySelector('.lib-share-btn').onclick = async (e) => {
+            e.stopPropagation();
+            if (confirm(`Share "${mix.name}" to the Public Gallery?`)) {
+                try {
+                    const btn = e.currentTarget;
+                    const originalHTML = btn.innerHTML;
+                    btn.innerHTML = '...';
+                    btn.disabled = true;
+
+                    await publishPreset(mix, state.currentUser);
+                    showToast(`"${mix.name}" is now live in the Gallery!`, "success");
+
+                    btn.innerHTML = '✅';
+                    setTimeout(() => {
+                        btn.innerHTML = originalHTML;
+                        btn.disabled = false;
+                    }, 3000);
+                } catch (err) {
+                    showToast("Failed to share: " + err.message, "error");
+                    btn.disabled = false;
+                }
             }
         };
 

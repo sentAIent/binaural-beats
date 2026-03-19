@@ -1,4 +1,5 @@
 import { els } from '../state.js';
+import { getCachedAudioUrl, cacheAudioOffline, isAudioCached } from '../utils/audio-offline-manager.js';
 
 // Built-in classical pieces (can be hidden but not deleted from server)
 export const BUILTIN_CLASSICAL_PIECES = [
@@ -185,7 +186,7 @@ function loadUserTracks() {
 }
 
 // Render combined track list (built-in + user tracks)
-function renderClassicalList() {
+async function renderClassicalList() {
     const container = document.getElementById('classicalContainer');
     if (!container) return;
 
@@ -206,31 +207,67 @@ function renderClassicalList() {
         return;
     }
 
+    // Check cache status for all tracks
+    const cacheStatus = await Promise.all(allTracks.map(async (piece) => {
+        return {
+            id: piece.id,
+            isCached: piece.isBuiltIn ? await isAudioCached(piece.url) : true // User uploads are already local
+        };
+    }));
+
     container.innerHTML = allTracks.map(piece => {
         const isUserTrack = !piece.isBuiltIn;
+        const status = cacheStatus.find(s => s.id === piece.id);
+        const isOffline = status ? status.isCached : false;
+
         return `
-        <div class="classical-item flex items-center gap-3 p-4 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-all group"
+        <div class="classical-item flex items-center gap-3 p-4 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 hover:border-[var(--accent)] active:border-[var(--accent)] transition-all group"
              data-id="${piece.id}">
-            <div class="w-9 h-9 flex items-center justify-center rounded-full bg-[var(--accent)]/20 text-[var(--accent)] play-icon cursor-pointer shrink-0"
-                 onclick="window.playClassicalPiece('${piece.id}')">
-                ▶
+             
+            <!-- Play Button & Status Ring -->
+            <div class="relative w-9 h-9 flex items-center justify-center shrink-0 cursor-pointer" onclick="window.playClassicalPiece('${piece.id}')">
+                <div class="absolute inset-0 rounded-full border-2 ${isOffline ? 'border-[var(--success)] opacity-50' : 'border-transparent'} transition-colors"></div>
+                <div class="w-full h-full flex items-center justify-center rounded-full bg-[var(--accent)]/20 text-[var(--accent)] play-icon">
+                    ▶
+                </div>
             </div>
+
+            <!-- Track Info -->
             <div class="flex-1 min-w-0 cursor-pointer" onclick="window.playClassicalPiece('${piece.id}')">
-                <div class="text-xs font-medium text-[var(--text-main)] truncate">${piece.title}</div>
+                <div class="text-xs font-medium text-[var(--text-main)] truncate flex items-center gap-2">
+                    ${piece.title}
+                    ${isOffline && piece.isBuiltIn ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
+                </div>
                 <div class="text-[9px] text-[var(--text-muted)] truncate">${piece.composer || 'Unknown'} ${piece.duration ? `• ${piece.duration}` : ''}${piece.bpm ? ` • ${piece.bpm} BPM` : ''}${isUserTrack ? ' • Custom' : ''}</div>
             </div>
-            <button onclick="window.deleteClassicalTrack('${piece.id}', ${piece.isBuiltIn || false})"
-                class="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-500/20 text-red-400 transition-all shrink-0"
-                title="${piece.isBuiltIn ? 'Hide track' : 'Delete track'}">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                </svg>
-            </button>
+            
+            <!-- Actions -->
+            <div class="flex items-center gap-1">
+                <!-- Download Action (Only for Built-In non-cached tracks) -->
+                ${piece.isBuiltIn && !isOffline ? `
+                <button onclick="window.downloadClassicalTrack('${piece.id}', event)"
+                    class="download-btn p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-[var(--accent)]/20 text-[var(--accent)] transition-all shrink-0 relative"
+                    title="Download for Offline Use">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                    </svg>
+                </button>
+                ` : ''}
+
+                <!-- Delete / Hide Action -->
+                <button onclick="window.deleteClassicalTrack('${piece.id}', ${piece.isBuiltIn || false})"
+                    class="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-500/20 text-red-400 transition-all shrink-0"
+                    title="${piece.isBuiltIn ? 'Hide track' : 'Delete track'}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                    </svg>
+                </button>
+            </div>
         </div>
     `}).join('');
 }
 
-// Handle file upload for classical tracks
+// Handle file upload for classical tracks (Ephemeral Object URL)
 async function handleClassicalUpload(event) {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -238,37 +275,24 @@ async function handleClassicalUpload(event) {
     for (const file of files) {
         if (!file.type.startsWith('audio/')) continue;
 
-        // Read file as base64
-        const base64 = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.readAsDataURL(file);
-        });
+        // Create a fast, zero-latency ephemeral Blob URL instead of heavy Base64
+        const objectUrl = URL.createObjectURL(file);
 
         // Create track object
         const track = {
             id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
             title: file.name.replace(/\.[^/.]+$/, ''), // Remove extension
-            composer: 'My Library',
-            url: base64, // Store as data URL
+            composer: 'Local Upload',
+            url: objectUrl,
             duration: '',
             isBuiltIn: false,
-            addedAt: Date.now()
+            addedAt: Date.now(),
+            isEphemeral: true // Flag to ensure it doesn't get saved to IDB
         };
 
-        // Save to IndexedDB
-        if (classicalState.db) {
-            try {
-                const transaction = classicalState.db.transaction([STORE_NAME], 'readwrite');
-                const store = transaction.objectStore(STORE_NAME);
-                store.put(track);
-
-                // Add to local state
-                classicalState.userTracks.push(track);
-            } catch (e) {
-                console.error('[Classical] Failed to save track:', e);
-            }
-        }
+        // Add to local state explicitly without saving to IndexedDB 
+        // (so massive internal 20MB files don't explode the browser cache)
+        classicalState.userTracks.push(track);
     }
 
     // Clear input and re-render
@@ -315,9 +339,51 @@ function restoreAllBuiltInTracks() {
     renderClassicalList();
 }
 
+// Download a Built-In Track for Offline Use (Phase 4)
+async function downloadClassicalTrack(trackId, event) {
+    if (event) {
+        event.stopPropagation(); // Prevent triggering the play function
+    }
+
+    const piece = BUILTIN_CLASSICAL_PIECES.find(p => p.id === trackId);
+    if (!piece || !piece.url) return;
+
+    // Find the specific button to show loading state
+    const card = document.querySelector(`.classical-item[data-id="${trackId}"]`);
+    const btn = card ? card.querySelector('.download-btn') : null;
+
+    if (btn) {
+        btn.innerHTML = `<svg class="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>`;
+        btn.classList.add('cursor-not-allowed', 'opacity-50');
+    }
+
+    try {
+        const success = await cacheAudioOffline(piece.url, (progress) => {
+            // Optional progress tracking could go here
+        });
+
+        if (success) {
+            console.log(`[Offline Sync] Downloaded ${piece.title} successfully`);
+            renderClassicalList(); // Refresh UI to show the checkmark and hide the download button
+        } else {
+            throw new Error("Cache failed");
+        }
+    } catch (e) {
+        console.error('[Offline Sync] Failed to download:', e);
+        if (btn) {
+            btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`;
+            btn.classList.remove('cursor-not-allowed', 'opacity-50');
+            // Flash red for failure
+            btn.classList.replace('text-[var(--accent)]', 'text-red-400');
+            setTimeout(() => btn.classList.replace('text-red-400', 'text-[var(--accent)]'), 2000);
+        }
+    }
+}
+
 // Expose delete function globally
 window.deleteClassicalTrack = deleteClassicalTrack;
 window.restoreAllBuiltInTracks = restoreAllBuiltInTracks;
+window.downloadClassicalTrack = downloadClassicalTrack;
 
 export async function initClassical() {
     const container = document.getElementById('classicalContainer');
@@ -439,7 +505,7 @@ export async function initClassical() {
     console.log('[Main] Classical initialized successfully');
 }
 
-export function playClassical(id) {
+export async function playClassical(id) {
     // Search in both built-in and user tracks
     let piece = BUILTIN_CLASSICAL_PIECES.find(p => p.id === id);
     if (!piece) {
@@ -457,9 +523,28 @@ export function playClassical(id) {
     stopClassical(); // Stop self
     if (window.stopCustomAudio) window.stopCustomAudio(); // Stop other custom audio
 
-    classicalState.audio = new Audio(piece.url);
+    // Phase 4: Offline Audio Intercept
+    let srcUrl = piece.url;
+    try {
+        const cachedUrl = await getCachedAudioUrl(piece.url);
+        if (cachedUrl) {
+            console.log(`[Classical] Serving ${id} from Offline Cache`);
+            srcUrl = cachedUrl;
+        } else {
+            console.log(`[Classical] Serving ${id} from Network`);
+        }
+    } catch (e) {
+        console.warn('[Classical] Failed to check offline cache, defaulting to network:', e);
+    }
+
+    classicalState.audio = new Audio(srcUrl);
     classicalState.audio.volume = classicalState.volume;
     classicalState.audio.loop = true;
+
+    // Connect ephemeral tracks to the Master WebAudio Chain
+    if (piece.isEphemeral && window.connectCustomAudio) {
+        window.connectCustomAudio(classicalState.audio);
+    }
 
     // Time update listener
     classicalState.audio.addEventListener('timeupdate', updateTimeDisplay);
@@ -481,7 +566,7 @@ export function playClassical(id) {
         })
         .catch(e => {
             console.error("Classical Play Error:", e);
-            alert("Could not play track. It might not be available.");
+            alert("Could not play track. It might not be available offline.");
         });
 }
 

@@ -72,11 +72,11 @@
     <link rel="stylesheet" href="./binaural-assets/css/style.css?v=25">
     <link rel="stylesheet" href="./binaural-assets/css/visual-active.css?v=1">
     <!-- Preload critical resources -->
-    <link rel="modulepreload" href="./binaural-assets/js/main_vFINAL.js">
+    <link rel="modulepreload" href="./binaural-assets/js/main_vFINAL.js?v=NUCLEAR_FIX_V42">
     <!-- Visualizer modulepreload removed to unblock critical path -->
     <script src="./binaural-assets/config.js" defer
         onerror="console.log('[Config] No config.js found - using mock mode')"></script>
-    <script type="module" src="./binaural-assets/js/main_vFINAL.js"
+    <script type="module" src="./binaural-assets/js/main_vFINAL.js?v=NUCLEAR_FIX_V42"
         onerror="console.error('Failed to load main_vFINAL.js')"></script>
     <style>
         /* Fallback Styles if Tailwind fails */
@@ -423,6 +423,35 @@
         <main class="flex-1 flex items-center justify-center pointer-events-auto" id="tapZone">
         </main>
 
+        <style>
+            /* Footer left/right control groups compress */
+            .footer-slim #bottomControlBar > div:first-child,
+            .footer-slim #bottomControlBar > div:last-child,
+            .footer-ultra #bottomControlBar > div:first-child,
+            .footer-ultra #bottomControlBar > div:last-child {
+                gap: 0.25rem !important;
+            }
+
+            /* ─── WIDTH CONTAINMENT ────────────────────────────────────────── */
+            /* Prevent the center column from stretching across ultra-wide     */
+            /* viewports. Responds to --footer-width set by sidebar changes.   */
+            #bottomControlCenter {
+                max-width: min(900px, var(--footer-width, 900px)) !important;
+                transition: max-width 0.35s cubic-bezier(0.4,0,0.2,1),
+                            gap 0.35s cubic-bezier(0.4,0,0.2,1) !important;
+            }
+
+            /* Play row */
+            #bottomControlCenter > .order-1 {
+                max-width: min(800px, var(--footer-width, 800px)) !important;
+            }
+
+            /* Dock — prevent single-row stretch */
+            #visualDock {
+                max-width: min(850px, var(--footer-width, 850px)) !important;
+            }
+        </style>
+
         <!-- FOOTER -->
         <footer id="bottomControlBar" style="opacity: 0"
             class="fixed bottom-0 left-0 right-0 z-[100] p-6 px-12 pointer-events-auto flex justify-between items-end pb-8 transition-[left,right,opacity,transform] duration-300 ease-in-out no-transition ui-fade-target">
@@ -493,7 +522,7 @@
             </div>
 
             <!-- CENTER: Main Play with Session Timer -->
-            <div class="flex-1 flex flex-col items-center justify-end gap-6 pb-0 max-w-4xl">
+            <div id="bottomControlCenter" class="flex-1 flex flex-col items-center justify-end gap-6 pb-0 max-w-4xl">
 
                 <!-- 1. Play & Timer Controls (Horizontal Row) -->
                 <div
@@ -674,6 +703,7 @@
                     <button id="sphereBtn"
                         class="visual-btn p-2 rounded-xl glass-pill border-[var(--accent)]/30 hover:bg-white/10 hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
                         <span class="text-2xl filter drop-shadow-lg">🔮</span>
+                        <input type="color" data-visual-color="sphere" class="absolute -top-1 -left-1 w-4 h-4 rounded-full border border-white/20 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10" value="#60a9ff">
                         <span
                             class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Sphere</span>
                     </button>
@@ -682,6 +712,7 @@
                     <button id="cubeBtn"
                         class="visual-btn p-2 rounded-xl glass-pill border-[var(--accent)]/30 hover:bg-white/10 hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
                         <span class="text-2xl filter drop-shadow-lg">📦</span>
+                        <input type="color" data-visual-color="cube" class="absolute -top-1 -left-1 w-4 h-4 rounded-full border border-white/20 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10" value="#60a9ff">
                         <span
                             class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Cube</span>
                     </button>
@@ -690,6 +721,7 @@
                     <button id="dragonBtn"
                         class="visual-btn p-2 rounded-xl glass-pill border-[var(--accent)]/30 hover:bg-white/10 hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
                         <span class="text-2xl filter drop-shadow-lg">🐉</span>
+                        <input type="color" data-visual-color="dragon" class="absolute -top-1 -left-1 w-4 h-4 rounded-full border border-white/20 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10" value="#60a9ff">
                         <span
                             class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Dragon</span>
                     </button>
@@ -698,6 +730,7 @@
                     <button id="galaxyBtn"
                         class="visual-btn p-2 rounded-xl glass-pill border-[var(--accent)]/30 hover:bg-white/10 hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
                         <span class="text-2xl filter drop-shadow-lg">🌌</span>
+                        <input type="color" data-visual-color="galaxy" class="absolute -top-1 -left-1 w-4 h-4 rounded-full border border-white/20 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10" value="#60a9ff">
                         <span
                             class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Galaxy</span>
 
@@ -713,6 +746,7 @@
                     <button id="mandalaBtn"
                         class="visual-btn p-2 rounded-xl glass-pill border-[var(--accent)]/30 hover:bg-white/10 hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
                         <span class="text-2xl filter drop-shadow-lg">🕉️</span>
+                        <input type="color" data-visual-color="mandala" class="absolute -top-1 -left-1 w-4 h-4 rounded-full border border-white/20 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10" value="#60a9ff">
                         <span
                             class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Mandala</span>
                     </button>
@@ -721,6 +755,7 @@
                     <button id="flowBtn"
                         class="visual-btn p-2 rounded-xl glass-pill border-[var(--accent)]/30 hover:bg-white/10 hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
                         <span class="text-2xl filter drop-shadow-lg">🌀</span>
+                        <input type="color" data-visual-color="particles" class="absolute -top-1 -left-1 w-4 h-4 rounded-full border border-white/20 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10" value="#60a9ff">
                         <span
                             class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Flow</span>
                     </button>
@@ -729,6 +764,7 @@
                     <button id="lavaBtn"
                         class="visual-btn p-2 rounded-xl glass-pill border-[var(--accent)]/30 hover:bg-white/10 hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
                         <span class="text-2xl filter drop-shadow-lg">🌋</span>
+                        <input type="color" data-visual-color="lava" class="absolute -top-1 -left-1 w-4 h-4 rounded-full border border-white/20 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10" value="#60a9ff">
                         <span
                             class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Lava</span>
                     </button>
@@ -737,6 +773,7 @@
                     <button id="fireplaceBtn"
                         class="visual-btn p-2 rounded-xl glass-pill border-[var(--accent)]/30 hover:bg-white/10 hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
                         <span class="text-2xl filter drop-shadow-lg">🔥</span>
+                        <input type="color" data-visual-color="fireplace" class="absolute -top-1 -left-1 w-4 h-4 rounded-full border border-white/20 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10" value="#60a9ff">
                         <span
                             class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Fire</span>
                     </button>
@@ -745,6 +782,7 @@
                     <button id="rainBtn"
                         class="visual-btn p-2 rounded-xl glass-pill border-[var(--accent)]/30 hover:bg-white/10 hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
                         <span class="text-2xl filter drop-shadow-lg">🌿</span>
+                        <input type="color" data-visual-color="rainforest" class="absolute -top-1 -left-1 w-4 h-4 rounded-full border border-white/20 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10" value="#60a9ff">
                         <span
                             class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Rain</span>
                     </button>
@@ -753,6 +791,7 @@
                     <button id="zenBtn"
                         class="visual-btn p-2 rounded-xl glass-pill border-[var(--accent)]/30 hover:bg-white/10 hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
                         <span class="text-2xl filter drop-shadow-lg">🌸</span>
+                        <input type="color" data-visual-color="zengarden" class="absolute -top-1 -left-1 w-4 h-4 rounded-full border border-white/20 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10" value="#60a9ff">
                         <span
                             class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Zen</span>
                     </button>
@@ -761,6 +800,7 @@
                     <button id="oceanBtn"
                         class="visual-btn p-2 rounded-xl glass-pill border-[var(--accent)]/30 hover:bg-white/10 hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
                         <span class="text-2xl filter drop-shadow-lg">🏝️</span>
+                        <input type="color" data-visual-color="ocean" class="absolute -top-1 -left-1 w-4 h-4 rounded-full border border-white/20 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10" value="#60a9ff">
                         <span
                             class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Waves</span>
                     </button>
@@ -769,6 +809,7 @@
                     <button id="cyberBtn"
                         class="visual-btn p-2 rounded-xl glass-pill border-[var(--accent)]/30 hover:bg-white/10 hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
                         <span class="text-2xl filter drop-shadow-lg">⚡</span>
+                        <input type="color" data-visual-color="cyber" class="absolute -top-1 -left-1 w-4 h-4 rounded-full border border-white/20 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10" value="#00FF41">
                         <span
                             class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Cyber</span>
                         
@@ -784,6 +825,7 @@
                     <button id="matrixBtn"
                         class="visual-btn p-2 rounded-xl glass-pill border-[var(--accent)]/30 hover:bg-white/10 hover:border-[var(--accent)] transition-all group relative flex flex-col items-center justify-center gap-1 h-16 min-w-[4rem]">
                         <span class="text-2xl filter drop-shadow-lg">🚀</span>
+                        <input type="color" data-visual-color="matrix" class="absolute -top-1 -left-1 w-4 h-4 rounded-full border border-white/20 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10" value="#00FF41">
                         <span
                             class="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">Matrix</span>
 
@@ -794,7 +836,43 @@
                             <span class="text-[8px] leading-none text-white">⚙️</span>
                         </div>
                     </button>
+
+                    <!-- DIVIDER -->
+                    <div class="w-px h-10 bg-gradient-to-b from-transparent via-white/20 to-transparent mx-2 hidden sm:block"></div>
+
+                    <!-- GLOBAL FX QUAD BUTTON -->
+                    <div class="visual-btn p-1.5 rounded-xl glass-pill border border-white/10 hover:border-[var(--accent)]/50 transition-all group relative flex flex-col items-center justify-center h-16 w-16 bg-[#050510]/60 shadow-[0_0_20px_rgba(45,212,191,0.1)]">
+                        <div class="grid grid-cols-2 grid-rows-2 gap-1 w-full h-full">
+                            <!-- Quad 1: Master Color -->
+                            <div class="relative rounded-md border border-white/5 hover:border-[var(--accent)]/50 bg-white/5 flex items-center justify-center cursor-pointer transition-all hover:bg-white/10 overflow-hidden group/color" onclick="document.getElementById('masterColorPicker').click()">
+                                <input type="color" id="masterColorPicker" class="absolute inset-0 opacity-0 cursor-pointer z-10" value="#60a9ff">
+                                <div id="masterColorPreview" class="w-2.5 h-2.5 rounded-full bg-[#60a9ff] shadow-[0_0_8px_rgba(96,169,255,0.5)] transition-transform group-hover/color:scale-125"></div>
+                            </div>
+                            
+                            <!-- Quad 2: Random -->
+                            <button id="masterRandomBtn" class="rounded-md border border-white/5 hover:border-[var(--accent)]/50 bg-white/5 flex items-center justify-center transition-all hover:bg-[var(--accent)]/10 text-white/40 hover:text-[var(--accent)] active:scale-90" title="Random Color">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line>
+                                </svg>
+                            </button>
+
+                            <!-- Quad 3: Undo -->
+                            <button id="masterPrevColorBtn" class="rounded-md border border-white/5 hover:border-[var(--accent)]/50 bg-white/5 flex items-center justify-center transition-all hover:bg-white/10 text-white/40 hover:text-white active:scale-90" title="Undo Color">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="15 18 9 12 15 6"></polyline>
+                                </svg>
+                            </button>
+
+                            <!-- Quad 4: Vibration Toggle -->
+                            <button id="masterVibrationToggle" class="rounded-md border border-white/5 hover:border-[var(--accent)]/50 bg-white/5 flex items-center justify-center transition-all hover:bg-[var(--accent)]/10 text-white/40 hover:text-[var(--accent)] active:scale-90" title="Global Vibration">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M2 12h3l2 8 4-16 4 16 2-8h3"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                 </div>
+
 
                 <div id="galaxySettingsPanel"
                 class="order-2 hidden flex flex-wrap justify-center items-center gap-3 px-4 py-2 bg-[#0a0a0f]/80 backdrop-blur-md border border-[var(--accent)]/30 rounded-xl shadow-[0_0_30px_rgba(45,212,191,0.1)] transition-all animate-fade-in-up w-auto max-w-4xl">
@@ -2459,7 +2537,7 @@
     </div>
 
     <!-- Stats Modal -->
-    <div id="statsModal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
+    <div id="statsModal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 hidden">
 
         <div class="glass-card p-6 rounded-2xl shadow-2xl max-w-md w-full mx-4 flex flex-col gap-4">
             <div class="flex justify-between items-center">

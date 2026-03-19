@@ -303,7 +303,14 @@ export const state = {
     idleTimeout: null,
 
     // NEW (Lotus State Options)
-    lotusState: 'full'
+    lotusState: 'full',
+
+    // NEW (Per-Visual RGB Memory)
+    visualColors: {
+        sphere: '#60a9ff', particles: '#60a9ff', cube: '#60a9ff', dragon: '#60a9ff',
+        galaxy: '#60a9ff', mandala: '#60a9ff', lava: '#60a9ff', fireplace: '#60a9ff',
+        rainforest: '#60a9ff', zengarden: '#60a9ff', ocean: '#60a9ff', cyber: '#00FF41', matrix: '#00FF41'
+    }
 };
 
 export const VISUALIZER_VERSION = 'PERFECT_V11';

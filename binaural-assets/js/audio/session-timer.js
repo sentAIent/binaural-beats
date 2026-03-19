@@ -1,6 +1,7 @@
 /**
  * Session Timer Module
- * Handles timed sessions with countdown, callbacks, and persistence
+ * Handles timed sessions with countdown, callbacks, and persistence,
+ * including cyclic Pomodoro modes.
  */
 
 import { state, els } from '../state.js';
@@ -11,36 +12,109 @@ let sessionDuration = 0; // in milliseconds
 let pausedTimeRemaining = 0;
 let onTickCallback = null;
 let onCompleteCallback = null;
+let onPhaseChangeCallback = null;
 let isInfiniteSession = false; // New flag for Free mode
+
+// Pomodoro / Phase state
+let isPomodoro = false;
+let currentPhase = 'NONE'; // 'FOCUS' | 'REST' | 'NONE'
+let pomodoroPhaseQueue = []; // array of duration info { phase: 'FOCUS', durationMs: 1500000 }
+let currentPhaseIndex = 0;
 
 // Duration presets in minutes
 export const DURATION_PRESETS = [5, 15, 30, 60, 90, 120, 180];
 
 /**
- * Start a new session timer
- * @param {number} durationMinutes - Session duration in minutes (0 for infinite)
- * @param {Object} callbacks - { onTick, onComplete }
+ * Parses duration argument (can be int minutes or 'pomodoro_X_Y' string)
+ * Returns config object for the timer sequence.
  */
-export function startSession(durationMinutes, callbacks = {}) {
-    if (timerInterval) {
-        clearInterval(timerInterval);
+function parseDurationConfig(durationInput) {
+    if (typeof durationInput === 'string' && durationInput.startsWith('pomodoro_')) {
+        const parts = durationInput.split('_');
+
+        const focusMins = parseInt(parts[1], 10);
+        const restMins = parseInt(parts[2], 10);
+        return {
+            isInfinite: false,
+            isPomodoro: true,
+            phases: [
+                { phase: 'FOCUS', durationMs: focusMins * 60 * 1000 },
+                { phase: 'REST', durationMs: restMins * 60 * 1000 }
+            ]
+        };
     }
 
-    isInfiniteSession = (durationMinutes === 0);
-    sessionDuration = durationMinutes * 60 * 1000;
+    const mins = parseInt(durationInput, 10);
+    return {
+        isInfinite: (mins === 0),
+        isPomodoro: false,
+        phases: [
+            { phase: 'NONE', durationMs: mins * 60 * 1000 }
+        ]
+    };
+}
+
+
+/**
+ * Start a new session timer
+ * @param {number|string} durationInput - Session duration in minutes (0 for infinite) or 'pomodoro_25_5'
+ * @param {Object} callbacks - { onTick, onComplete, onPhaseChange }
+ */
+export function startSession(durationInput, callbacks = {}) {
+    if (timerInterval) clearInterval(timerInterval);
+
+    const config = parseDurationConfig(durationInput);
+
+    isInfiniteSession = config.isInfinite;
+    isPomodoro = config.isPomodoro;
+    pomodoroPhaseQueue = config.phases;
+    currentPhaseIndex = 0;
+
+    const currentPhaseConfig = pomodoroPhaseQueue[currentPhaseIndex];
+    currentPhase = currentPhaseConfig.phase;
+    sessionDuration = currentPhaseConfig.durationMs;
+
     sessionStartTime = Date.now();
     pausedTimeRemaining = 0;
+
     onTickCallback = callbacks.onTick || null;
     onCompleteCallback = callbacks.onComplete || null;
+    onPhaseChangeCallback = callbacks.onPhaseChange || null;
 
     state.sessionActive = true;
-    state.sessionDuration = durationMinutes;
+    state.sessionDuration = typeof durationInput === 'number' ? durationInput : durationInput;
 
     timerInterval = setInterval(tick, 1000);
+
+    // Fire initial phase change before first tick
+    if (isPomodoro && onPhaseChangeCallback) {
+        onPhaseChangeCallback(currentPhase);
+    }
+
     tick(); // Initial tick
 
-    console.log(`[Session] Started: ${isInfiniteSession ? 'Infinite' : durationMinutes + ' minutes'}`);
+    console.log(`[Session] Started: ${isInfiniteSession ? 'Infinite' : durationInput} mode`);
 }
+
+/**
+ * Handles transitioning to the next phase in a Pomodoro queue
+ */
+function advancePhase() {
+    currentPhaseIndex = (currentPhaseIndex + 1) % pomodoroPhaseQueue.length;
+    const nextPhaseConfig = pomodoroPhaseQueue[currentPhaseIndex];
+
+    currentPhase = nextPhaseConfig.phase;
+    sessionDuration = nextPhaseConfig.durationMs;
+    sessionStartTime = Date.now();
+    pausedTimeRemaining = 0;
+
+    console.log(`[Session] Advancing phase to: ${currentPhase}`);
+
+    if (onPhaseChangeCallback) {
+        onPhaseChangeCallback(currentPhase);
+    }
+}
+
 
 /**
  * Pause the current session
@@ -51,15 +125,13 @@ export function pauseSession() {
     clearInterval(timerInterval);
     timerInterval = null;
 
-    // For infinite, we store elapsed time effectively
     if (isInfiniteSession) {
-        pausedTimeRemaining = getElapsed(); // terminology reuse, technically 'elapsed at pause'
+        pausedTimeRemaining = getElapsed();
     } else {
         pausedTimeRemaining = getTimeRemaining();
     }
 
     state.sessionPaused = true;
-
     console.log(`[Session] Paused`);
 }
 
@@ -67,20 +139,16 @@ export function pauseSession() {
  * Resume a paused session
  */
 export function resumeSession() {
-    if (timerInterval) return; // Already running
+    if (timerInterval) return;
 
-    // Recalculate start time based on paused state
     if (isInfiniteSession) {
-        // New start time = Now - Previously Elapsed
         sessionStartTime = Date.now() - pausedTimeRemaining;
     } else {
         if (pausedTimeRemaining <= 0 && !isInfiniteSession) return;
-        // New start time = Now - (Total Duration - Remaining)
         sessionStartTime = Date.now() - (sessionDuration - pausedTimeRemaining);
     }
 
     state.sessionPaused = false;
-
     timerInterval = setInterval(tick, 1000);
     tick();
 
@@ -102,6 +170,13 @@ export function stopSession() {
     sessionDuration = 0;
     pausedTimeRemaining = 0;
     isInfiniteSession = false;
+    isPomodoro = false;
+    currentPhase = 'NONE';
+    currentPhaseIndex = 0;
+    pomodoroPhaseQueue = [];
+
+    // Notify main controller we dropped out of phased modes
+    if (onPhaseChangeCallback) onPhaseChangeCallback('NONE');
 
     console.log(`[Session] Stopped`);
 }
@@ -110,7 +185,7 @@ export function stopSession() {
  * Get remaining time in milliseconds (Countdown)
  */
 export function getTimeRemaining() {
-    if (pausedTimeRemaining > 0 && !state.sessionActive) return pausedTimeRemaining; // Handle paused state correctly
+    if (pausedTimeRemaining > 0 && !state.sessionActive) return pausedTimeRemaining;
     if (!sessionStartTime) return 0;
 
     const elapsed = Date.now() - sessionStartTime;
@@ -130,7 +205,7 @@ export function getElapsed() {
  * Get session progress as percentage (0-100)
  */
 export function getProgress() {
-    if (isInfiniteSession) return 100; // Always full for infinite? Or maybe 0? Let's say 100 or cycle.
+    if (isInfiniteSession) return 100;
     if (sessionDuration === 0) return 0;
     const remaining = getTimeRemaining();
     return ((sessionDuration - remaining) / sessionDuration) * 100;
@@ -160,10 +235,11 @@ function tick() {
     if (isInfiniteSession) {
         const elapsed = getElapsed();
         timeData = {
-            remaining: elapsed, // For infinite, 'remaining' slot holds elapsed for display
+            remaining: elapsed,
             formatted: formatTime(elapsed),
-            progress: 0, // No progress ring for infinite
-            isInfinite: true
+            progress: 0,
+            isInfinite: true,
+            phase: currentPhase
         };
     } else {
         const remaining = getTimeRemaining();
@@ -171,20 +247,27 @@ function tick() {
             remaining: remaining,
             formatted: formatTime(remaining),
             progress: getProgress(),
-            isInfinite: false
+            isInfinite: false,
+            phase: currentPhase
         };
 
         if (remaining <= 0) {
-            clearInterval(timerInterval);
-            timerInterval = null;
-            state.sessionActive = false;
+            // Loop Pomodoro or finish Standard timer
+            if (isPomodoro) {
+                advancePhase();
+                return; // Let next tick() pick it up on 1000ms
+            } else {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                state.sessionActive = false;
 
-            if (onCompleteCallback) {
-                onCompleteCallback();
+                if (onCompleteCallback) {
+                    onCompleteCallback();
+                }
+
+                console.log(`[Session] Complete!`);
+                return;
             }
-
-            console.log(`[Session] Complete!`);
-            return; // Stop here
         }
     }
 

@@ -1,4 +1,7 @@
-import { initVisualizer, toggleVisual, setVisualSpeed, setVisualColor, pauseVisuals, resumeVisuals, getVisualizer, isVisualsPaused } from '../visuals/visualizer_nuclear_v4.js';
+console.log("CONTROLS V3 LOADED - ID: NUCLEAR_CHECK_777");
+import { state, els, THEMES, SOUNDSCAPES, PRESET_COMBOS } from '../state.js';
+import { startAudio, stopAudio, updateFrequencies, updateBeatsVolume, updateMasterVolume, updateMasterBalance, updateAtmosMaster, updateSoundscape, registerUICallback, fadeIn, fadeOut, cancelFadeOut, cancelStopAudio, resetAllSoundscapes, isVolumeHigh, playCompletionChime, setAudioMode, getAudioMode, startSweep, stopSweep, startSweepPreset, isSweepActive, isAudioPlaying, SWEEP_PRESETS } from '../audio/engine.js';
+import { initVisualizer, toggleVisual, setVisualSpeed, setVisualColor, setVisualBrightness, setVisualLogoOpacity, pauseVisuals, resumeVisuals, getVisualizer, isVisualsPaused, preloadVisualizer } from '../visuals/visualizer_lazy.js?v=2';
 import { startRecording, stopRecording, startExport, cancelExport, updateExportPreview } from '../export/recorder.js';
 import { openAuthModal, renderLibraryList } from './auth-controller.js';
 import { saveMixToCloud } from '../services/firebase.js';
@@ -25,9 +28,135 @@ let restoredPrefs = null;
 // This block is just for thought process.
 
 // Cursor logic imports removed for inlined UI generation
+export function toggleMixerSection(sectionName) {
+    const section = document.querySelector(`[data-section="${sectionName}"]`);
+    if (section) {
+        section.classList.toggle('collapsed');
+        const collapsed = section.classList.contains('collapsed');
+        const states = JSON.parse(localStorage.getItem('mixerSectionStates') || '{}');
+        states[sectionName] = collapsed;
+        localStorage.setItem('mixerSectionStates', JSON.stringify(states));
+    }
+}
+window.toggleMixerSection = toggleMixerSection;
 
+export function toggleLeftMenuSection(sectionName) {
+    const section = document.querySelector(`#leftPanel [data-section="${sectionName}"]`);
+    if (section) {
+        section.classList.toggle('collapsed');
+        const collapsed = section.classList.contains('collapsed');
+        const states = JSON.parse(localStorage.getItem('leftMenuSectionStates') || '{}');
+        states[sectionName] = collapsed;
+        localStorage.setItem('leftMenuSectionStates', JSON.stringify(states));
+    }
+}
+window.toggleLeftMenuSection = toggleLeftMenuSection;
+
+window.toggleGalaxySettings = function (btn) {
+    state.galaxyPanelOpen = !state.galaxyPanelOpen;
+    const panel = document.getElementById('galaxySettingsPanel');
+    const viz = getVisualizer();
+    const isActive = viz && viz.activeModes && viz.activeModes.has('galaxy');
+    if (panel && isActive) {
+        if (state.galaxyPanelOpen) {
+            panel.classList.remove('hidden');
+            panel.classList.add('flex', 'items-center');
+        } else {
+            panel.classList.add('hidden');
+            panel.classList.remove('flex', 'items-center');
+        }
+    } else if (panel) {
+        panel.classList.toggle('hidden');
+        panel.classList.toggle('flex');
+        panel.classList.toggle('items-center');
+    }
+};
+
+window.toggleCyberSettings = function (btn) {
+    state.cyberPanelOpen = !state.cyberPanelOpen;
+    const panel = document.getElementById('cyberSettingsPanel');
+    const viz = getVisualizer();
+    // Cyber mode is 'cyber' in the underlying engine (v4 mapping)
+    const isActive = viz && viz.activeModes && viz.activeModes.has('cyber');
+    if (panel && isActive) {
+        if (state.cyberPanelOpen) {
+            panel.classList.remove('hidden');
+            panel.classList.add('flex', 'items-center');
+        } else {
+            panel.classList.add('hidden');
+            panel.classList.remove('flex', 'items-center');
+        }
+    } else if (panel) {
+        panel.classList.toggle('hidden');
+        panel.classList.toggle('flex');
+        panel.classList.toggle('items-center');
+    }
+};
+
+window.toggleMatrixSettings = function (btn) {
+    state.matrixPanelOpen = !state.matrixPanelOpen;
+    const panel = document.getElementById('matrixSettingsPanel');
+    const viz = getVisualizer();
+    // Matrix mode is 'matrix' in the underlying engine (v4 mapping)
+    const active = viz && viz.activeModes && viz.activeModes.has('matrix');
+    if (panel && active) {
+        if (state.matrixPanelOpen) {
+            panel.classList.remove('hidden');
+            panel.classList.add('flex', 'items-center');
+        } else {
+            panel.classList.add('hidden');
+            panel.classList.remove('flex', 'items-center');
+        }
+    } else if (panel) {
+        panel.classList.toggle('hidden');
+        panel.classList.toggle('flex');
+        panel.classList.toggle('items-center');
+    }
+};
+
+export function updateDockScaling() {
+    const width = window.innerWidth;
+    const footer = document.getElementById('bottomControlBar');
+
+    if (!footer) return;
+
+    // Output CSS variables based on screen width instead of using transform: scale()
+    // This allows children to elegantly rearrange instead of becoming unreadable ants
+    let dockGap = '16px';
+    let btnSize = '56px';
+    let iconSize = '24px';
+    let auxBtnSize = '36px';
+    let auxIconSize = '14px';
+
+    if (width < 600) {
+        dockGap = '8px';
+        btnSize = '42px';
+        iconSize = '20px';
+        auxBtnSize = '32px';
+        auxIconSize = '12px';
+    } else if (width < 900) {
+        dockGap = '12px';
+        btnSize = '48px';
+        iconSize = '22px';
+        auxBtnSize = '34px';
+        auxIconSize = '13px';
+    }
+
+    footer.style.setProperty('--dock-gap', dockGap);
+    footer.style.setProperty('--dock-btn-size', btnSize);
+    footer.style.setProperty('--dock-icon-size', iconSize);
+    footer.style.setProperty('--aux-btn-size', auxBtnSize);
+    footer.style.setProperty('--aux-icon-size', auxIconSize);
+    
+    // Clear legacy transform logic
+    footer.style.transform = 'none';
+
+    console.log(`[Resizing] Dock CSS vars updated for width ${width}`);
+}
+window.updateDockScaling = updateDockScaling;
 
 export function setupUI() {
+    console.log('[Controls] setupUI CALLED');
     // Populate els (DOM Element References)
     els.playBtn = document.getElementById('playBtn');
     els.playIcon = document.getElementById('playIcon');
@@ -118,12 +247,10 @@ export function setupUI() {
     // Force immediate calculation before reveal to prevent shift
     updateTopBarWidth();
     updateBottomBarWidth();
+    updateDockScaling();
 
-    // INITIALIZE CYBER & MATRIX CONTROLS IMMEDIATELY
-    if (typeof setupMatrixControls === 'function') setupMatrixControls();
-    if (typeof setupCyberControls === 'function') setupCyberControls();
 
-    console.log('[Controls] Initial layout and Cyber/Matrix controls synchronized');
+    console.log('[Controls] Initial layout synchronized');
     els.playbackAudio = document.getElementById('playbackAudio');
     els.profileModal = document.getElementById('profileModal');
     els.profileNameInput = document.getElementById('profileNameInput');
@@ -205,6 +332,10 @@ export function setupUI() {
     // NEW: Stats Modal Elements
     els.statsModal = document.getElementById('statsModal');
     els.statsBtn = document.getElementById('statsBtn');
+
+    // --- INITIALIZATION ---
+    setupGalaxyControls();
+    // setupMatrixControls(); // Functionality migrated to direct mode setting, but kept for future refactors
 
     // --- PERSISTENCE RESTORATION ---
     restoredPrefs = loadUserPreferences();
@@ -968,13 +1099,6 @@ export function setupUI() {
     setupSweepUI(); // NEW
     setupStatsUI(); // NEW - Session Analytics
     setupGalaxyControls(); // RESTORED MAR 11
-    // Initialize Timer & Disclaimer UI
-    setupTimerUI();
-    setupDisclaimerUI();
-    setupModeToggle(); // NEW
-    setupHyperGammaUI(); // NEW
-    setupSweepUI(); // NEW
-    setupStatsUI(); // NEW - Session Analytics
 
     // Mobile Bottom Navigation Handlers
     // ... (existing code) ...
@@ -983,6 +1107,9 @@ export function setupUI() {
     const footer = document.getElementById('bottomControlBar');
     const header = document.getElementById('topControlBar');
     if (footer) {
+        updateBottomBarWidth();
+        updateDockScaling(); // Ensure scaling is applied immediately
+        footer.classList.remove('idle-hidden'); // EXPLICITLY REMOVE
         footer.style.opacity = '1';
         footer.classList.remove('no-transition');
     }
@@ -1020,8 +1147,6 @@ export function setupUI() {
     window.startSweepPreset = startSweepPresetUI; // NEW
     window.stopSweep = stopSweepUI; // NEW
     window.handleHyperGammaClick = handleHyperGammaClick; // NEW
-    window.toggleCyberSettings = toggleCyberSettings;
-    window.toggleMatrixSettings = toggleMatrixSettings;
 
     // PAYWALL HELPER: Handles Auth + Purchase
     const checkAccessAndPurchase = async (tier) => {
@@ -1219,6 +1344,9 @@ export function setupUI() {
 
     // Initialize UI State
     updateSyncUI();
+    
+    // Initialize Per-Visual Color Pickers
+    initVisualColorPickers();
 }
 window.setupUI = setupUI; // EXPOSE GLOBALLY FOR DEBUGGING
 
@@ -1714,68 +1842,8 @@ function setupGalaxyControls() {
     console.log('[Controls] Galaxy Sun Controls Initialized');
 }
 
-window.toggleGalaxySettings = function(btn) {
-    state.galaxyPanelOpen = !state.galaxyPanelOpen;
-    console.log('[Controls] Toggle Galaxy Settings:', state.galaxyPanelOpen);
-    const panel = document.getElementById('galaxySettingsPanel');
-    const viz = getVisualizer();
-    const isActive = viz && viz.activeModes && viz.activeModes.has('galaxy');
-    if (panel && isActive) {
-        if (state.galaxyPanelOpen) {
-            panel.classList.remove('hidden');
-            panel.classList.add('flex', 'items-center');
-        } else {
-            panel.classList.add('hidden');
-            panel.classList.remove('flex', 'items-center');
-        }
-    } else if (panel) {
-        panel.classList.toggle('hidden');
-        panel.classList.toggle('flex');
-        panel.classList.toggle('items-center');
-    }
-};
+// Toggles moved to top for global availability
 
-window.toggleCyberSettings = function(btn) {
-    state.cyberPanelOpen = !state.cyberPanelOpen;
-    console.log('[Controls] Toggle Cyber Settings:', state.cyberPanelOpen);
-    const panel = document.getElementById('cyberSettingsPanel');
-    const viz = getVisualizer();
-    const isActive = viz && viz.activeModes && viz.activeModes.has('matrix');
-    if (panel && isActive) {
-        if (state.cyberPanelOpen) {
-            panel.classList.remove('hidden');
-            panel.classList.add('flex', 'items-center');
-        } else {
-            panel.classList.add('hidden');
-            panel.classList.remove('flex', 'items-center');
-        }
-    } else if (panel) {
-        panel.classList.toggle('hidden');
-        panel.classList.toggle('flex');
-        panel.classList.toggle('items-center');
-    }
-};
-
-window.toggleMatrixSettings = function (btn) {
-    state.matrixPanelOpen = !state.matrixPanelOpen;
-    console.log('[Controls] Toggle Matrix Settings:', state.matrixPanelOpen);
-    const panel = document.getElementById('matrixSettingsPanel');
-    const viz = getVisualizer();
-    const active = viz && viz.activeModes && viz.activeModes.has('cyber');
-    if (panel && active) {
-        if (state.matrixPanelOpen) {
-            panel.classList.remove('hidden');
-            panel.classList.add('flex', 'items-center');
-        } else {
-            panel.classList.add('hidden');
-            panel.classList.remove('flex', 'items-center');
-        }
-    } else if (panel) {
-        panel.classList.toggle('hidden');
-        panel.classList.toggle('flex');
-        panel.classList.toggle('items-center');
-    }
-};
 
 
 function showTimerUI() {
@@ -2409,21 +2477,6 @@ export function setVisualMode(mode, forceState = null) {
         // If applying an array (preset), clear existing modes for 'Total Immersion'
         if (Array.isArray(mode)) {
             viz.activeModes.clear();
-        } else {
-            // EXPERT REFACTOR: Define additive vs primary visuals
-            const additiveModes = ['cyber', 'matrix'];
-            const modesToApply = Array.isArray(mode) ? mode : [mode];
-            
-            // If we are activating a PRIMARY visual (not cyber/matrix), 
-            // clear other primary visuals but leave additive layers alone.
-            const isApplyingPrimary = modesToApply.some(m => !additiveModes.includes(m));
-            
-            if (isApplyingPrimary) {
-                // Clear all modes that are NOT in the additive list
-                Array.from(viz.activeModes).forEach(m => {
-                    if (!additiveModes.includes(m)) viz.activeModes.delete(m);
-                });
-            }
         }
 
         // NEW: Check for AI Lock
@@ -2495,7 +2548,7 @@ export function setVisualMode(mode, forceState = null) {
     const matrixPanel = document.getElementById('matrixSettingsPanel');
     const cyberPanel = document.getElementById('cyberSettingsPanel');
     const galaxyPanel = document.getElementById('galaxySettingsPanel');
-    
+
     const matrixActive = activeModes.has('matrix'); // 3D Matrix
     const cyberActive = activeModes.has('cyber');   // 2D Cyber
     const galaxyActive = activeModes.has('galaxy');
@@ -2514,7 +2567,7 @@ export function setVisualMode(mode, forceState = null) {
             matrixPanel.classList.remove('flex', 'items-center');
         }
     }
-    
+
     // Cyber Panel Toggle (2D)
     if (cyberPanel) {
         if (typeof state.cyberPanelOpen === 'undefined') state.cyberPanelOpen = true;
@@ -2543,22 +2596,7 @@ export function setVisualMode(mode, forceState = null) {
 }
 window.setVisualMode = setVisualMode;
 
-/**
- * Toggle mixer sections collapse/expand
- * @param {string} sectionName 
- */
-export function toggleMixerSection(sectionName) {
-    const section = document.querySelector(`[data-section="${sectionName}"]`);
-    if (section) {
-        section.classList.toggle('collapsed');
-        // Save state to localStorage
-        const collapsed = section.classList.contains('collapsed');
-        const states = JSON.parse(localStorage.getItem('mixerSectionStates') || '{}');
-        states[sectionName] = collapsed;
-        localStorage.setItem('mixerSectionStates', JSON.stringify(states));
-    }
-}
-window.toggleMixerSection = toggleMixerSection;
+// Redundant toggleMixerSection removed to fix syntax error
 
 
 
@@ -5035,18 +5073,64 @@ function setupMatrixControls() {
         });
     }
 
-    const colorPicker = document.getElementById('matrixColorPicker');
-    if (colorPicker) {
-        colorPicker.addEventListener('input', (e) => {
+    const matrixColorPicker = document.getElementById('matrixColorPicker');
+    if (matrixColorPicker) {
+        matrixColorPicker.addEventListener('input', (e) => {
             const val = e.target.value;
             const viz = getVisualizer();
             if (viz && viz.setMatrixColor) {
+                window._matrixPrevColor = matrixColorPicker.value;
                 viz.setMatrixColor(val);
                 const rainbowToggle = document.getElementById('matrixRainbowToggle');
                 if (rainbowToggle && rainbowToggle.checked) {
                     rainbowToggle.checked = false;
                     if (viz.setMatrixRainbow) viz.setMatrixRainbow(false);
                 }
+            }
+        });
+    }
+
+    // Random Color
+    const matrixRandomColorBtn = document.getElementById('matrixRandomColorBtn');
+    if (matrixRandomColorBtn) {
+        matrixRandomColorBtn.addEventListener('click', () => {
+            const randomHex = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+            const colorPicker = document.getElementById('matrixColorPicker');
+            if (colorPicker) {
+                window._matrixPrevColor = colorPicker.value;
+                colorPicker.value = randomHex;
+            }
+            const viz = getVisualizer();
+            if (viz && viz.setMatrixColor) viz.setMatrixColor(randomHex);
+        });
+    }
+
+    // Previous Color (Back)
+    const matrixPrevColorBtn = document.getElementById('matrixPrevColorBtn');
+    if (matrixPrevColorBtn) {
+        matrixPrevColorBtn.addEventListener('click', () => {
+            if (window._matrixPrevColor) {
+                const colorPicker = document.getElementById('matrixColorPicker');
+                const prev = window._matrixPrevColor;
+                if (colorPicker) {
+                    window._matrixPrevColor = colorPicker.value;
+                    colorPicker.value = prev;
+                }
+                const viz = getVisualizer();
+                if (viz && viz.setMatrixColor) viz.setMatrixColor(prev);
+            }
+        });
+    }
+
+    // Vibration Toggle
+    const matrixVibrationToggle = document.getElementById('matrixVibrationToggle');
+    if (matrixVibrationToggle) {
+        matrixVibrationToggle.addEventListener('click', () => {
+            const viz = getVisualizer();
+            if (viz && viz.setVibrationEnabled) {
+                const newState = !viz.vibrationEnabled;
+                viz.setVibrationEnabled(newState);
+                matrixVibrationToggle.style.color = newState ? 'var(--accent)' : 'var(--text-muted)';
             }
         });
     }
@@ -5109,65 +5193,6 @@ function setupMatrixControls() {
             }
         });
     });
-
-    // Initial sync for Matrix mode buttons
-    const viz = getVisualizer();
-    if (viz && viz.matrixConfig) {
-        const currentMode = viz.matrixConfig.logicMode || 'random';
-        modeBtns.forEach(b => {
-            if (b.dataset.matrixMode === currentMode) {
-                b.classList.add('bg-[var(--accent)]', 'text-[var(--bg-main)]', 'font-bold');
-            } else {
-                b.classList.remove('bg-[var(--accent)]', 'text-[var(--bg-main)]', 'font-bold');
-            }
-        });
-        if (textInput) textInput.value = viz.matrixConfig.customText || '';
-    }
-}
-
-function toggleMatrixSettings(btn) {
-    const panel = document.getElementById('matrixSettingsPanel');
-    if (panel) {
-        const isHidden = panel.classList.contains('hidden');
-        // Hide other panels
-        const cyberPanel = document.getElementById('cyberSettingsPanel');
-        if (cyberPanel) cyberPanel.classList.add('hidden');
-        
-        panel.classList.toggle('hidden');
-        
-        if (isHidden) { // If we just opened it
-            const viz = getVisualizer();
-            if (viz && viz.matrixConfig) {
-                // Sync Color Picker
-                const colorPicker = document.getElementById('matrixColorPicker');
-                if (colorPicker && viz.matrixConfig.color) colorPicker.value = viz.matrixConfig.color;
-                
-                // Sync Rainbow Toggle
-                const rainbowToggle = document.getElementById('matrixRainbowToggle');
-                if (rainbowToggle) rainbowToggle.checked = !!viz.matrixConfig.rainbow;
-                
-                // Sync Sliders
-                const speedSlider = document.getElementById('matrixSpeedSlider');
-                if (speedSlider) {
-                    speedSlider.value = viz.matrixConfig.speed || 1.0;
-                    const valDisp = document.getElementById('matrixSpeedVal');
-                    if (valDisp) valDisp.textContent = `${viz.matrixConfig.speed.toFixed(1)}x`;
-                }
-                const lengthSlider = document.getElementById('matrixLengthSlider');
-                if (lengthSlider) {
-                    lengthSlider.value = viz.matrixConfig.length || 1.0;
-                    const valDisp = document.getElementById('matrixLengthVal');
-                    if (valDisp) valDisp.textContent = `${viz.matrixConfig.length.toFixed(1)}x`;
-                }
-                const angleSlider = document.getElementById('matrixAngleSlider');
-                if (angleSlider) {
-                    angleSlider.value = viz.matrixConfig.angle || 0;
-                    const valDisp = document.getElementById('matrixAngleVal');
-                    if (valDisp) valDisp.textContent = `${viz.matrixConfig.angle}°`;
-                }
-            }
-        }
-    }
 }
 
 // --- GHOST MODE (Idle UI Fade-out) ---
@@ -5273,14 +5298,60 @@ function setupCyberControls() {
     }
 
     // Color Picker
-    const colorPicker = document.getElementById('cyberColorPicker');
-    if (colorPicker) {
-        colorPicker.addEventListener('input', (e) => {
+    const cyberColorPicker = document.getElementById('cyberColorPicker');
+    if (cyberColorPicker) {
+        cyberColorPicker.addEventListener('input', (e) => {
             const viz = getVisualizer();
             if (viz) {
+                window._cyberPrevColor = cyberColorPicker.value;
                 if (viz.setCyberColor) viz.setCyberColor(e.target.value);
                 const rainbow = document.getElementById('cyberRainbowToggle');
                 if (rainbow) rainbow.checked = false;
+            }
+        });
+    }
+
+    // Random Color
+    const cyberRandomColorBtn = document.getElementById('cyberRandomColorBtn');
+    if (cyberRandomColorBtn) {
+        cyberRandomColorBtn.addEventListener('click', () => {
+            const randomHex = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+            const colorPicker = document.getElementById('cyberColorPicker');
+            if (colorPicker) {
+                window._cyberPrevColor = colorPicker.value;
+                colorPicker.value = randomHex;
+            }
+            const viz = getVisualizer();
+            if (viz && viz.setCyberColor) viz.setCyberColor(randomHex);
+        });
+    }
+
+    // Previous Color (Back)
+    const cyberPrevColorBtn = document.getElementById('cyberPrevColorBtn');
+    if (cyberPrevColorBtn) {
+        cyberPrevColorBtn.addEventListener('click', () => {
+            if (window._cyberPrevColor) {
+                const colorPicker = document.getElementById('cyberColorPicker');
+                const prev = window._cyberPrevColor;
+                if (colorPicker) {
+                    window._cyberPrevColor = colorPicker.value;
+                    colorPicker.value = prev;
+                }
+                const viz = getVisualizer();
+                if (viz && viz.setCyberColor) viz.setCyberColor(prev);
+            }
+        });
+    }
+
+    // Vibration Toggle
+    const cyberVibrationToggle = document.getElementById('cyberVibrationToggle');
+    if (cyberVibrationToggle) {
+        cyberVibrationToggle.addEventListener('click', () => {
+            const viz = getVisualizer();
+            if (viz && viz.setVibrationEnabled) {
+                const newState = !viz.vibrationEnabled;
+                viz.setVibrationEnabled(newState);
+                cyberVibrationToggle.style.color = newState ? 'var(--accent)' : 'var(--text-muted)';
             }
         });
     }
@@ -5313,70 +5384,159 @@ function setupCyberControls() {
             });
         }
     });
+}
 
-    // Initial sync for Cyber mode buttons
-    const viz = getVisualizer();
-    if (viz && viz.cyberConfig) {
-        const currentMode = viz.cyberConfig.logicMode || 'random';
-        const cyberModes = ['Random', 'Mindwave', 'Custom', 'Interstellar'];
-        cyberModes.forEach(m => {
-            const b = document.getElementById(`cyberMode${m}`);
-            if (b) {
-                if (b.dataset.cyberMode === currentMode) {
-                    b.classList.add('bg-[var(--accent)]', 'text-[var(--bg-main)]', 'font-bold');
-                } else {
-                    b.classList.remove('bg-[var(--accent)]', 'text-[var(--bg-main)]', 'font-bold');
+// Ensure init calls them
+setTimeout(() => {
+    if (typeof setupMatrixControls === 'function') setupMatrixControls();
+    if (typeof setupCyberControls === 'function') setupCyberControls();
+    if (typeof setupMasterVisualControls === 'function') setupMasterVisualControls();
+}, 2000);
+
+window.addEventListener('resize', () => {
+    if (typeof updateDockScaling === 'function') updateDockScaling();
+    if (typeof resetIdleTimer === 'function') resetIdleTimer();
+});
+
+// --- PER-VISUAL COLOR PICKERS ---
+export function initVisualColorPickers() {
+    console.log('[Controls] Initializing 13 Per-Visual RGB Pickers');
+    const colorInputs = document.querySelectorAll('input[data-visual-color]');
+    
+    colorInputs.forEach(input => {
+        const mode = input.getAttribute('data-visual-color');
+        
+        // Load saved color or use default
+        if (state.visualColors && state.visualColors[mode]) {
+            input.value = state.visualColors[mode];
+        }
+
+        // Apply color instantly on change
+        input.addEventListener('input', (e) => {
+            const newColor = e.target.value;
+            // Stop propagation so it doesn't trigger the button underneath
+            e.stopPropagation(); 
+            
+            if (state.visualColors) {
+                state.visualColors[mode] = newColor;
+            }
+            
+            // If this is the active mode, apply it to the visualizer immediately
+            const viz = getVisualizer();
+            if (viz && viz.activeModes && viz.activeModes.has(mode)) {
+                setVisualColor(newColor);
+            }
+        });
+        
+        // Prevent click from bubbling up to the mode toggle button
+        input.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+    });
+}
+
+// --- MASTER VISUAL CONTROLS ---
+export function setupMasterVisualControls() {
+    console.log('[Controls] Initializing Master Visual Controls');
+    
+    const masterColorPicker = document.getElementById('masterColorPicker');
+    const masterColorPreview = document.getElementById('masterColorPreview');
+    const masterRandomBtn = document.getElementById('masterRandomBtn');
+    const masterPrevColorBtn = document.getElementById('masterPrevColorBtn');
+    const masterVibrationToggle = document.getElementById('masterVibrationToggle');
+    
+    // Master Color Picker
+    if (masterColorPicker && masterColorPreview) {
+        masterColorPicker.addEventListener('input', (e) => {
+            const hex = e.target.value;
+            masterColorPreview.style.backgroundColor = hex;
+            
+            if (state.masterVisualColor && state.masterVisualColor !== hex) {
+                state.previousVisualColor = state.masterVisualColor;
+            } else if (!state.masterVisualColor) {
+                state.previousVisualColor = '#60a9ff';
+            }
+
+            state.masterVisualColor = hex;
+            
+            const viz = getVisualizer();
+            if (viz && viz.setVisualColor) {
+                viz.setVisualColor(hex);
+            }
+        });
+    }
+
+    // Master Random Color
+    if (masterRandomBtn) {
+        masterRandomBtn.addEventListener('click', () => {
+            const randomHex = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+            
+            if (masterColorPicker) masterColorPicker.value = randomHex;
+            if (masterColorPreview) masterColorPreview.style.backgroundColor = randomHex;
+            
+            if (state.masterVisualColor) {
+                state.previousVisualColor = state.masterVisualColor;
+            } else if (!state.masterVisualColor) {
+                state.previousVisualColor = '#60a9ff';
+            }
+            
+            state.masterVisualColor = randomHex;
+
+            const viz = getVisualizer();
+            if (viz && viz.setVisualColor) {
+                viz.setVisualColor(randomHex);
+            }
+        });
+    }
+
+    // Master Previous Color
+    if (masterPrevColorBtn) {
+        masterPrevColorBtn.addEventListener('click', () => {
+            if (state.previousVisualColor) {
+                const prev = state.previousVisualColor;
+                
+                state.previousVisualColor = state.masterVisualColor;
+                state.masterVisualColor = prev;
+
+                if (masterColorPicker) masterColorPicker.value = prev;
+                if (masterColorPreview) masterColorPreview.style.backgroundColor = prev;
+
+                const viz = getVisualizer();
+                if (viz && viz.setVisualColor) {
+                    viz.setVisualColor(prev);
                 }
             }
         });
-        const textInput = document.getElementById('cyberTextInput');
-        if (textInput) textInput.value = viz.cyberConfig.customText || '';
     }
-}
 
-function toggleCyberSettings(btn) {
-    const panel = document.getElementById('cyberSettingsPanel');
-    if (panel) {
-        const isHidden = panel.classList.contains('hidden');
-        // Hide other panels
-        const matrixPanel = document.getElementById('matrixSettingsPanel');
-        if (matrixPanel) matrixPanel.classList.add('hidden');
-        
-        panel.classList.toggle('hidden');
-        
-        if (isHidden) { // If we just opened it
-            const viz = getVisualizer();
-            if (viz && viz.cyberConfig) {
-                // Sync Color Picker
-                const colorPicker = document.getElementById('cyberColorPicker');
-                if (colorPicker && viz.cyberConfig.color) colorPicker.value = viz.cyberConfig.color;
-                
-                // Sync Rainbow Toggle
-                const rainbowToggle = document.getElementById('cyberRainbowToggle');
-                if (rainbowToggle) rainbowToggle.checked = !!viz.cyberConfig.rainbow;
-                
-                // Sync Sliders
-                const speedSlider = document.getElementById('cyberSpeedSlider');
-                if (speedSlider) {
-                    speedSlider.value = viz.cyberConfig.speed || 1.0;
-                    const valDisp = document.getElementById('cyberSpeedVal');
-                    if (valDisp) valDisp.textContent = `${viz.cyberConfig.speed.toFixed(1)}x`;
-                }
-                const lengthSlider = document.getElementById('cyberLengthSlider');
-                if (lengthSlider) {
-                    lengthSlider.value = viz.cyberConfig.length || 1.0;
-                    const valDisp = document.getElementById('cyberLengthVal');
-                    if (valDisp) valDisp.textContent = `${viz.cyberConfig.length.toFixed(1)}x`;
-                }
-                const angleSlider = document.getElementById('cyberAngleSlider');
-                if (angleSlider) {
-                    angleSlider.value = viz.cyberConfig.angle || 0;
-                    const valDisp = document.getElementById('cyberAngleVal');
-                    if (valDisp) valDisp.textContent = `${viz.cyberConfig.angle}°`;
-                }
+    // Master Vibration Toggle
+    if (masterVibrationToggle) {
+        // Helper function for UI states (Quad Edition)
+        const updateVibeUI = (isOn) => {
+            const svg = masterVibrationToggle.querySelector('svg');
+            
+            if (isOn) {
+                masterVibrationToggle.classList.add('border-[var(--accent)]/50', 'bg-[var(--accent)]/10', 'text-[var(--accent)]', 'shadow-[0_0_10px_rgba(45,212,191,0.2)]');
+                masterVibrationToggle.classList.remove('border-white/5', 'text-white/40');
+                if (svg) svg.classList.add('text-[var(--accent)]');
+            } else {
+                masterVibrationToggle.classList.remove('border-[var(--accent)]/50', 'bg-[var(--accent)]/10', 'text-[var(--accent)]', 'shadow-[0_0_10px_rgba(45,212,191,0.2)]');
+                masterVibrationToggle.classList.add('border-white/5', 'text-white/40');
+                if (svg) svg.classList.remove('text-[var(--accent)]');
             }
-        }
+        };
+
+        // Set initial UI state
+        updateVibeUI(state.visualVibration || false);
+
+        masterVibrationToggle.addEventListener('click', () => {
+            state.visualVibration = !state.visualVibration;
+            updateVibeUI(state.visualVibration);
+
+            const viz = getVisualizer();
+            if (viz && viz.setVibrationEnabled) {
+                viz.setVibrationEnabled(state.visualVibration);
+            }
+        });
     }
 }
-
-// Ensure init calls are handled within setupUI()

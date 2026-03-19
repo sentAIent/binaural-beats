@@ -20,11 +20,11 @@ async function loadVisualizerModule() {
 
     if (loadPromise) return loadPromise;
 
-    console.log(`[LazyViz] Loading visualizer module from ./visualizer_nuclear_v4.js`);
+    console.log(`[LazyViz] Loading visualizer module from ./visualizer_nuclear_v4.js?v=${VISUALIZER_VERSION}`);
     // Added version tracking
     const startTime = performance.now();
 
-    loadPromise = import(`./visualizer_nuclear_v4.js`).then(module => {
+    loadPromise = import(`./visualizer_nuclear_v4.js?v=${VISUALIZER_VERSION}`).then(module => {
         visualizerModule = module;
         const loadTime = (performance.now() - startTime).toFixed(0);
         console.log(`[LazyViz] Visualizer loaded in ${loadTime}ms`);

@@ -28,7 +28,7 @@ export const STRIPE_CONFIG = {
             id: 'price_1SoKEV1b7ezAwuLWiFjCeYaa',
             amount: 199,
             interval: 'one-time',
-            name: 'Lifetime Access'
+            name: 'Eternity Access'
         }
     }
 };

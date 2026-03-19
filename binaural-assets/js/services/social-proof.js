@@ -4,9 +4,10 @@
  */
 
 const NAMES = [
-    "Sarah J.", "Michael K.", "David R.", "Jessica M.", "Alex T.",
+    "Sarah J.", "David K.", "Michelle R.", "Jessica M.", "Alex T.",
     "Emily W.", "Chris B.", "Amanda L.", "Daniel H.", "Rachel P.",
-    "Julian S.", "Hiroshi M.", "Elena G.", "Marcus V.", "Sasha L."
+    "Julian S.", "Hiroshi M.", "Elena G.", "Marcus V.", "Sasha L.",
+    "Kevin D.", "Sofia Z.", "Liam O.", "Maya C.", "Noah W."
 ];
 
 const LOCATIONS = [
@@ -15,11 +16,13 @@ const LOCATIONS = [
 ];
 
 const ACTIONS = [
-    { text: "joined Founders Club", premium: true, icon: "⚡" },
-    { text: "unlocked Lifetime Access", premium: true, icon: "🔥" },
+    { text: "joined Zen", premium: true, icon: "⚡" },
+    { text: "unlocked Eternity Access", premium: true, icon: "🔥" },
     { text: "is in Deep Focus mode", premium: false, icon: "🧠" },
     { text: "is meditating with Theta waves", premium: false, icon: "🧘" },
-    { text: "upgraded to Professional", premium: true, icon: "💎" }
+    { text: "is manifestating in Alpha state", premium: false, icon: "🍃" },
+    { text: "unlocked Nirvana", premium: true, icon: "💎" },
+    { text: "started a 30-Day Journey", premium: false, icon: "🚀" }
 ];
 
 export function initSocialProof() {
@@ -37,7 +40,17 @@ function scheduleNextToast() {
 
 function showToast() {
     // Don't show if user is busy (e.g. modal open)
-    if (document.querySelector('.modal:not(.hidden)')) return;
+    // Don't show if any major modal is open
+    const activeModals = [
+        document.getElementById('pricingModal'),
+        document.getElementById('authModal'),
+        document.getElementById('profileModal'),
+        document.getElementById('journeyModal'),
+        document.getElementById('upgradePromptModal'),
+        document.querySelector('.modal:not(.hidden)') // Fallback
+    ].filter(m => m && !m.classList.contains('hidden'));
+
+    if (activeModals.length > 0) return;
 
     const name = NAMES[Math.floor(Math.random() * NAMES.length)];
     const location = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];

@@ -6,8 +6,8 @@ let viz3D = null;
 export class Visualizer3D {
     constructor(canvas, initialState = {}) {
         this.canvas = canvas;
-        this.activeModes = initialState.activeModes || new Set(['particles', 'cyber']); // Default to Flow + Cyber
-        this.mode = initialState.mode || 'cyber'; // Legacy support
+        this.activeModes = initialState.activeModes || new Set(); // Start empty to match UI
+        this.mode = initialState.mode || 'none'; // Legacy support
 
         // Default settings - MUST be set before init methods
         this.mindWaveMode = initialState.mindWaveMode !== undefined ? initialState.mindWaveMode : true;
@@ -347,15 +347,15 @@ export class Visualizer3D {
         const rainbowToggle = document.getElementById('cyberRainbowToggle');
         if (rainbowToggle) {
             // Only sync if the toggle doesn't match the theme AND we aren't in a custom state
-            // Actually, simpler: just don't touch this.cyberConfig.rainbow here if it's already defined
-            if (this.cyberConfig.rainbow === undefined) {
-                this.cyberConfig.rainbow = (currentTheme.color === 'rainbow');
-                rainbowToggle.checked = this.cyberConfig.rainbow;
+            // Actually, simpler: just don't touch this.cyberRainbowMode here if it's already defined
+            if (this.cyberRainbowMode === undefined) {
+                this.cyberRainbowMode = (currentTheme.color === 'rainbow');
+                rainbowToggle.checked = this.cyberRainbowMode;
             }
         }
 
         // Set color if NOT in rainbow mode
-        if (!this.cyberConfig.rainbow && currentTheme.color !== 'rainbow') {
+        if (!this.cyberRainbowMode && currentTheme.color !== 'rainbow') {
             this.cyberColor = currentTheme.color;
             const colorPicker = document.getElementById('cyberColorPicker');
             if (colorPicker) colorPicker.value = this.cyberColor;
@@ -455,7 +455,7 @@ export class Visualizer3D {
 
                 ctx.globalAlpha = Math.min(1.0, alpha);
 
-                if (this.cyberConfig.rainbow) {
+                if (this.cyberRainbowMode) {
                     const hue = (rainbowHueOffset + streamIndex * 15 + i * 5) % 360;
                     ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
                 } else {
@@ -1587,9 +1587,9 @@ export class Visualizer3D {
                 }
                 void main() {
                     float rawIndex = floor(vCharIndex + 0.5);
-                    if (rawIndex > 20.5) {
+                    if (rawIndex > 8.5) {
                         float timeStep = floor(uTime * 0.5); 
-                        rawIndex = 21.0 + mod((rawIndex - 21.0) + timeStep, 43.0);
+                        rawIndex = 9.0 + mod((rawIndex - 9.0) + timeStep, 55.0);
                     }
                     float index = floor(rawIndex + 0.5);
                     float col = mod(index, 8.0);
@@ -1762,15 +1762,17 @@ export class Visualizer3D {
     }
 
     setMode(mode) {
+        const target = this.mapMode(mode);
         this.activeModes.clear();
-        this.activeModes.add(mode);
-        this.mode = mode;
+        this.activeModes.add(target);
+        this.mode = target;
         this.updateVisibility();
-        this.updateLabel(mode);
+        this.updateLabel(target);
     }
 
     mapMode(mode) {
         if (mode === 'interstellar') return 'matrix'; // UI "Matrix" -> Internal 3D Matrix
+        if (mode === 'cube') return 'box';
         return mode;
     }
 
@@ -1827,6 +1829,14 @@ export class Visualizer3D {
         if (this.overlayCanvas) {
             if (this.activeModes.has('cyber')) {
                 this.overlayCanvas.classList.remove('hidden');
+                // Dim 3D scene significantly to let Cyber shine, UNLESS Matrix is active
+                if (this.activeModes.has('matrix')) {
+                    this.renderer.domElement.style.opacity = '1.0';
+                } else if (this.activeModes.size > 1) {
+                    this.renderer.domElement.style.opacity = '0.3'; 
+                } else {
+                    this.renderer.domElement.style.opacity = '1.0';
+                }
                 if (!this.matrixCyberStreams || this.matrixCyberStreams.length === 0) {
                     this.generateCyberStyle();
                 }
@@ -2363,9 +2373,9 @@ export class Visualizer3D {
 
                 // Tribal sun - absolute 3D rotation controlled by sliders
                 if (this.galaxySunMesh) {
-                    this.galaxySunMesh.rotation.x = this.sunRotationSpeedX;
-                    this.galaxySunMesh.rotation.y = this.sunRotationSpeedY;
-                    this.galaxySunMesh.rotation.z = this.sunRotationSpeedZ;
+                    this.galaxySunMesh.rotation.x += this.sunRotationSpeedX;
+                    this.galaxySunMesh.rotation.y += this.sunRotationSpeedY;
+                    this.galaxySunMesh.rotation.z += this.sunRotationSpeedZ;
                 }
             }
 
@@ -2719,7 +2729,7 @@ export class Visualizer3D {
         console.log(`[Visualizer] setCyberLogicMode(mode="${mode}", text="${text}")`);
         this.cyberConfig.logicMode = mode;
         if (text !== undefined) this.cyberConfig.customText = text;
-        this.updateCyberStrings();
+        this.updateCyberStrings(); // Needs to update based on cyberConfig
     }
 
     setMatrixLogicMode(mode, text) {
@@ -2739,6 +2749,7 @@ export class Visualizer3D {
 
     setCyberAngle(degrees) {
         this.cyberConfig.angle = degrees;
+        // The 2D overlay rotates via its rendering context.
     }
 
     setMatrixAngle(degrees) {
